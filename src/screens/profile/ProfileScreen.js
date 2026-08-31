@@ -1,0 +1,137 @@
+import React, { useState, useCallback } from "react";
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { C, F, R, S } from "../../utils/theme";
+import api from "../../services/api";
+import { AuthToken, SecurePin } from "../../utils/storage";
+import Preloader from "../../components/Preloader";
+
+export default function ProfileScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    console.log("[Profile] Fetching...");
+    try {
+      const res = await api.getUserProfile();
+      console.log("[Profile] Result:", res.success, res.data ? Object.keys(res.data) : "null");
+      if (res.success && res.data) {
+        const u = res.data.user || res.data;
+        setUser({
+          ...u,
+          firstName: u.firstName || u.firstname || "",
+          lastName: u.lastName || u.lastname || "",
+        });
+      }
+    } catch (err) {
+      console.error("[Profile] Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          console.log("[Profile] Logging out...");
+          await api.logout();
+          await AuthToken.clear();
+          await SecurePin.clear();
+          console.log("[Profile] Logout complete, navigating to Auth");
+          navigation.reset({ index: 0, routes: [{ name: "Auth" }] });
+        },
+      },
+    ]);
+  };
+
+  const rows = [
+    { icon: "person-outline", label: "Edit Profile", screen: "EditProfile" },
+    { icon: "lock-closed-outline", label: "Change PIN", screen: "ChangePin" },
+    { icon: "help-circle-outline", label: "Support", screen: "Support" },
+  ];
+
+  if (loading) return <Preloader />;
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+        <View style={{ width: 22 }} />
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={{ width: 22 }} />
+      </LinearGradient>
+
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.avatarSection}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
+          </View>
+          <Text style={styles.name}>{user?.firstName} {user?.lastName}</Text>
+          <Text style={styles.phone}>{user?.phone}</Text>
+          <Text style={styles.email}>{user?.email}</Text>
+        </View>
+
+        {rows.map((r, i) => (
+          <TouchableOpacity
+            key={i}
+            style={styles.row}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate(r.screen); }}
+          >
+            <Ionicons name={r.icon} size={20} color={C.primary} />
+            <Text style={styles.rowLabel}>{r.label}</Text>
+            <Ionicons name="chevron-forward" size={18} color={C.textLight} />
+          </TouchableOpacity>
+        ))}
+
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color={C.debit} />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
+  headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
+  scroll: { padding: S.xl },
+  avatarSection: { alignItems: "center", paddingVertical: S.xl },
+  avatar: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: C.primaryLight,
+    justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: C.primary,
+  },
+  avatarText: { fontSize: F.h2, fontWeight: "800", color: C.primary },
+  name: { fontSize: F.xl, fontWeight: "800", color: C.text, marginTop: S.md },
+  phone: { fontSize: F.md, color: C.textMuted, marginTop: S.xs },
+  email: { fontSize: F.sm, color: C.textLight, marginTop: 4 },
+
+  row: {
+    flexDirection: "row", alignItems: "center", gap: S.md,
+    backgroundColor: C.white, borderRadius: R.sm, padding: S.base,
+    marginBottom: S.sm, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+  },
+  rowLabel: { flex: 1, fontSize: F.md, fontWeight: "600", color: C.text },
+
+  logoutBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
+    backgroundColor: C.debit + "10", borderRadius: R.sm, padding: S.base, marginTop: S.xl,
+  },
+  logoutText: { fontSize: F.md, fontWeight: "700", color: C.debit },
+});
