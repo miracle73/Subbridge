@@ -6,6 +6,11 @@ class ApiService {
   constructor() {
     this.token = null;
     this.userId = null;
+    this.onAuthError = null;
+  }
+
+  setOnAuthError(callback) {
+    this.onAuthError = callback;
   }
 
   async init() {
@@ -34,6 +39,16 @@ class ApiService {
 
     try {
       const response = await fetch(`${BASE_URL}${endpoint}`, config);
+
+      if (response.status === 401) {
+        console.log("[API] 401 Unauthorized — clearing token, redirecting to auth");
+        this.token = null;
+        this.userId = null;
+        await AuthToken.clear();
+        if (this.onAuthError) this.onAuthError();
+        return { success: false, message: "Session expired. Please login again.", data: null, unauthorized: true };
+      }
+
       const raw = await response.json();
 
       console.log(`[API] Response ${response.status}:`, JSON.stringify(raw).substring(0, 500));

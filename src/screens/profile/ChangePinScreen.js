@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../../utils/theme";
+import { SecurePin } from "../../utils/storage";
 import PinDots from "../../components/PinDots";
 import PinPad from "../../components/PinPad";
 import Preloader from "../../components/Preloader";
@@ -66,7 +67,8 @@ export default function ChangePinScreen({ navigation }) {
     setVerifying(true);
     console.log("[ChangePin] Verifying current PIN...");
     try {
-      const res = await api.verifyPin("", pin);
+      const phone = await SecurePin.getPhone();
+      const res = await api.verifyPin(phone || "", pin);
       console.log("[ChangePin] Verify result:", res.success, res.message);
       if (res.success) {
         setTimeout(() => setStep(2), 300);

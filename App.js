@@ -1,30 +1,61 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AppState } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import AppNavigator from "./src/navigation/AppNavigator";
 import AuthLock from "./src/components/AuthLock";
 import { SecurePin, AuthToken } from "./src/utils/storage";
+import api from "./src/services/api";
+
+function AuthRedirector() {
+  const [forceAuth, setForceAuth] = useState(false);
+
+  useEffect(() => {
+    api.setOnAuthError(() => {
+      setForceAuth(true);
+    });
+    return () => api.setOnAuthError(null);
+  }, []);
+
+  if (forceAuth) {
+    return null;
+  }
+
+  return null;
+}
 
 export default function App() {
   const [locked, setLocked] = useState(false);
   const [ready, setReady] = useState(false);
+  const [authKey, setAuthKey] = useState(0);
   const lastBg = useRef(0);
   const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    api.setOnAuthError(() => {
+      AuthToken.clear();
+      SecurePin.clear();
+      setReady(false);
+      setLocked(false);
+      setTimeout(() => {
+        setAuthKey((k) => k + 1);
+        setReady(true);
+      }, 100);
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
       const isLoggedIn = await AuthToken.isLoggedIn();
       const pin = await SecurePin.get();
-      // If user is logged in and has a PIN, lock on open
       if (isLoggedIn && pin) {
         setLocked(true);
       }
       setReady(true);
     })();
-  }, []);
+  }, [authKey]);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", async (next) => {
@@ -61,7 +92,7 @@ export default function App() {
         {locked ? (
           <AuthLock onUnlock={() => setLocked(false)} />
         ) : (
-          <NavigationContainer>
+          <NavigationContainer key={authKey}>
             <AppNavigator />
           </NavigationContainer>
         )}

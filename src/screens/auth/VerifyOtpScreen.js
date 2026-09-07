@@ -2,16 +2,39 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { C, F, R, S } from "../../utils/theme";
+import api from "../../services/api";
 
 export default function VerifyOtpScreen({ navigation, route }) {
   const { phone } = route.params || {};
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (otp.length !== 6) return setError("Enter the 6-digit code");
     setError("");
-    navigation.replace("ResetPassword", { phone, resetToken: "mock_reset_token" });
+    setLoading(true);
+    try {
+      const cleanPhone = "234" + phone.replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
+      const result = await api.verifyOtp(cleanPhone, otp);
+      if (result.success && result.data?.resetToken) {
+        navigation.replace("ResetPassword", { phone, resetToken: result.data.resetToken });
+      } else {
+        setError(result.message || "Invalid code. Please try again.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!phone) return;
+    try {
+      const cleanPhone = "234" + phone.replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
+      await api.forgotPassword(cleanPhone);
+    } catch (err) {}
   };
 
   return (
@@ -40,11 +63,11 @@ export default function VerifyOtpScreen({ navigation, route }) {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity style={styles.btn} onPress={handleVerify}>
-          <Text style={styles.btnText}>Verify</Text>
+        <TouchableOpacity style={[styles.btn, loading && { opacity: 0.6 }]} onPress={handleVerify} disabled={loading}>
+          <Text style={styles.btnText}>{loading ? "Verifying..." : "Verify"}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.resend}>
+        <TouchableOpacity style={styles.resend} onPress={handleResend}>
           <Text style={styles.resendText}>Resend Code</Text>
         </TouchableOpacity>
       </View>

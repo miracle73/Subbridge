@@ -2,16 +2,31 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { C, F, R, S } from "../../utils/theme";
+import api from "../../services/api";
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [phone, setPhone] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!phone || phone.length < 10) return setError("Enter a valid phone number");
     setError("");
-    setSent(true);
+    setLoading(true);
+    try {
+      const cleanPhone = "234" + phone.replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
+      const result = await api.forgotPassword(cleanPhone);
+      if (result.success) {
+        setSent(true);
+      } else {
+        setError(result.message || "Failed to send code. Please try again.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (sent) {
@@ -56,8 +71,8 @@ export default function ForgotPasswordScreen({ navigation }) {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity style={styles.btn} onPress={handleSend}>
-          <Text style={styles.btnText}>Send Code</Text>
+        <TouchableOpacity style={[styles.btn, loading && { opacity: 0.6 }]} onPress={handleSend} disabled={loading}>
+          <Text style={styles.btnText}>{loading ? "Sending..." : "Send Code"}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.goBack()}>

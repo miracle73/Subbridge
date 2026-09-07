@@ -141,7 +141,7 @@ export default function AirtimeScreen({ navigation }) {
       console.log("[Airtime] Purchasing:", cleanPhone, network?.id, finalAmount);
       const result = await api.post("/api/airtime/purchase/", {
         phone: cleanPhone,
-        provider: network?.id || "mtn",
+        network: network?.id || "mtn",
         amount: finalAmount,
         pin: pinValue,
       });

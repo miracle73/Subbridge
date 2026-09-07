@@ -2,18 +2,34 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { C, F, R, S } from "../../utils/theme";
+import api from "../../services/api";
 
-export default function ResetPasswordScreen({ navigation }) {
+export default function ResetPasswordScreen({ navigation, route }) {
+  const { phone, resetToken } = route.params || {};
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (password.length < 5) return setError("Password must be at least 5 characters");
     if (password !== confirm) return setError("Passwords do not match");
     setError("");
-    setDone(true);
+    setLoading(true);
+    try {
+      const cleanPhone = "234" + (phone || "").replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
+      const result = await api.resetPassword(cleanPhone, resetToken, password);
+      if (result.success) {
+        setDone(true);
+      } else {
+        setError(result.message || "Failed to reset password. Please try again.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (done) {
@@ -53,8 +69,8 @@ export default function ResetPasswordScreen({ navigation }) {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity style={styles.btn} onPress={handleReset}>
-          <Text style={styles.btnText}>Reset Password</Text>
+        <TouchableOpacity style={[styles.btn, loading && { opacity: 0.6 }]} onPress={handleReset} disabled={loading}>
+          <Text style={styles.btnText}>{loading ? "Resetting..." : "Reset Password"}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
