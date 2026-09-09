@@ -41,6 +41,6 @@ export function getElectricityLogo(id) {
 export function enrichProviders(list, logoFn) {
   return (list || []).map((p) => ({
     ...p,
-    logo: logoFn(p.id),
+    logo: logoFn(p.id) || logoFn(p.code) || logoFn(p.name) || null,
   }));
 }

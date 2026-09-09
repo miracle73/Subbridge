@@ -72,9 +72,10 @@ export default function ElectricityScreen({ navigation }) {
     if (!provider) return setError("Select a provider");
     if (!meterNumber || meterNumber.length < 8) return setError("Enter a valid meter number");
     setError("");
-    console.log("[Electricity] Verifying meter:", provider.id, meterNumber, meterType);
+    const providerCode = provider.code || provider.id;
+    console.log("[Electricity] Verifying meter:", providerCode, meterNumber, meterType);
     try {
-      const res = await api.verifyMeter(provider.id, meterNumber, meterType);
+      const res = await api.verifyMeter(providerCode, meterNumber, meterType);
       console.log("[Electricity] Verify result:", res.success, res.data);
       if (res.success && res.data) {
         setVerified({ name: res.data.customerName, address: res.data.customerAddress || res.data.address });
@@ -128,9 +129,9 @@ export default function ElectricityScreen({ navigation }) {
         return;
       }
 
-      console.log("[Electricity] Purchasing:", provider.id, meterNumber, meterType, amount);
+      console.log("[Electricity] Purchasing:", provider.code || provider.id, meterNumber, meterType, amount);
       const res = await api.purchaseElectricity({
-        provider: provider.id,
+        provider: provider.code || provider.id,
         meterNumber,
         meterType,
         amount: finalAmount,
@@ -221,7 +222,7 @@ export default function ElectricityScreen({ navigation }) {
         <Text style={styles.label}>Provider & Meter Number</Text>
         <View style={styles.comboRow}>
           <TouchableOpacity style={styles.providerLogoBtn} onPress={() => setShowProvider(true)}>
-            {provider ? (
+            {provider?.logo ? (
               <Image source={provider.logo} style={styles.providerLogo} />
             ) : (
               <View style={styles.providerLogoPlaceholder}>
@@ -303,7 +304,13 @@ export default function ElectricityScreen({ navigation }) {
             {providers.map((p) => (
               <TouchableOpacity key={p.id} style={styles.modalItem} onPress={() => handleProvider(p)}>
                 <View style={styles.modalItemRow}>
-                  <Image source={p.logo} style={styles.modalLogo} />
+                  {p.logo ? (
+                    <Image source={p.logo} style={styles.modalLogo} />
+                  ) : (
+                    <View style={[styles.modalLogo, { backgroundColor: C.inputBg, alignItems: "center", justifyContent: "center" }]}>
+                      <Ionicons name="flash-outline" size={20} color={C.textMuted} />
+                    </View>
+                  )}
                   <Text style={styles.modalItemText}>{p.name}</Text>
                 </View>
                 {provider?.id === p.id && <Ionicons name="checkmark" size={20} color={C.primary} />}
