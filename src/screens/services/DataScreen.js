@@ -91,8 +91,8 @@ export default function DataScreen({ navigation }) {
         const planTypes = result.data.types || [];
         setAllPlans(plans);
         setTypes(planTypes);
-        setActiveType(planTypes.length > 0 ? planTypes[0] : null);
-        setActiveValidity(null);
+        setActiveType(null);
+        setActiveValidity("Daily");
         setPlan(null);
       }
     } catch (err) {
@@ -119,18 +119,6 @@ export default function DataScreen({ navigation }) {
   const sortedDisplayGroups = allValidityGroups
     .filter((g) => displayGroups[g] && displayGroups[g].length > 0)
     .map((g) => [g, displayGroups[g]]);
-
-  // Muted hint for selector chips with no plans in current context
-  const validityCounts = {};
-  const typeScope = activeType ? allPlans.filter((p) => p.type === activeType) : allPlans;
-  typeScope.forEach((p) => {
-    const g = getValidityGroup(p.validity);
-    validityCounts[g] = (validityCounts[g] || 0) + 1;
-  });
-  const typeCounts = {};
-  allPlans.forEach((p) => {
-    typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
-  });
 
   const handleNetwork = (n) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -342,11 +330,7 @@ export default function DataScreen({ navigation }) {
               style={[styles.typeTab, activeValidity === group && styles.typeTabActive]}
               onPress={() => handleValidityFilter(group)}
             >
-              <Text style={[
-                styles.typeTabText,
-                activeValidity === group && { color: C.white },
-                activeValidity !== group && !validityCounts[group] && { color: C.textLight },
-              ]}>
+              <Text style={[styles.typeTabText, activeValidity === group && { color: C.white }]}>
                 {group}
               </Text>
             </TouchableOpacity>
@@ -364,11 +348,7 @@ export default function DataScreen({ navigation }) {
                   style={[styles.typeTab, activeType === t && styles.typeTabActive]}
                   onPress={() => handleTypeFilter(t)}
                 >
-                  <Text style={[
-                    styles.typeTabText,
-                    activeType === t && { color: C.white },
-                    activeType !== t && !typeCounts[t] && { color: C.textLight },
-                  ]}>
+                  <Text style={[styles.typeTabText, activeType === t && { color: C.white }]}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </Text>
                 </TouchableOpacity>
