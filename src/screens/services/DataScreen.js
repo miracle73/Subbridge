@@ -27,6 +27,17 @@ function getValidityGroup(validity) {
   return validity;
 }
 
+// Parses "500.0MB" / "1.0GB" / "2TB" into megabytes for ascending sort
+function dataValueToMB(v) {
+  if (!v) return Number.MAX_SAFE_INTEGER;
+  const m = String(v).trim().toUpperCase().match(/([\d.]+)\s*(MB|GB|TB)/);
+  if (!m) return Number.MAX_SAFE_INTEGER;
+  const n = parseFloat(m[1]);
+  if (m[2] === "TB") return n * 1024 * 1024;
+  if (m[2] === "GB") return n * 1024;
+  return n;
+}
+
 export default function DataScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [networks, setNetworks] = useState([]);
@@ -114,6 +125,11 @@ export default function DataScreen({ navigation }) {
     const group = getValidityGroup(p.validity);
     if (!displayGroups[group]) displayGroups[group] = [];
     displayGroups[group].push(p);
+  });
+
+  // Sort each group smallest → largest (500MB → 1GB → 2GB → 3GB)
+  Object.values(displayGroups).forEach((list) => {
+    list.sort((a, b) => dataValueToMB(a.dataValue || a.name) - dataValueToMB(b.dataValue || b.name));
   });
 
   const sortedDisplayGroups = allValidityGroups
@@ -369,6 +385,11 @@ export default function DataScreen({ navigation }) {
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPlan(p); }}
                 >
                   <Text style={[styles.planDataValue, plan?.id === p.id && { color: C.white }]}>{p.dataValue || p.name}</Text>
+                  {p.type ? (
+                    <View style={[styles.planTypePill, plan?.id === p.id && styles.planTypePillActive]}>
+                      <Text style={[styles.planTypeText, plan?.id === p.id && { color: C.white }]}>{p.type.toUpperCase()}</Text>
+                    </View>
+                  ) : null}
                   <Text style={[styles.planAmount, plan?.id === p.id && { color: C.white }]}>{fmtShort(p.amount)}</Text>
                   <Text style={[styles.planValidity, plan?.id === p.id && { color: "rgba(255,255,255,0.7)" }]}>{p.validity}</Text>
                 </TouchableOpacity>
@@ -553,6 +574,12 @@ const styles = StyleSheet.create({
   },
   planCardActive: { backgroundColor: C.primary, borderColor: C.primary },
   planDataValue: { fontSize: 12, fontWeight: "800", color: C.text, textAlign: "center" },
+  planTypePill: {
+    marginTop: 4, paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 999, backgroundColor: C.primaryLight,
+  },
+  planTypePillActive: { backgroundColor: "rgba(255,255,255,0.25)" },
+  planTypeText: { fontSize: 9, fontWeight: "800", color: C.primary, letterSpacing: 0.5 },
   planAmount: { fontSize: 11, fontWeight: "700", color: C.primary, marginTop: 4 },
   planValidity: { fontSize: 10, color: C.textMuted, marginTop: 2 },
 
