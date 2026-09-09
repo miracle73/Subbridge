@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -33,6 +33,7 @@ export default function ElectricityScreen({ navigation }) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
   const [purchaseData, setPurchaseData] = useState(null);
 
@@ -40,6 +41,7 @@ export default function ElectricityScreen({ navigation }) {
     (async () => {
       console.log("[Electricity] Loading...");
       try {
+        await api.init();
         const [providersRes, walletRes] = await Promise.all([
           api.getElectricityProviders(),
           api.getWalletBalance(),
@@ -69,12 +71,16 @@ export default function ElectricityScreen({ navigation }) {
   };
 
   const handleVerify = async () => {
+    if (verifying) return;
     if (!provider) return setError("Select a provider");
     if (!meterNumber || meterNumber.length < 8) return setError("Enter a valid meter number");
     setError("");
+    setVerified(null);
+    setVerifying(true);
     const providerCode = provider.code || provider.id;
     console.log("[Electricity] Verifying meter:", providerCode, meterNumber, meterType);
     try {
+      await api.init();
       const res = await api.verifyMeter(providerCode, meterNumber, meterType);
       console.log("[Electricity] Verify result:", res.success, res.data);
       if (res.success && res.data) {
@@ -84,6 +90,8 @@ export default function ElectricityScreen({ navigation }) {
       }
     } catch (e) {
       setError("Network error. Please try again.");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -255,9 +263,18 @@ export default function ElectricityScreen({ navigation }) {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.verifyBtn} onPress={handleVerify}>
-          <Ionicons name="checkmark-circle-outline" size={18} color={C.primary} />
-          <Text style={styles.verifyBtnText}>Verify Meter</Text>
+        <TouchableOpacity
+          style={[styles.verifyBtnSolid, verifying && { opacity: 0.7 }]}
+          onPress={handleVerify}
+          disabled={verifying}
+          activeOpacity={0.8}
+        >
+          {verifying ? (
+            <ActivityIndicator size="small" color={C.white} />
+          ) : (
+            <Ionicons name="checkmark-circle-outline" size={18} color={C.white} />
+          )}
+          <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Verify Meter"}</Text>
         </TouchableOpacity>
 
         {verified && (
@@ -279,13 +296,16 @@ export default function ElectricityScreen({ navigation }) {
         }} />
 
         <Text style={styles.label}>Amount</Text>
-        <TextInput
-          style={styles.input}
-          value={amount}
-          onChangeText={setAmount}
-          placeholder="Enter amount"
-          keyboardType="number-pad"
-        />
+        <View style={styles.amountBox}>
+          <Text style={styles.naira}>₦</Text>
+          <TextInput
+            style={styles.amountInput}
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="Enter amount (min ₦100)"
+            keyboardType="number-pad"
+          />
+        </View>
 
         <Text style={styles.balance}>Wallet Balance: {fmt(walletBalance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -410,8 +430,23 @@ const styles = StyleSheet.create({
   },
   typeChipActive: { backgroundColor: C.primary, borderColor: C.primary },
   typeChipText: { fontSize: F.sm, fontWeight: "600", color: C.text },
-  verifyBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: S.md, paddingVertical: S.sm },
-  verifyBtnText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
+  verifyBtnSolid: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: C.primary, borderRadius: R.sm,
+    paddingVertical: S.md + 2, marginTop: S.md,
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 6, elevation: 4,
+  },
+  verifyBtnSolidText: { fontSize: F.md, color: C.white, fontWeight: "800" },
+  amountBox: {
+    flexDirection: "row", alignItems: "center", gap: S.sm,
+    backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
+    borderRadius: R.sm, paddingHorizontal: S.base,
+  },
+  naira: { fontSize: F.xl, fontWeight: "900", color: C.primary },
+  amountInput: {
+    flex: 1, paddingVertical: S.md + 2,
+    fontSize: F.xl, fontWeight: "700", color: C.text,
+  },
   verifiedCard: {
     flexDirection: "row", alignItems: "center",
     backgroundColor: C.credit + "15", borderRadius: R.sm, padding: S.md, marginTop: S.sm,
