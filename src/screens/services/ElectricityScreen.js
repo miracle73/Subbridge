@@ -274,7 +274,7 @@ export default function ElectricityScreen({ navigation }) {
           ) : (
             <Ionicons name="checkmark-circle-outline" size={18} color={C.white} />
           )}
-          <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Verify Meter"}</Text>
+          <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Click to Verify Meter"}</Text>
         </TouchableOpacity>
 
         {verified && (
