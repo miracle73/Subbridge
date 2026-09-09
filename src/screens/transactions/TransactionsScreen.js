@@ -81,13 +81,19 @@ export default function TransactionsScreen({ navigation }) {
           renderItem={({ item: tx }) => {
             const isCredit = tx.type === "credit";
             const statusColor = tx.status === "success" ? C.credit : tx.status === "failed" ? C.debit : tx.status === "pending" ? "#F59E0B" : C.primary;
+            let displayDesc = tx.description || "";
+            if (tx.category && displayDesc && !displayDesc.toLowerCase().startsWith(tx.category.toLowerCase())) {
+              displayDesc = tx.category + " - " + displayDesc.replace(/^[\s-]+/, "");
+            } else if (tx.category && !displayDesc) {
+              displayDesc = tx.category;
+            }
             return (
               <TouchableOpacity style={styles.txItem} activeOpacity={0.6} onPress={() => navigation.navigate("Receipt", { tx })}>
                 <View style={[styles.txIconWrap, { backgroundColor: statusColor + "15" }]}>
                   <Ionicons name={TX_ICONS[tx.category] || "receipt-outline"} size={20} color={statusColor} />
                 </View>
                 <View style={styles.txInfo}>
-                  <Text style={styles.txLabel}>{tx.description || tx.category}</Text>
+                  <Text style={styles.txLabel}>{displayDesc || tx.category}</Text>
                   <Text style={styles.txDesc}>{tx.reference || ""}</Text>
                   <Text style={styles.txDate}>{tx.date} {"\u00B7"} {tx.time}</Text>
                 </View>

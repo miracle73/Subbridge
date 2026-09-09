@@ -93,10 +93,8 @@ export default function DataScreen({ navigation }) {
         const planTypes = result.data.types || [];
         setAllPlans(plans);
         setTypes(planTypes);
-        if (planTypes.length > 0) {
-          setActiveType(planTypes[0]);
-        }
-        setActiveValidity(null);
+        setActiveType(null);
+        setActiveValidity("Daily");
         setPlan(null);
       }
     } catch (err) {
@@ -140,15 +138,19 @@ export default function DataScreen({ navigation }) {
     setNetwork(n);
     setPlan(null);
     setActiveType(null);
-    setActiveValidity(null);
+    setActiveValidity("Daily");
     setShowNetwork(false);
     loadAllPlans(n.id);
   };
 
   const handleTypeFilter = (type) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setActiveType(type);
-    setActiveValidity(null);
+    if (activeType === type) {
+      setActiveType(null);
+    } else {
+      setActiveType(type);
+    }
+    setActiveValidity("Daily");
     setPlan(null);
   };
 
@@ -277,6 +279,8 @@ export default function DataScreen({ navigation }) {
     );
   }
 
+  const hasPlans = filteredPlans.length > 0;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -329,8 +333,8 @@ export default function DataScreen({ navigation }) {
           </View>
         )}
 
-        {/* Plan Type Tabs */}
-        {types.length > 1 && (
+        {/* Plan Type Tabs - always show */}
+        {types.length > 0 && (
           <>
             <Text style={[styles.label, { marginTop: S.lg }]}>Plan Type</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeTabs}>
@@ -350,7 +354,7 @@ export default function DataScreen({ navigation }) {
         )}
 
         {/* Validity Filter Buttons */}
-        {sortedGroups.length > 1 && (
+        {sortedGroups.length > 0 && (
           <>
             <Text style={[styles.label, { marginTop: S.md }]}>Validity</Text>
             <View style={styles.validityRow}>
@@ -389,23 +393,24 @@ export default function DataScreen({ navigation }) {
           </View>
         ))}
 
-        {filteredPlans.length === 0 && !loading && (
-          <Text style={styles.emptyText}>No plans available for this selection</Text>
+        {!hasPlans && !loading && (
+          <Text style={styles.emptyText}>No plans available in the selected category</Text>
         )}
-
-        <TouchableOpacity style={styles.beneficiaryRow} onPress={() => setSaveBeneficiary(!saveBeneficiary)}>
-          <Ionicons name={saveBeneficiary ? "checkbox" : "square-outline"} size={20} color={saveBeneficiary ? C.primary : C.textMuted} />
-          <Text style={styles.beneficiaryText}>Save as beneficiary</Text>
-        </TouchableOpacity>
 
         <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {plan && (
-          <TouchableOpacity style={styles.btn} onPress={handleBuy}>
-            <Text style={styles.btnText}>Buy Data - {fmt(plan.amount)}</Text>
-          </TouchableOpacity>
-        )}
+        {/* Buy button - always visible, active only when plan selected */}
+        <TouchableOpacity
+          style={[styles.btn, !plan && styles.btnInactive]}
+          onPress={handleBuy}
+          disabled={!plan}
+          activeOpacity={plan ? 0.6 : 1}
+        >
+          <Text style={[styles.btnText, !plan && styles.btnTextInactive]}>
+            {plan ? `Buy Data - ${fmt(plan.amount)}` : "Select a plan to continue"}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Network Picker Modal */}
@@ -432,7 +437,7 @@ export default function DataScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal - with save beneficiary */}
       <Modal visible={showConfirm} transparent animationType="fade">
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmSheet}>
@@ -459,6 +464,12 @@ export default function DataScreen({ navigation }) {
                 <Text style={styles.confirmValue}>{fmt(balance)}</Text>
               </View>
             </View>
+
+            <TouchableOpacity style={styles.beneficiaryRow} onPress={() => setSaveBeneficiary(!saveBeneficiary)}>
+              <Ionicons name={saveBeneficiary ? "checkbox" : "square-outline"} size={20} color={saveBeneficiary ? C.primary : C.textMuted} />
+              <Text style={styles.beneficiaryText}>Save as beneficiary</Text>
+            </TouchableOpacity>
+
             <View style={styles.confirmActions}>
               <TouchableOpacity style={styles.confirmCancel} onPress={() => setShowConfirm(false)}>
                 <Text style={styles.confirmCancelText}>Cancel</Text>
@@ -561,16 +572,17 @@ const styles = StyleSheet.create({
   planAmount: { fontSize: 11, fontWeight: "700", color: C.primary, marginTop: 4 },
   planValidity: { fontSize: 10, color: C.textMuted, marginTop: 2 },
 
-  beneficiaryRow: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.md },
-  beneficiaryText: { fontSize: F.sm, color: C.textMuted },
-
   balance: { fontSize: F.sm, color: C.textMuted, marginTop: S.base, textAlign: "center" },
   error: { fontSize: F.sm, color: C.debit, textAlign: "center", marginTop: S.sm },
   btn: {
     backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2,
     alignItems: "center", marginTop: S.xl,
   },
+  btnInactive: {
+    backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
+  },
   btnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
+  btnTextInactive: { color: C.textMuted, fontSize: F.lg, fontWeight: "600" },
 
   modalOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, paddingTop: S.lg },
@@ -593,6 +605,9 @@ const styles = StyleSheet.create({
   confirmCancelText: { fontSize: F.md, fontWeight: "600", color: C.textMuted },
   confirmBtn: { flex: 1, backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md, alignItems: "center" },
   confirmBtnText: { fontSize: F.md, fontWeight: "700", color: C.white },
+
+  beneficiaryRow: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.lg },
+  beneficiaryText: { fontSize: F.sm, color: C.textMuted },
 
   pinOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
   pinSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, paddingTop: S.lg, alignItems: "center" },

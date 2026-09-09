@@ -194,13 +194,19 @@ export default function HomeScreen({ navigation }) {
           recentTx.map((tx) => {
             const isCredit = tx.type === "credit";
             const statusColor = tx.status === "success" ? C.credit : tx.status === "failed" ? C.debit : tx.status === "pending" ? "#F59E0B" : C.primary;
+            let displayDesc = tx.description || "";
+            if (tx.category && displayDesc && !displayDesc.toLowerCase().startsWith(tx.category.toLowerCase())) {
+              displayDesc = tx.category + " - " + displayDesc.replace(/^[\s-]+/, "");
+            } else if (tx.category && !displayDesc) {
+              displayDesc = tx.category;
+            }
             return (
               <TouchableOpacity key={tx.id || tx.reference} style={styles.txItem} activeOpacity={0.6} onPress={() => openReceipt(tx)}>
                 <View style={[styles.txIconWrap, { backgroundColor: statusColor + "15" }]}>
                   <Ionicons name={TX_ICONS[tx.category] || "receipt-outline"} size={18} color={statusColor} />
                 </View>
                 <View style={styles.txInfo}>
-                  <Text style={styles.txLabel}>{tx.description || tx.service || "Transaction"}</Text>
+                  <Text style={styles.txLabel}>{displayDesc || tx.service || "Transaction"}</Text>
                   <Text style={styles.txDesc}>{tx.reference || ""}</Text>
                 </View>
                 <View style={styles.txRight}>
