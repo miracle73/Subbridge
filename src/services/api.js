@@ -49,9 +49,21 @@ class ApiService {
         return { success: false, message: "Session expired. Please login again.", data: null, unauthorized: true };
       }
 
-      const raw = await response.json();
+      const text = await response.text();
+      let raw;
+      try { raw = text ? JSON.parse(text) : null; } catch { raw = text; }
 
-      console.log(`[API] Response ${response.status}:`, JSON.stringify(raw).substring(0, 500));
+      console.log(`[API] Response ${response.status}:`, JSON.stringify(raw)?.substring(0, 500));
+
+      // /api/verify-pin/ returns raw true/false, not the envelope
+      if (typeof raw === "boolean") {
+        return { success: raw, message: raw ? "" : "Incorrect PIN", data: raw };
+      }
+      if (typeof raw === "string") {
+        const t = raw.trim().toLowerCase();
+        if (t === "true" || t === "1") return { success: true, message: "", data: true };
+        if (t === "false" || t === "0") return { success: false, message: "Incorrect PIN", data: false };
+      }
 
       const apiSuccess = raw?.success === true;
       const inner = raw?.data;
@@ -163,13 +175,9 @@ class ApiService {
       password: pin,
     });
     console.log("[API] verifyPin raw result:", result.success, result.data, result.message);
-    let valid = false;
-    if (typeof result.data === "boolean") valid = result.data;
-    else if (result.data === true) valid = true;
-    else if (result.message === "" && result.success) valid = true;
-    else valid = !!result.data;
+    const valid = result.success === true && result.data !== false;
     console.log("[API] verifyPin valid:", valid);
-    return { success: valid, message: result.message };
+    return { success: valid, message: valid ? "" : result.message || "Incorrect PIN" };
   }
 
   async logout() {
