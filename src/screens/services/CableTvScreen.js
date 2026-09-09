@@ -266,19 +266,21 @@ export default function CableTvScreen({ navigation }) {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[styles.verifyBtnSolid, verifying && { opacity: 0.7 }]}
-          onPress={handleVerify}
-          disabled={verifying}
-          activeOpacity={0.8}
-        >
-          {verifying ? (
-            <ActivityIndicator size="small" color={C.white} />
-          ) : (
-            <Ionicons name="checkmark-circle-outline" size={18} color={C.white} />
-          )}
-          <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Click to Verify Smartcard"}</Text>
-        </TouchableOpacity>
+        {smartcard.length >= 5 && (
+          <TouchableOpacity
+            style={[styles.verifyBtnSolid, verifying && { opacity: 0.7 }]}
+            onPress={handleVerify}
+            disabled={verifying}
+            activeOpacity={0.8}
+          >
+            {verifying ? (
+              <ActivityIndicator size="small" color={C.white} />
+            ) : (
+              <Ionicons name="checkmark-circle-outline" size={18} color={C.white} />
+            )}
+            <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Click to Verify Smartcard"}</Text>
+          </TouchableOpacity>
+        )}
 
         {verified && (
           <View style={styles.verifiedCard}>
@@ -320,21 +322,11 @@ export default function CableTvScreen({ navigation }) {
         <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {(() => {
-          const ready = verified && plan;
-          return (
-            <TouchableOpacity
-              style={[styles.btn, !ready && styles.btnInactive]}
-              onPress={handleBuy}
-              disabled={!ready}
-              activeOpacity={ready ? 0.6 : 1}
-            >
-              <Text style={[styles.btnText, !ready && styles.btnTextInactive]}>
-                {ready ? `Subscribe - ${fmt(plan.amount)}` : "Verify smartcard & select plan"}
-              </Text>
-            </TouchableOpacity>
-          );
-        })()}
+        {verified && plan && (
+          <TouchableOpacity style={styles.btn} onPress={handleBuy}>
+            <Text style={styles.btnText}>Subscribe - {fmt(plan.amount)}</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       <Modal visible={showProvider} transparent animationType="slide">
