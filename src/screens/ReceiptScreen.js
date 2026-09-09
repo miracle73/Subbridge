@@ -41,6 +41,14 @@ export default function ReceiptScreen({ navigation, route }) {
 
   const isDebit = tx.type === "debit";
 
+  let displayDesc = tx.description || "";
+  if (tx.category && displayDesc && !displayDesc.toLowerCase().startsWith(tx.category.toLowerCase())) {
+    displayDesc = tx.category + " - " + displayDesc.replace(/^[\s-]+/, "");
+  } else if (tx.category && !displayDesc) {
+    displayDesc = tx.category;
+  }
+  const displayLabel = tx.label || tx.category || "Transaction";
+
   const buildHtml = () => `
     <html>
       <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 28px; color:#1A1D2E;">
@@ -60,11 +68,11 @@ export default function ReceiptScreen({ navigation, route }) {
         <table style="width:100%; border-collapse:collapse;">
           <tr style="border-top:1px solid #E8EAF2;">
             <td style="padding:9px 0; color:#8A8FA8; font-size:12px;">Category</td>
-            <td style="padding:9px 0; text-align:right; font-weight:700; font-size:12px;">${tx.label}</td>
+            <td style="padding:9px 0; text-align:right; font-weight:700; font-size:12px;">${displayLabel}</td>
           </tr>
           <tr style="border-top:1px solid #E8EAF2;">
             <td style="padding:9px 0; color:#8A8FA8; font-size:12px;">Description</td>
-            <td style="padding:9px 0; text-align:right; font-weight:700; font-size:12px;">${tx.description}</td>
+            <td style="padding:9px 0; text-align:right; font-weight:700; font-size:12px;">${displayDesc}</td>
           </tr>
           <tr style="border-top:1px solid #E8EAF2;">
             <td style="padding:9px 0; color:#8A8FA8; font-size:12px;">Date & Time</td>
@@ -140,11 +148,11 @@ export default function ReceiptScreen({ navigation, route }) {
 
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Category</Text>
-            <Text style={styles.rowValue}>{tx.label}</Text>
+            <Text style={styles.rowValue}>{displayLabel}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Description</Text>
-            <Text style={styles.rowValue}>{tx.description}</Text>
+            <Text style={styles.rowValue}>{displayDesc}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Date & Time</Text>

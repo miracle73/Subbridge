@@ -93,7 +93,7 @@ export default function DataScreen({ navigation }) {
         const planTypes = result.data.types || [];
         setAllPlans(plans);
         setTypes(planTypes);
-        setActiveType(null);
+        setActiveType(planTypes.length > 0 ? planTypes[0] : null);
         setActiveValidity("Daily");
         setPlan(null);
       }
@@ -107,16 +107,7 @@ export default function DataScreen({ navigation }) {
     return true;
   });
 
-  const validityGroups = {};
-  filteredPlans.forEach((p) => {
-    const group = getValidityGroup(p.validity);
-    if (!validityGroups[group]) validityGroups[group] = [];
-    validityGroups[group].push(p);
-  });
-
-  const sortedGroups = Object.entries(validityGroups).sort((a, b) => {
-    return VALIDITY_ORDER.indexOf(a[0]) - VALIDITY_ORDER.indexOf(b[0]);
-  });
+  const allValidityGroups = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"];
 
   const displayPlans = activeValidity
     ? filteredPlans.filter((p) => getValidityGroup(p.validity) === activeValidity)
@@ -129,9 +120,12 @@ export default function DataScreen({ navigation }) {
     displayGroups[group].push(p);
   });
 
-  const sortedDisplayGroups = Object.entries(displayGroups).sort((a, b) => {
-    return VALIDITY_ORDER.indexOf(a[0]) - VALIDITY_ORDER.indexOf(b[0]);
-  });
+  const sortedDisplayGroups = allValidityGroups
+    .filter((g) => displayGroups[g] && displayGroups[g].length > 0)
+    .map((g) => [g, displayGroups[g]]);
+
+  const hasAnyPlans = filteredPlans.length > 0;
+  const activeGroupHasPlans = activeValidity && displayGroups[activeValidity]?.length > 0;
 
   const handleNetwork = (n) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -353,25 +347,24 @@ export default function DataScreen({ navigation }) {
           </>
         )}
 
-        {/* Validity Filter Buttons */}
-        {sortedGroups.length > 0 && (
-          <>
-            <Text style={[styles.label, { marginTop: S.md }]}>Validity</Text>
-            <View style={styles.validityRow}>
-              {sortedGroups.map(([group]) => (
-                <TouchableOpacity
-                  key={group}
-                  style={[styles.validityChip, activeValidity === group && styles.validityChipActive]}
-                  onPress={() => handleValidityFilter(group)}
-                >
-                  <Text style={[styles.validityText, activeValidity === group && { color: C.white }]}>
-                    {group}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
+        {/* Validity Filter Buttons - always show all groups */}
+        <Text style={[styles.label, { marginTop: S.md }]}>Validity</Text>
+        <View style={styles.validityRow}>
+          {allValidityGroups.map((group) => {
+            const hasPlans = displayGroups[group]?.length > 0;
+            return (
+              <TouchableOpacity
+                key={group}
+                style={[styles.validityChip, activeValidity === group && styles.validityChipActive]}
+                onPress={() => handleValidityFilter(group)}
+              >
+                <Text style={[styles.validityText, activeValidity === group && { color: C.white }, !hasPlans && { color: C.textLight }]}>
+                  {group}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         {/* Plans grouped by validity */}
         {sortedDisplayGroups.map(([validity, planList]) => (
@@ -393,7 +386,12 @@ export default function DataScreen({ navigation }) {
           </View>
         ))}
 
-        {!hasPlans && !loading && (
+        {/* Empty state for active validity group */}
+        {activeValidity && !activeGroupHasPlans && (
+          <Text style={styles.emptyText}>No plans available under {activeValidity}</Text>
+        )}
+
+        {!hasAnyPlans && !loading && (
           <Text style={styles.emptyText}>No plans available in the selected category</Text>
         )}
 
