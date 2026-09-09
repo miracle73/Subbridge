@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -33,6 +33,7 @@ export default function CableTvScreen({ navigation }) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const [balance, setBalance] = useState(0);
 
   useEffect(() => {
@@ -95,11 +96,15 @@ export default function CableTvScreen({ navigation }) {
   };
 
   const handleVerify = async () => {
+    if (verifying) return;
     if (!provider) return setError("Select a provider");
     if (!smartcard || smartcard.length < 8) return setError("Enter a valid smartcard number");
     setError("");
+    setVerified(null);
+    setVerifying(true);
     console.log("[Cable] Verifying smartcard:", provider.id, smartcard);
     try {
+      await api.init();
       const result = await api.verifySmartcard(provider.id, smartcard);
       console.log("[Cable] Verify result:", result.success, result.data);
       if (result.success && result.data) {
@@ -109,6 +114,8 @@ export default function CableTvScreen({ navigation }) {
       }
     } catch (err) {
       setError("Network error. Please try again.");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -239,7 +246,7 @@ export default function CableTvScreen({ navigation }) {
         <Text style={styles.label}>Provider & Smartcard</Text>
         <View style={styles.comboRow}>
           <TouchableOpacity style={styles.providerLogoBtn} onPress={() => setShowProvider(true)}>
-            {provider ? (
+            {provider?.logo ? (
               <Image source={provider.logo} style={styles.providerLogo} />
             ) : (
               <View style={styles.providerLogoPlaceholder}>
@@ -254,14 +261,23 @@ export default function CableTvScreen({ navigation }) {
               onChangeText={setSmartcard}
               placeholder="Smartcard / IUC number"
               keyboardType="number-pad"
-              maxLength={12}
+              maxLength={15}
             />
           </View>
         </View>
 
-        <TouchableOpacity style={styles.verifyBtn} onPress={handleVerify}>
-          <Ionicons name="checkmark-circle-outline" size={18} color={C.primary} />
-          <Text style={styles.verifyBtnText}>Verify Smartcard</Text>
+        <TouchableOpacity
+          style={[styles.verifyBtnSolid, verifying && { opacity: 0.7 }]}
+          onPress={handleVerify}
+          disabled={verifying}
+          activeOpacity={0.8}
+        >
+          {verifying ? (
+            <ActivityIndicator size="small" color={C.white} />
+          ) : (
+            <Ionicons name="checkmark-circle-outline" size={18} color={C.white} />
+          )}
+          <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Verify Smartcard"}</Text>
         </TouchableOpacity>
 
         {verified && (
@@ -318,7 +334,13 @@ export default function CableTvScreen({ navigation }) {
             {providers.map((p) => (
               <TouchableOpacity key={p.id} style={styles.modalItem} onPress={() => handleProvider(p)}>
                 <View style={styles.modalItemRow}>
-                  <Image source={p.logo} style={styles.modalLogo} />
+                  {p.logo ? (
+                    <Image source={p.logo} style={styles.modalLogo} />
+                  ) : (
+                    <View style={[styles.modalLogo, { backgroundColor: C.inputBg, alignItems: "center", justifyContent: "center" }]}>
+                      <Ionicons name="tv-outline" size={20} color={C.textMuted} />
+                    </View>
+                  )}
                   <Text style={styles.modalItemText}>{p.name}</Text>
                 </View>
                 {provider?.id === p.id && <Ionicons name="checkmark" size={20} color={C.primary} />}
@@ -412,10 +434,13 @@ const styles = StyleSheet.create({
     fontSize: F.base, color: C.text,
   },
 
-  verifyBtn: {
-    flexDirection: "row", alignItems: "center", gap: 6, marginTop: S.md, paddingVertical: S.sm,
+  verifyBtnSolid: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: C.primary, borderRadius: R.sm,
+    paddingVertical: S.md + 2, marginTop: S.md,
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 6, elevation: 4,
   },
-  verifyBtnText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
+  verifyBtnSolidText: { fontSize: F.md, color: C.white, fontWeight: "800" },
   verifiedCard: {
     flexDirection: "row", alignItems: "center",
     backgroundColor: C.credit + "15", borderRadius: R.sm, padding: S.md, marginTop: S.sm,

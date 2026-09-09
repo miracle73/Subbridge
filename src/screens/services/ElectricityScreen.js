@@ -245,7 +245,7 @@ export default function ElectricityScreen({ navigation }) {
               onChangeText={setMeterNumber}
               placeholder="Meter number"
               keyboardType="number-pad"
-              maxLength={12}
+              maxLength={15}
             />
           </View>
         </View>
