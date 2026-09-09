@@ -298,11 +298,21 @@ export default function AirtimeScreen({ navigation }) {
         <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {finalAmount > 0 && (
-          <TouchableOpacity style={styles.btn} onPress={handleBuy}>
-            <Text style={styles.btnText}>Buy Airtime</Text>
-          </TouchableOpacity>
-        )}
+        {(() => {
+          const ready = network && phone.length >= 10 && finalAmount > 0;
+          return (
+            <TouchableOpacity
+              style={[styles.btn, !ready && styles.btnInactive]}
+              onPress={handleBuy}
+              disabled={!ready}
+              activeOpacity={ready ? 0.6 : 1}
+            >
+              <Text style={[styles.btnText, !ready && styles.btnTextInactive]}>
+                {ready ? `Buy Airtime - ${fmt(finalAmount)}` : "Enter details to continue"}
+              </Text>
+            </TouchableOpacity>
+          );
+        })()}
       </ScrollView>
 
       {/* Network Picker Modal */}
@@ -457,7 +467,11 @@ const styles = StyleSheet.create({
     backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2,
     alignItems: "center", marginTop: S.xl,
   },
+  btnInactive: {
+    backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
+  },
   btnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
+  btnTextInactive: { color: C.textMuted, fontSize: F.lg, fontWeight: "600" },
 
   modalOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, paddingTop: S.lg },
