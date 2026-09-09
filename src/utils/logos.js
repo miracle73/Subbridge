@@ -12,6 +12,17 @@ const CABLE_LOGOS = {
   startimes: require("../assets/logos/startimes.jpg"),
 };
 
+function normalizeId(id) {
+  return (id || "").toLowerCase().replace(/[\s_-]+/g, "");
+}
+
+// Maps alternate server ids to a bundled logo key.
+// NOTE: TSTV has no bundled file yet — drop tstv.png/jpg into
+// src/assets/logos/ and add: tstv: require("../assets/logos/tstv.png"),
+const CABLE_ALIASES = {
+  startimes: ["startime", "startimes", "startimestv"],
+};
+
 const ELECTRICITY_LOGOS = {
   "ikeja electric": require("../assets/logos/ikeja.png"),
   "eko electric": require("../assets/logos/eko.jpg"),
@@ -31,7 +42,12 @@ export function getNetworkLogo(id) {
 }
 
 export function getCableLogo(id) {
-  return CABLE_LOGOS[id?.toLowerCase()] || null;
+  const norm = normalizeId(id);
+  if (CABLE_LOGOS[norm]) return CABLE_LOGOS[norm];
+  for (const [key, aliases] of Object.entries(CABLE_ALIASES)) {
+    if (aliases.includes(norm) && CABLE_LOGOS[key]) return CABLE_LOGOS[key];
+  }
+  return null;
 }
 
 export function getElectricityLogo(id) {

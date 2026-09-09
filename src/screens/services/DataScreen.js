@@ -27,8 +27,6 @@ function getValidityGroup(validity) {
   return validity;
 }
 
-const VALIDITY_ORDER = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Other"];
-
 export default function DataScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [networks, setNetworks] = useState([]);
@@ -94,7 +92,7 @@ export default function DataScreen({ navigation }) {
         setAllPlans(plans);
         setTypes(planTypes);
         setActiveType(planTypes.length > 0 ? planTypes[0] : null);
-        setActiveValidity("Daily");
+        setActiveValidity(null);
         setPlan(null);
       }
     } catch (err) {
@@ -102,16 +100,14 @@ export default function DataScreen({ navigation }) {
     }
   };
 
-  const filteredPlans = allPlans.filter((p) => {
-    if (activeType && p.type !== activeType) return false;
-    return true;
-  });
+  // Type and validity operate independently: picking one clears the other.
+  const displayPlans = activeType
+    ? allPlans.filter((p) => p.type === activeType)
+    : activeValidity
+      ? allPlans.filter((p) => getValidityGroup(p.validity) === activeValidity)
+      : allPlans;
 
   const allValidityGroups = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"];
-
-  const displayPlans = activeValidity
-    ? filteredPlans.filter((p) => getValidityGroup(p.validity) === activeValidity)
-    : filteredPlans;
 
   const displayGroups = {};
   displayPlans.forEach((p) => {
@@ -124,8 +120,17 @@ export default function DataScreen({ navigation }) {
     .filter((g) => displayGroups[g] && displayGroups[g].length > 0)
     .map((g) => [g, displayGroups[g]]);
 
-  const hasAnyPlans = filteredPlans.length > 0;
-  const activeGroupHasPlans = activeValidity && displayGroups[activeValidity]?.length > 0;
+  // Muted hint for selector chips with no plans in current context
+  const validityCounts = {};
+  const typeScope = activeType ? allPlans.filter((p) => p.type === activeType) : allPlans;
+  typeScope.forEach((p) => {
+    const g = getValidityGroup(p.validity);
+    validityCounts[g] = (validityCounts[g] || 0) + 1;
+  });
+  const typeCounts = {};
+  allPlans.forEach((p) => {
+    typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
+  });
 
   const handleNetwork = (n) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -144,13 +149,14 @@ export default function DataScreen({ navigation }) {
     } else {
       setActiveType(type);
     }
-    setActiveValidity("Daily");
+    setActiveValidity(null);
     setPlan(null);
   };
 
   const handleValidityFilter = (validity) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveValidity(validity === activeValidity ? null : validity);
+    setActiveType(null);
     setPlan(null);
   };
 
@@ -273,7 +279,7 @@ export default function DataScreen({ navigation }) {
     );
   }
 
-  const hasPlans = filteredPlans.length > 0;
+  const hasPlans = displayPlans.length > 0;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -327,10 +333,30 @@ export default function DataScreen({ navigation }) {
           </View>
         )}
 
-        {/* Plan Type Tabs - always show */}
+        {/* Validity Tabs */}
+        <Text style={[styles.label, { marginTop: S.lg }]}>Validity</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeTabs}>
+          {allValidityGroups.map((group) => (
+            <TouchableOpacity
+              key={group}
+              style={[styles.typeTab, activeValidity === group && styles.typeTabActive]}
+              onPress={() => handleValidityFilter(group)}
+            >
+              <Text style={[
+                styles.typeTabText,
+                activeValidity === group && { color: C.white },
+                activeValidity !== group && !validityCounts[group] && { color: C.textLight },
+              ]}>
+                {group}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Plan Type Tabs */}
         {types.length > 0 && (
           <>
-            <Text style={[styles.label, { marginTop: S.lg }]}>Plan Type</Text>
+            <Text style={[styles.label, { marginTop: S.md }]}>Plan Type</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeTabs}>
               {types.map((t) => (
                 <TouchableOpacity
@@ -338,7 +364,11 @@ export default function DataScreen({ navigation }) {
                   style={[styles.typeTab, activeType === t && styles.typeTabActive]}
                   onPress={() => handleTypeFilter(t)}
                 >
-                  <Text style={[styles.typeTabText, activeType === t && { color: C.white }]}>
+                  <Text style={[
+                    styles.typeTabText,
+                    activeType === t && { color: C.white },
+                    activeType !== t && !typeCounts[t] && { color: C.textLight },
+                  ]}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -346,25 +376,6 @@ export default function DataScreen({ navigation }) {
             </ScrollView>
           </>
         )}
-
-        {/* Validity Filter Buttons - always show all groups */}
-        <Text style={[styles.label, { marginTop: S.md }]}>Validity</Text>
-        <View style={styles.validityRow}>
-          {allValidityGroups.map((group) => {
-            const hasPlans = displayGroups[group]?.length > 0;
-            return (
-              <TouchableOpacity
-                key={group}
-                style={[styles.validityChip, activeValidity === group && styles.validityChipActive]}
-                onPress={() => handleValidityFilter(group)}
-              >
-                <Text style={[styles.validityText, activeValidity === group && { color: C.white }, !hasPlans && { color: C.textLight }]}>
-                  {group}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
         {/* Plans grouped by validity */}
         {sortedDisplayGroups.map(([validity, planList]) => (
@@ -386,13 +397,17 @@ export default function DataScreen({ navigation }) {
           </View>
         ))}
 
-        {/* Empty state for active validity group */}
-        {activeValidity && !activeGroupHasPlans && (
+        {/* Empty states */}
+        {activeType && !hasPlans && (
+          <Text style={styles.emptyText}>No plans available in the selected category</Text>
+        )}
+
+        {activeValidity && !hasPlans && (
           <Text style={styles.emptyText}>No plans available under {activeValidity}</Text>
         )}
 
-        {!hasAnyPlans && !loading && (
-          <Text style={styles.emptyText}>No plans available in the selected category</Text>
+        {!activeType && !activeValidity && !hasPlans && !loading && (
+          <Text style={styles.emptyText}>No plans available</Text>
         )}
 
         <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
@@ -550,15 +565,6 @@ const styles = StyleSheet.create({
   },
   typeTabActive: { backgroundColor: C.primary, borderColor: C.primary },
   typeTabText: { fontSize: 12, fontWeight: "700", color: C.text },
-
-  validityRow: { flexDirection: "row", flexWrap: "wrap", gap: S.sm, marginTop: S.xs },
-  validityChip: {
-    paddingHorizontal: S.md, paddingVertical: S.sm,
-    backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
-    borderRadius: R.sm,
-  },
-  validityChipActive: { backgroundColor: C.primaryDark, borderColor: C.primaryDark },
-  validityText: { fontSize: 12, fontWeight: "700", color: C.text },
 
   planGrid: { flexDirection: "row", flexWrap: "wrap", gap: S.sm, marginTop: S.xs },
   planCard: {
