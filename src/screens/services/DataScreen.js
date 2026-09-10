@@ -20,14 +20,14 @@ import ContactPicker from "../../components/ContactPicker";
 function getValidityGroup(validity) {
   if (!validity) return "Other";
   const v = validity.toLowerCase();
-  // Bucket any "<number> day(s)" value: under 7→Daily, 7→Weekly, 14→Bi-weekly,
+  // Bucket any "<number> day(s)" value: under 7→Daily, 7→Weekly, 14→2 Weeks,
   // 30/31→Monthly, ≤92→Quarterly, else Yearly
   const m = v.match(/(\d+)\s*d(?:ay)?s?/);
   if (m) {
     const days = parseInt(m[1], 10);
     if (days < 7) return "Daily";
     if (days === 7) return "Weekly";
-    if (days === 14) return "Bi-weekly";
+    if (days === 14) return "2 Weeks";
     if (days <= 31) return "Monthly";
     if (days <= 92) return "Quarterly";
     return "Yearly";
@@ -132,7 +132,7 @@ export default function DataScreen({ navigation }) {
       ? allPlans.filter((p) => getValidityGroup(p.validity) === activeValidity)
       : allPlans;
 
-  const allValidityGroups = ["Daily", "Weekly", "Bi-weekly", "Monthly", "Quarterly", "Yearly"];
+  const allValidityGroups = ["Daily", "Weekly", "2 Weeks", "Monthly", "Quarterly", "Yearly"];
 
   const displayGroups = {};
   displayPlans.forEach((p) => {
