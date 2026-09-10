@@ -20,12 +20,12 @@ import ContactPicker from "../../components/ContactPicker";
 function getValidityGroup(validity) {
   if (!validity) return "Other";
   const v = validity.toLowerCase();
-  // Bucket any "<number> day(s)" value: 1→Daily, ≤7→Weekly, ≤31→Monthly, ≤92→Quarterly, else Yearly
+  // Bucket any "<number> day(s)" value: under 7→Daily, 7→Weekly, ≤31→Monthly, ≤92→Quarterly, else Yearly
   const m = v.match(/(\d+)\s*d(?:ay)?s?/);
   if (m) {
     const days = parseInt(m[1], 10);
-    if (days <= 1) return "Daily";
-    if (days <= 7) return "Weekly";
+    if (days < 7) return "Daily";
+    if (days === 7) return "Weekly";
     if (days <= 31) return "Monthly";
     if (days <= 92) return "Quarterly";
     return "Yearly";
