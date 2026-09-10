@@ -20,12 +20,14 @@ import ContactPicker from "../../components/ContactPicker";
 function getValidityGroup(validity) {
   if (!validity) return "Other";
   const v = validity.toLowerCase();
-  // Bucket any "<number> day(s)" value: under 7→Daily, 7→Weekly, ≤31→Monthly, ≤92→Quarterly, else Yearly
+  // Bucket any "<number> day(s)" value: under 7→Daily, 7→Weekly, 14→Bi-weekly,
+  // 30/31→Monthly, ≤92→Quarterly, else Yearly
   const m = v.match(/(\d+)\s*d(?:ay)?s?/);
   if (m) {
     const days = parseInt(m[1], 10);
     if (days < 7) return "Daily";
     if (days === 7) return "Weekly";
+    if (days === 14) return "Bi-weekly";
     if (days <= 31) return "Monthly";
     if (days <= 92) return "Quarterly";
     return "Yearly";
@@ -130,7 +132,7 @@ export default function DataScreen({ navigation }) {
       ? allPlans.filter((p) => getValidityGroup(p.validity) === activeValidity)
       : allPlans;
 
-  const allValidityGroups = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"];
+  const allValidityGroups = ["Daily", "Weekly", "Bi-weekly", "Monthly", "Quarterly", "Yearly"];
 
   const displayGroups = {};
   displayPlans.forEach((p) => {
@@ -338,13 +340,13 @@ export default function DataScreen({ navigation }) {
           onSelect={(num) => setPhone(num)}
         />
 
-        {/* Validity Tabs */}
+        {/* Validity Grid - 3 columns */}
         <Text style={[styles.label, { marginTop: S.lg }]}>Validity</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeTabs}>
+        <View style={styles.validityGrid}>
           {allValidityGroups.map((group) => (
             <TouchableOpacity
               key={group}
-              style={[styles.typeTab, activeValidity === group && styles.typeTabActive]}
+              style={[styles.validityGridTab, activeValidity === group && styles.typeTabActive]}
               onPress={() => handleValidityFilter(group)}
             >
               <Text style={[styles.typeTabText, activeValidity === group && { color: C.white }]}>
@@ -352,7 +354,7 @@ export default function DataScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
 
         {/* Plan Type Tabs */}
         {types.length > 0 && (
@@ -567,6 +569,14 @@ const styles = StyleSheet.create({
   },
   typeTabActive: { backgroundColor: C.primary, borderColor: C.primary },
   typeTabText: { fontSize: 12, fontWeight: "700", color: C.text },
+
+  validityGrid: { flexDirection: "row", flexWrap: "wrap", gap: S.sm, marginTop: S.xs },
+  validityGridTab: {
+    width: "31%", alignItems: "center",
+    paddingHorizontal: S.sm, paddingVertical: S.sm,
+    backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
+    borderRadius: R.sm,
+  },
 
   planGrid: { flexDirection: "row", flexWrap: "wrap", gap: S.sm, marginTop: S.xs },
   planCard: {
