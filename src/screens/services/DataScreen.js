@@ -15,15 +15,27 @@ import PinPad from "../../components/PinPad";
 import ProcessingOverlay from "../../components/ProcessingOverlay";
 import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
+import ContactPicker from "../../components/ContactPicker";
 
 function getValidityGroup(validity) {
   if (!validity) return "Other";
-  const v = validity.toLowerCase().replace(/\s+/g, "");
-  if (v.includes("1d") || v.includes("daily") || v === "1day") return "Daily";
-  if (v.includes("7d") || v.includes("weekly") || v === "7days" || v === "7day") return "Weekly";
-  if (v.includes("30d") || v.includes("monthly") || v.includes("30days") || v.includes("30day")) return "Monthly";
-  if (v.includes("90d") || v.includes("quarterly") || v.includes("90days")) return "Quarterly";
-  if (v.includes("365") || v.includes("yearly") || v.includes("annual")) return "Yearly";
+  const v = validity.toLowerCase();
+  // Bucket any "<number> day(s)" value: 1→Daily, ≤7→Weekly, ≤31→Monthly, ≤92→Quarterly, else Yearly
+  const m = v.match(/(\d+)\s*d(?:ay)?s?/);
+  if (m) {
+    const days = parseInt(m[1], 10);
+    if (days <= 1) return "Daily";
+    if (days <= 7) return "Weekly";
+    if (days <= 31) return "Monthly";
+    if (days <= 92) return "Quarterly";
+    return "Yearly";
+  }
+  const t = v.replace(/\s+/g, "");
+  if (t.includes("daily")) return "Daily";
+  if (t.includes("weekly")) return "Weekly";
+  if (t.includes("monthly")) return "Monthly";
+  if (t.includes("quarterly")) return "Quarterly";
+  if (t.includes("yearly") || t.includes("annual") || t.includes("365")) return "Yearly";
   return validity;
 }
 
@@ -57,7 +69,7 @@ export default function DataScreen({ navigation }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saveBeneficiary, setSaveBeneficiary] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showContacts, setShowContacts] = useState(false);
   const [balance, setBalance] = useState(0);
 
   useEffect(() => {
@@ -162,15 +174,6 @@ export default function DataScreen({ navigation }) {
     setActiveValidity(validity === activeValidity ? null : validity);
     setActiveType(null);
     setPlan(null);
-  };
-
-  const selectBeneficiary = (b) => {
-    setPhone(b.phone);
-    if (b.network) {
-      const n = networks.find((x) => x.id === b.network);
-      if (n) setNetwork(n);
-    }
-    setShowDropdown(false);
   };
 
   const handleBuy = () => {
@@ -324,18 +327,16 @@ export default function DataScreen({ navigation }) {
               maxLength={11}
             />
           </View>
-          <TouchableOpacity style={styles.contactIconBtn} onPress={() => setShowDropdown(!showDropdown)}>
+          <TouchableOpacity style={styles.contactIconBtn} onPress={() => setShowContacts(true)}>
             <Ionicons name="person-circle-outline" size={24} color={C.primary} />
           </TouchableOpacity>
         </View>
 
-        {showDropdown && (
-          <View style={styles.dropdown}>
-            <View style={styles.dropdownItem}>
-              <Text style={{ fontSize: 13, color: C.textMuted, textAlign: "center", padding: S.md }}>No recent beneficiaries</Text>
-            </View>
-          </View>
-        )}
+        <ContactPicker
+          visible={showContacts}
+          onClose={() => setShowContacts(false)}
+          onSelect={(num) => setPhone(num)}
+        />
 
         {/* Validity Tabs */}
         <Text style={[styles.label, { marginTop: S.lg }]}>Validity</Text>

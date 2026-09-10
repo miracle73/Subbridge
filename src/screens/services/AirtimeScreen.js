@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Platform,
 } from "react-native";
@@ -15,6 +15,7 @@ import PinDots from "../../components/PinDots";
 import PinPad from "../../components/PinPad";
 import ProcessingOverlay from "../../components/ProcessingOverlay";
 import ServiceBanner from "../../components/ServiceBanner";
+import ContactPicker from "../../components/ContactPicker";
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
 
@@ -34,7 +35,7 @@ export default function AirtimeScreen({ navigation }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saveBeneficiary, setSaveBeneficiary] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showContacts, setShowContacts] = useState(false);
   const [balance, setBalance] = useState(0);
 
   useEffect(() => {
@@ -66,17 +67,6 @@ export default function AirtimeScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const beneficiaries = useMemo(() => [], []);
-
-  const selectBeneficiary = (b) => {
-    setPhone(b.phone);
-    if (b.network) {
-      const n = networks.find((x) => x.id === b.network);
-      if (n) setNetwork(n);
-    }
-    setShowDropdown(false);
   };
 
   const handleNetwork = (n) => {
@@ -242,33 +232,16 @@ export default function AirtimeScreen({ navigation }) {
               maxLength={11}
             />
           </View>
-          <TouchableOpacity style={styles.contactIconBtn} onPress={() => setShowDropdown(!showDropdown)}>
+          <TouchableOpacity style={styles.contactIconBtn} onPress={() => setShowContacts(true)}>
             <Ionicons name="person-circle-outline" size={24} color={C.primary} />
           </TouchableOpacity>
         </View>
 
-        {showDropdown && (
-          <View style={styles.dropdown}>
-            {beneficiaries.length === 0 ? (
-              <View style={styles.dropdownItem}>
-                <Text style={{ fontSize: 13, color: C.textMuted, textAlign: "center", padding: S.md }}>No recent beneficiaries</Text>
-              </View>
-            ) : (
-              beneficiaries.map((b) => (
-                <TouchableOpacity key={b.id} style={styles.dropdownItem} onPress={() => selectBeneficiary(b)}>
-                  <View style={styles.dropdownAvatar}>
-                    <Text style={styles.dropdownAvatarText}>{b.name.charAt(0)}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.dropdownName}>{b.name}</Text>
-                    <Text style={styles.dropdownPhone}>{b.phone}</Text>
-                  </View>
-                  <Ionicons name="person-add-outline" size={16} color={C.primary} />
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        )}
+        <ContactPicker
+          visible={showContacts}
+          onClose={() => setShowContacts(false)}
+          onSelect={(num) => setPhone(num)}
+        />
 
         <Text style={[styles.label, { marginTop: S.lg }]}>Amount</Text>
         <View style={styles.amountGrid}>
