@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
@@ -43,8 +43,19 @@ export default function BiometricPrompt({ visible, onClose }) {
     }
   }, [visible]);
 
-  const verifyPinCode = async () => {
-    if (pinCode.length !== 4) {
+  const onPinChange = (t) => {
+    const clean = t.replace(/\D/g, "").slice(0, 4);
+    setPinCode(clean);
+    // Fire immediately on the 4th digit and close the keypad
+    if (clean.length === 4) {
+      Keyboard.dismiss();
+      verifyPinCode(clean);
+    }
+  };
+
+  const verifyPinCode = async (override) => {
+    const code = override || pinCode;
+    if (code.length !== 4) {
       setError("Enter your 4-digit transaction PIN.");
       return;
     }
@@ -114,7 +125,7 @@ export default function BiometricPrompt({ visible, onClose }) {
               <TextInput
                 style={styles.pinInput}
                 value={pinCode}
-                onChangeText={(t) => setPinCode(t.replace(/\D/g, "").slice(0, 4))}
+                onChangeText={onPinChange}
                 placeholder="••••"
                 placeholderTextColor={C.textLight}
                 keyboardType="number-pad"
@@ -126,7 +137,7 @@ export default function BiometricPrompt({ visible, onClose }) {
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <TouchableOpacity
                 style={[styles.enableBtn, verifyingPin && { opacity: 0.7 }]}
-                onPress={verifyPinCode}
+                onPress={() => verifyPinCode()}
                 disabled={verifyingPin}
               >
                 {verifyingPin ? (
