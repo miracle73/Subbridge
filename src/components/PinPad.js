@@ -32,7 +32,7 @@ export default function PinPad({ onPress, onBiometric }) {
                 <TouchableOpacity key={k} style={styles.cell} onPress={() => handle(k)}>
                   <Ionicons name="finger-print-outline" size={26} color={C.primary} />
                 </TouchableOpacity>
-              ) : <View key={k} style={styles.cell} />;
+              ) : <View key={k} style={styles.cellEmpty} />;
             }
             if (k === "del") {
               return (
@@ -59,6 +59,10 @@ const styles = StyleSheet.create({
   cell: {
     width: CELL, height: CELL, borderRadius: CELL / 2,
     backgroundColor: C.inputBg, justifyContent: "center", alignItems: "center",
+  },
+  // Invisible placeholder that keeps the 3-column grid aligned
+  cellEmpty: {
+    width: CELL, height: CELL, backgroundColor: "transparent",
   },
   key: { fontSize: 22, fontWeight: "600", color: C.text },
 });
