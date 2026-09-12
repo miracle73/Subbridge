@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
@@ -23,6 +23,7 @@ export default function AuthScreen({ navigation }) {
   }, []);
 
   const handlePinKey = (k) => {
+    if (loading) return;
     if (k === "del") { setPin((p) => p.slice(0, -1)); setError(""); return; }
     if (pin.length >= 4) return;
     const next = pin + k;
@@ -33,13 +34,14 @@ export default function AuthScreen({ navigation }) {
   const loginWithPin = async (value) => {
     setLoading(true);
     setError("");
-    console.log("[Auth] PIN login attempt, phone:", phone);
+    // Phone is pre-loaded on mount; fall back to storage so the request fires immediately
+    const currentPhone = phone || (await SecurePin.getPhone());
+    console.log("[Auth] PIN login attempt, phone:", currentPhone);
 
     try {
-      const currentPhone = await SecurePin.getPhone();
-      console.log("[Auth] Stored phone:", currentPhone);
       if (!currentPhone) {
         setError("No phone found. Please sign in with password.");
+        setPin("");
         setLoading(false);
         return;
       }
@@ -109,6 +111,12 @@ export default function AuthScreen({ navigation }) {
             <Text style={styles.subtitle}>Enter your PIN to sign in</Text>
             <PinDots length={4} filled={pin.length} />
             {error ? <Text style={styles.error}>{error}</Text> : null}
+            {loading ? (
+              <View style={styles.verifyingRow}>
+                <ActivityIndicator size="small" color={C.white} />
+                <Text style={styles.verifyingText}>Verifying...</Text>
+              </View>
+            ) : null}
             <PinPad onPress={handlePinKey} />
             <TouchableOpacity style={styles.switchBtn} onPress={() => { setMode("password"); setPin(""); setError(""); }}>
               <Text style={styles.switchText}>Sign in with Password</Text>
@@ -160,6 +168,8 @@ const styles = StyleSheet.create({
     fontSize: F.base, color: C.white,
   },
   error: { fontSize: F.sm, color: "#FFD4D4", textAlign: "center", marginTop: S.base },
+  verifyingRow: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.md },
+  verifyingText: { fontSize: F.md, color: C.white, fontWeight: "600" },
   forgot: { alignSelf: "flex-end", marginTop: S.sm },
   forgotText: { fontSize: F.sm, color: "rgba(255,255,255,0.7)", fontWeight: "600" },
   btn: {

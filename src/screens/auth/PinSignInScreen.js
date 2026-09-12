@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../../utils/theme";
@@ -15,6 +15,7 @@ export default function PinSignInScreen({ navigation }) {
   const shake = useRef(new Animated.Value(0)).current;
 
   const handleKey = (k) => {
+    if (loading) return;
     if (k === "del") { setPin((p) => p.slice(0, -1)); setError(""); return; }
     if (pin.length >= 4) return;
     const next = pin + k;
@@ -84,6 +85,12 @@ export default function PinSignInScreen({ navigation }) {
         </Animated.View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {loading ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
+            <ActivityIndicator size="small" color={C.primary} />
+            <Text style={{ fontSize: F.sm, color: C.textMuted, fontWeight: "600" }}>Verifying...</Text>
+          </View>
+        ) : null}
       </View>
 
       <PinPad onPress={handleKey} />

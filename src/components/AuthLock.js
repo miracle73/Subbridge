@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -22,6 +22,7 @@ export default function AuthLock({ onUnlock }) {
   }, []);
 
   const handleKey = async (k) => {
+    if (loading) return;
     if (k === "del") { setPin((p) => p.slice(0, -1)); setError(""); return; }
     if (pin.length >= 4) return;
     const next = pin + k;
@@ -80,6 +81,12 @@ export default function AuthLock({ onUnlock }) {
         </Animated.View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {loading ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
+            <ActivityIndicator size="small" color={C.primary} />
+            <Text style={{ fontSize: F.sm, color: C.textMuted, fontWeight: "600" }}>Verifying...</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={{ paddingBottom: insets.bottom }}>
