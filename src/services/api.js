@@ -363,6 +363,13 @@ class ApiService {
     return result;
   }
 
+  async setupPin(pin) {
+    console.log("[API] setupPin");
+    const result = await this.post("/api/setup-pin/", { pin });
+    console.log("[API] setupPin result:", result.success, result.message);
+    return result;
+  }
+
   async forgotPassword(phone) {
     console.log("[API] forgotPassword:", phone);
     const result = await this.post("/api/forgot-password/", { phone });

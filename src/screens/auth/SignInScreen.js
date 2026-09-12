@@ -31,7 +31,11 @@ export default function SignInScreen({ navigation }) {
           ? `${user.firstName || user.firstname || ""} ${user.lastName || user.lastname || ""}`.trim()
           : null;
         if (name) await SecurePin.setName(name);
-        navigation.replace("Home");
+        if (user?.has_pin === false) {
+          navigation.replace("SetupPin", { phone: cleanPhone });
+        } else {
+          navigation.replace("Home");
+        }
       } else {
         setError(result.message || "Invalid credentials. Please try again.");
       }

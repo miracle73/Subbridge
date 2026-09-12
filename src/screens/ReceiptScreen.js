@@ -9,7 +9,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { captureRef } from "react-native-view-shot";
 import { C, F, R, S } from "../utils/theme";
-import { fmt, formatDate, formatTime } from "../utils/format";
+import { fmt, formatTime } from "../utils/format";
 
 const TX_ICONS = {
   airtime: "phone-portrait-outline", data: "wifi-outline", cable: "tv-outline",
@@ -49,6 +49,20 @@ export default function ReceiptScreen({ navigation, route }) {
   }
   const displayLabel = tx.label || tx.category || "Transaction";
 
+  // Trust the API status field, not the HTTP code (HTTP 200 can carry status: failed)
+  const statusLower = String(tx.status || "").toLowerCase();
+  const isFailed = statusLower === "failed";
+  const isPending = statusLower === "pending";
+  const statusText = isFailed ? "FAILED" : isPending ? "PENDING" : "SUCCESSFUL";
+  const statusColor = isFailed ? C.debit : isPending ? "#F59E0B" : C.accent;
+  const statusIcon = isFailed ? "close" : isPending ? "time-outline" : "checkmark";
+
+  // History already provides formatted date/time strings — use them verbatim
+  // so the receipt matches the transaction list exactly
+  const displayDate = tx.date || "";
+  const displayTime = tx.time || formatTime(tx.date || tx.createdAt);
+  const displayDateTime = displayDate && displayTime ? `${displayDate} · ${displayTime}` : displayDate || displayTime;
+
   const buildHtml = () => `
     <html>
       <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 28px; color:#1A1D2E;">
@@ -61,8 +75,8 @@ export default function ReceiptScreen({ navigation, route }) {
           <div style="font-size:28px; font-weight:800; color:${isDebit ? "#FF4757" : "#00C896"}; margin-top:2px;">
             ${isDebit ? "-" : "+"} ${fmt(tx.amount)}
           </div>
-          <div style="display:inline-block; margin-top:8px; padding:4px 14px; border-radius:20px; background:rgba(0,200,150,0.1); color:#00C896; font-size:11px; font-weight:700;">
-            SUCCESSFUL
+          <div style="display:inline-block; margin-top:8px; padding:4px 14px; border-radius:20px; background:${statusColor}1A; color:${statusColor}; font-size:11px; font-weight:700;">
+            ${statusText}
           </div>
         </div>
         <table style="width:100%; border-collapse:collapse;">
@@ -76,7 +90,7 @@ export default function ReceiptScreen({ navigation, route }) {
           </tr>
           <tr style="border-top:1px solid #E8EAF2;">
             <td style="padding:9px 0; color:#8A8FA8; font-size:12px;">Date & Time</td>
-            <td style="padding:9px 0; text-align:right; font-weight:700; font-size:12px;">${formatDate(tx.date)} · ${formatTime(tx.date)}</td>
+            <td style="padding:9px 0; text-align:right; font-weight:700; font-size:12px;">${displayDateTime}</td>
           </tr>
           <tr style="border-top:1px solid #E8EAF2;">
             <td style="padding:9px 0; color:#8A8FA8; font-size:12px;">Reference</td>
@@ -132,16 +146,16 @@ export default function ReceiptScreen({ navigation, route }) {
             <Text style={styles.brandText}>SubBridge</Text>
           </View>
 
-          <View style={[styles.statusIcon, { backgroundColor: "rgba(0,200,150,0.1)" }]}>
-            <Ionicons name="checkmark" size={28} color={C.accent} />
+          <View style={[styles.statusIcon, { backgroundColor: statusColor + "1A" }]}>
+            <Ionicons name={statusIcon} size={28} color={statusColor} />
           </View>
 
           <Text style={styles.amountLabel}>{isDebit ? "Amount Sent" : "Amount Received"}</Text>
           <Text style={[styles.amountVal, { color: isDebit ? C.debit : C.accent }]}>
             {isDebit ? "-" : "+"} {fmt(tx.amount)}
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: "rgba(0,200,150,0.1)" }]}>
-            <Text style={[styles.statusText, { color: C.accent }]}>SUCCESSFUL</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + "1A" }]}>
+            <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -156,7 +170,7 @@ export default function ReceiptScreen({ navigation, route }) {
           </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Date & Time</Text>
-            <Text style={styles.rowValue}>{formatDate(tx.date)} · {formatTime(tx.date)}</Text>
+            <Text style={styles.rowValue}>{displayDateTime}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Reference</Text>

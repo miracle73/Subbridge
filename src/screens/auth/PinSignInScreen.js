@@ -46,7 +46,11 @@ export default function PinSignInScreen({ navigation }) {
           ? `${user.firstName || user.firstname || ""} ${user.lastName || user.lastname || ""}`.trim()
           : null;
         if (name) await SecurePin.setName(name);
-        navigation.replace("Home");
+        if (user?.has_pin === false) {
+          navigation.replace("SetupPin", { phone });
+        } else {
+          navigation.replace("Home");
+        }
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setError(result.message || "Incorrect PIN");

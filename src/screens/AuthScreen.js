@@ -48,7 +48,12 @@ export default function AuthScreen({ navigation }) {
       console.log("[Auth] PIN login result:", result.success, result.message);
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        navigation.replace("Home");
+        const user = result.data?.user;
+        if (user?.has_pin === false) {
+          navigation.replace("SetupPin", { phone: currentPhone });
+        } else {
+          navigation.replace("Home");
+        }
       } else {
         setError(result.message || "Incorrect PIN");
         setPin("");
@@ -74,7 +79,12 @@ export default function AuthScreen({ navigation }) {
       console.log("[Auth] Password login result:", result.success, result.message);
       if (result.success) {
         await SecurePin.save(password, cleanPhone);
-        navigation.replace("Home");
+        const user = result.data?.user;
+        if (user?.has_pin === false) {
+          navigation.replace("SetupPin", { phone: cleanPhone });
+        } else {
+          navigation.replace("Home");
+        }
       } else {
         setError(result.message || "Invalid credentials.");
       }

@@ -16,6 +16,7 @@ import PinSignInScreen from "../screens/auth/PinSignInScreen";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import VerifyOtpScreen from "../screens/auth/VerifyOtpScreen";
 import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";
+import SetupPinScreen from "../screens/auth/SetupPinScreen";
 
 import HomeScreen from "../screens/HomeScreen";
 import AirtimeScreen from "../screens/services/AirtimeScreen";
@@ -87,6 +88,7 @@ export default function AppNavigator() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      <Stack.Screen name="SetupPin" component={SetupPinScreen} options={{ gestureEnabled: false }} />
 
       <Stack.Screen name="Home" component={MainTabs} options={{ animation: "fade", gestureEnabled: false }} />
 
