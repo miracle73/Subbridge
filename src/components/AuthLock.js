@@ -16,13 +16,6 @@ export default function AuthLock({ onUnlock }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [userName, setUserName] = useState("");
-  const shake = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    SecurePin.getName().then((name) => { if (name) setUserName(name); });
-  }, []);
-
-  const [userName, setUserName] = useState("");
   const [bioReady, setBioReady] = useState(false);
   const [bioLabel, setBioLabel] = useState("Fingerprint");
   const shake = useRef(new Animated.Value(0)).current;
