@@ -12,7 +12,12 @@ export default function PinSignInScreen({ navigation }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userName, setUserName] = useState("");
   const shake = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    SecurePin.getName().then((n) => { if (n) setUserName(n); });
+  }, []);
 
   const handleKey = (k) => {
     if (loading) return;
@@ -77,8 +82,16 @@ export default function PinSignInScreen({ navigation }) {
       </TouchableOpacity>
 
       <View style={styles.center}>
-        <Ionicons name="finger-print" size={48} color={C.primary} />
-        <Text style={styles.title}>Enter your PIN</Text>
+        <View style={styles.profileAvatar}>
+          {userName ? (
+            <Text style={styles.profileInitial}>{userName.charAt(0).toUpperCase()}</Text>
+          ) : (
+            <Ionicons name="person" size={36} color={C.primary} />
+          )}
+        </View>
+        <Text style={styles.title}>
+          {userName ? `Welcome Back, ${userName.split(" ")[0]}` : "Enter your PIN"}
+        </Text>
 
         <Animated.View style={{ transform: [{ translateX: shake }] }}>
           <PinDots length={4} filled={pin.length} />
@@ -106,6 +119,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white, paddingTop: 60 },
   back: { paddingHorizontal: S.xl },
   center: { flex: 1, justifyContent: "center", alignItems: "center", paddingBottom: S.xl },
+  profileAvatar: {
+    width: 72, height: 72, borderRadius: 36, backgroundColor: C.primaryLight,
+    justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: C.primary,
+  },
+  profileInitial: { fontSize: 32, fontWeight: "800", color: C.primary },
   title: { fontSize: F.h3, fontWeight: "800", color: C.text, marginTop: S.base, marginBottom: S.lg },
   error: { fontSize: F.sm, color: C.debit, marginTop: S.md },
   forgot: { alignItems: "center", paddingVertical: S.base, marginBottom: S.xl },

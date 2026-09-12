@@ -72,9 +72,17 @@ export default function AuthLock({ onUnlock }) {
   return (
     <View style={styles.container}>
       <View style={styles.center}>
-        <Ionicons name="finger-print" size={48} color={C.primary} />
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>{userName ? `${userName}, ` : ""}Enter your PIN to continue</Text>
+        <View style={styles.profileAvatar}>
+          {userName ? (
+            <Text style={styles.profileInitial}>{userName.charAt(0).toUpperCase()}</Text>
+          ) : (
+            <Ionicons name="person" size={40} color={C.primary} />
+          )}
+        </View>
+        <Text style={styles.title}>
+          {userName ? `Welcome Back, ${userName.split(" ")[0]}` : "Welcome Back"}
+        </Text>
+        <Text style={styles.subtitle}>{userName ? "Enter your PIN to continue" : "Enter your PIN to continue"}</Text>
 
         <Animated.View style={{ transform: [{ translateX: shake }] }}>
           <PinDots length={4} filled={pin.length} />
@@ -103,6 +111,11 @@ export default function AuthLock({ onUnlock }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white, paddingTop: 60 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  profileAvatar: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: C.primaryLight,
+    justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: C.primary,
+  },
+  profileInitial: { fontSize: 36, fontWeight: "800", color: C.primary },
   title: { fontSize: F.h3, fontWeight: "800", color: C.text, marginTop: S.base, marginBottom: S.sm },
   subtitle: { fontSize: F.md, color: C.textMuted, marginBottom: S.xl },
   error: { fontSize: F.sm, color: C.debit, marginTop: S.md },
