@@ -56,8 +56,22 @@ export default function ProfileScreen({ navigation }) {
       // Opens the setup modal: verifies transaction PIN first, then device biometrics
       setShowBioSetup(true);
     } else {
-      await Biometrics.setEnabled(false);
-      setBioEnabled(false);
+      Alert.alert(
+        `Disable ${bioLabel} Unlock?`,
+        `You will need to enter your PIN manually for logins and transactions.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Disable",
+            style: "destructive",
+            onPress: async () => {
+              await Biometrics.setEnabled(false);
+              setBioEnabled(false);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            },
+          },
+        ]
+      );
     }
   };
 
