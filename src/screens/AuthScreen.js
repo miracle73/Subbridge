@@ -16,10 +16,12 @@ export default function AuthScreen({ navigation }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasSavedPin, setHasSavedPin] = useState(false);
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     SecurePin.getPhone().then((p) => { if (p) setPhone(p); });
     SecurePin.hasSavedPin().then(setHasSavedPin);
+    SecurePin.getName().then((n) => { if (n) setUserName(n); });
   }, []);
 
   const handlePinKey = (k) => {
@@ -101,13 +103,18 @@ export default function AuthScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.inner}>
-        <View style={styles.avatarWrap}>
-          <Ionicons name="shield-checkmark" size={48} color={C.white} />
-        </View>
-        <Text style={styles.welcome}>Welcome to SubBridge</Text>
-
         {mode === "pin" && hasSavedPin ? (
           <>
+            <View style={styles.profileAvatar}>
+              {userName ? (
+                <Text style={styles.profileInitial}>{userName.charAt(0).toUpperCase()}</Text>
+              ) : (
+                <Ionicons name="person" size={40} color={C.primary} />
+              )}
+            </View>
+            <Text style={styles.welcome}>
+              {userName ? `Welcome Back, ${userName.split(" ")[0]}` : "Welcome Back"}
+            </Text>
             <Text style={styles.subtitle}>Enter your PIN to sign in</Text>
             <PinDots length={4} filled={pin.length} />
             {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -124,6 +131,10 @@ export default function AuthScreen({ navigation }) {
           </>
         ) : (
           <>
+            <View style={styles.avatarWrap}>
+              <Ionicons name="shield-checkmark" size={48} color={C.white} />
+            </View>
+            <Text style={styles.welcome}>Welcome to SubBridge</Text>
             <Text style={styles.subtitle}>Sign in with your password</Text>
             <View style={styles.form}>
               <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Phone number" keyboardType="phone-pad" maxLength={11} />
@@ -159,6 +170,12 @@ const styles = StyleSheet.create({
     width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center", alignItems: "center", marginBottom: S.base,
   },
+  profileAvatar: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: C.white,
+    justifyContent: "center", alignItems: "center", marginBottom: S.base,
+    borderWidth: 3, borderColor: "rgba(255,255,255,0.4)",
+  },
+  profileInitial: { fontSize: 36, fontWeight: "800", color: C.primary },
   welcome: { fontSize: F.h2, fontWeight: "800", color: C.white },
   subtitle: { fontSize: F.md, color: "rgba(255,255,255,0.7)", marginTop: S.xs, marginBottom: S.xl },
   form: { width: "100%", gap: S.md },
