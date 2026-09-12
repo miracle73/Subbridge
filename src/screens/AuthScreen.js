@@ -26,6 +26,7 @@ export default function AuthScreen({ navigation }) {
     SecurePin.hasSavedPin().then(setHasSavedPin);
     SecurePin.getName().then((n) => { if (n) setUserName(n); });
     Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
+      console.log("[Auth] biometric available:", a, "enabled:", e);
       setBioReady(a && e);
     });
     Biometrics.label().then(setBioLabel);
