@@ -88,7 +88,7 @@ export default function AppNavigator() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-      <Stack.Screen name="SetupPin" component={SetupPinScreen} options={{ gestureEnabled: false }} />
+      <Stack.Screen name="SetupPin" component={SetupPinScreen} options={{ presentation: "modal", gestureEnabled: false }} />
 
       <Stack.Screen name="Home" component={MainTabs} options={{ animation: "fade", gestureEnabled: false }} />
 

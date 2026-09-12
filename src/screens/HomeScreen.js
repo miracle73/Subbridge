@@ -61,6 +61,11 @@ export default function HomeScreen({ navigation }) {
           lastName: u.lastName || u.lastname || "",
         };
         console.log("[Home] User:", normalized.firstName, normalized.lastName, normalized.phone);
+        // Safety net: PIN-less accounts get the setup modal immediately, even on stale sessions
+        if (normalized.has_pin === false) {
+          navigation.replace("SetupPin", { phone: normalized.phone || "" });
+          return;
+        }
         setUser(normalized);
       }
 
