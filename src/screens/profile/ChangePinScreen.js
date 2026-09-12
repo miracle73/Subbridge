@@ -94,6 +94,8 @@ export default function ChangePinScreen({ navigation }) {
       console.log("[ChangePin] Submit result:", res.success, res.message);
       if (res.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Keep the locally saved PIN in sync for biometric use
+        await SecurePin.save(newPinValue);
         setSuccess(true);
       } else {
         setError(res.message || "Failed to change PIN");

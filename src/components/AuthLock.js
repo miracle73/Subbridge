@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
 import { SecurePin, AuthToken } from "../utils/storage";
+import { Biometrics } from "../utils/biometrics";
 import PinDots from "./PinDots";
 import PinPad from "./PinPad";
 import api from "../services/api";
@@ -21,13 +22,43 @@ export default function AuthLock({ onUnlock }) {
     SecurePin.getName().then((name) => { if (name) setUserName(name); });
   }, []);
 
+  const [userName, setUserName] = useState("");
+  const [bioReady, setBioReady] = useState(false);
+  const [bioLabel, setBioLabel] = useState("Fingerprint");
+  const shake = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    SecurePin.getName().then((name) => { if (name) setUserName(name); });
+    Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
+      setBioReady(a && e);
+    });
+    Biometrics.label().then(setBioLabel);
+  }, []);
+
   const handleKey = async (k) => {
     if (loading) return;
     if (k === "del") { setPin((p) => p.slice(0, -1)); setError(""); return; }
     if (pin.length >= 4) return;
     const next = pin + k;
     setPin(next);
-    if (next.length === 4) {
+    if (next.length === 4) submitPin(next);
+  };
+
+  const loginWithBiometric = async () => {
+    if (loading) return;
+    setLoading(true);
+    setError("");
+    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric("Unlock SubBridge");
+    if (bioError || !savedPin) {
+      setError(bioError || "Biometric unlock failed.");
+      setLoading(false);
+      return;
+    }
+    setPin(savedPin);
+    await submitPin(savedPin);
+  };
+
+  const submitPin = async (value) => {
       setLoading(true);
       console.log("[AuthLock] PIN entered, verifying...");
       try {
@@ -35,14 +66,17 @@ export default function AuthLock({ onUnlock }) {
         console.log("[AuthLock] Phone:", phone);
         if (!phone) {
           setError("No phone found. Please login again.");
+          setPin("");
           setLoading(false);
           return;
         }
 
-        const result = await api.signInWithPin(phone, next);
+        const result = await api.signInWithPin(phone, value);
         console.log("[AuthLock] Result:", result.success, result.message);
         if (result.success) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          // This PIN just verified against the server — persist it for biometric use
+          await SecurePin.save(value, phone);
           onUnlock();
         } else {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -57,9 +91,9 @@ export default function AuthLock({ onUnlock }) {
         }
       } catch (err) {
         setError("Network error. Please try again.");
+        setPin("");
         setLoading(false);
       }
-    }
   };
 
   const handleLogout = async () => {
@@ -101,6 +135,13 @@ export default function AuthLock({ onUnlock }) {
         <PinPad onPress={handleKey} />
       </View>
 
+      {bioReady ? (
+        <TouchableOpacity style={styles.bioBtn} onPress={loginWithBiometric} disabled={loading}>
+          <Ionicons name="finger-print-outline" size={22} color={C.primary} />
+          <Text style={styles.bioText}>Unlock with {bioLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
+
       <TouchableOpacity style={[styles.logoutBtn, { marginBottom: insets.bottom + S.sm }]} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -121,4 +162,10 @@ const styles = StyleSheet.create({
   error: { fontSize: F.sm, color: C.debit, marginTop: S.md },
   logoutBtn: { alignItems: "center", paddingVertical: S.base },
   logoutText: { fontSize: F.md, color: C.debit, fontWeight: "600" },
+  bioBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
+    borderWidth: 1.5, borderColor: C.border, borderRadius: R.sm,
+    paddingVertical: S.md, marginHorizontal: S.xl,
+  },
+  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
 });

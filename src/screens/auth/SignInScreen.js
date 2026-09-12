@@ -25,7 +25,8 @@ export default function SignInScreen({ navigation }) {
       console.log("[SignIn] Result:", result.success, result.message);
 
       if (result.success) {
-        await SecurePin.save(password, cleanPhone);
+        // Save phone only — never store the password as the PIN
+        await SecurePin.save(null, cleanPhone);
         const user = result.data?.user;
         const name = user?.firstName || user?.firstname || user?.lastName || user?.lastname
           ? `${user.firstName || user.firstname || ""} ${user.lastName || user.lastname || ""}`.trim()

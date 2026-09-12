@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar, Switch,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,12 +9,16 @@ import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../../utils/theme";
 import api from "../../services/api";
 import { AuthToken, SecurePin } from "../../utils/storage";
+import { Biometrics } from "../../utils/biometrics";
 import Preloader from "../../components/Preloader";
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bioSupported, setBioSupported] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioLabel, setBioLabel] = useState("Fingerprint");
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -39,7 +43,25 @@ export default function ProfileScreen({ navigation }) {
 
   React.useEffect(() => {
     fetchProfile();
+    Biometrics.isAvailable().then(setBioSupported);
+    Biometrics.isEnabled().then(setBioEnabled);
+    Biometrics.label().then(setBioLabel);
   }, [fetchProfile]);
+
+  const toggleBiometric = async (on) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (on) {
+      const ok = await Biometrics.authenticate(`Enable ${bioLabel} for easy transactions`);
+      if (ok) {
+        await Biometrics.setEnabled(true);
+        setBioEnabled(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } else {
+      await Biometrics.setEnabled(false);
+      setBioEnabled(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -97,6 +119,19 @@ export default function ProfileScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={18} color={C.textLight} />
           </TouchableOpacity>
         ))}
+
+        {bioSupported ? (
+          <View style={styles.row}>
+            <Ionicons name="finger-print-outline" size={20} color={C.primary} />
+            <Text style={styles.rowLabel}>{bioLabel} Unlock</Text>
+            <Switch
+              value={bioEnabled}
+              onValueChange={toggleBiometric}
+              trackColor={{ false: C.border, true: C.primary }}
+              thumbColor={C.white}
+            />
+          </View>
+        ) : null}
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color={C.debit} />

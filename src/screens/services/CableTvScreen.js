@@ -16,6 +16,8 @@ import ProcessingOverlay from "../../components/ProcessingOverlay";
 import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
 import BeneficiaryBox from "../../components/BeneficiaryBox";
+import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
+import { Biometrics } from "../../utils/biometrics";
 
 export default function CableTvScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -35,9 +37,16 @@ export default function CableTvScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [bioReady, setBioReady] = useState(false);
+  const [bioLabel, setBioLabel] = useState("Fingerprint");
+  const [showBioPrompt, setShowBioPrompt] = useState(false);
 
   useEffect(() => {
     loadData();
+    Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
+      setBioReady(a && e);
+    });
+    Biometrics.label().then(setBioLabel);
   }, []);
 
   const loadData = async () => {
@@ -141,6 +150,18 @@ export default function CableTvScreen({ navigation }) {
     if (next.length === 4) verifyAndPurchase(next);
   };
 
+  const handleBioPurchase = async () => {
+    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric(
+      `Approve ${fmt(plan?.amount || 0)} payment`
+    );
+    if (bioError || !savedPin) {
+      setError(bioError || "Biometric approval failed.");
+      return;
+    }
+    setPin(savedPin);
+    verifyAndPurchase(savedPin);
+  };
+
   const verifyAndPurchase = async (pinValue) => {
     setShowPin(false);
     setProcessing(true);
@@ -172,6 +193,7 @@ export default function CableTvScreen({ navigation }) {
       if (result.success) {
         setSuccess(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
         setError(result.message || "Transaction failed. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -221,6 +243,7 @@ export default function CableTvScreen({ navigation }) {
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
         </View>
+        <BiometricPrompt visible={showBioPrompt} onClose={() => setShowBioPrompt(false)} />
       </View>
     );
   }
@@ -399,6 +422,12 @@ export default function CableTvScreen({ navigation }) {
             <PinDots length={4} filled={pin.length} />
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <PinPad onPress={handlePinKey} />
+            {bioReady ? (
+              <TouchableOpacity style={styles.bioBtn} onPress={handleBioPurchase}>
+                <Ionicons name="finger-print-outline" size={22} color={C.primary} />
+                <Text style={styles.bioText}>Approve with {bioLabel}</Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowPin(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
@@ -492,6 +521,12 @@ const styles = StyleSheet.create({
   pinSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, alignItems: "center" },
   pinTitle: { fontSize: F.lg, fontWeight: "700", color: C.text },
   pinAmount: { fontSize: F.h2, fontWeight: "900", color: C.primary, marginVertical: S.base },
+  bioBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
+    borderWidth: 1.5, borderColor: C.primary, borderRadius: R.sm,
+    paddingVertical: S.md, paddingHorizontal: S.xl, marginTop: S.md, width: "100%",
+  },
+  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
   cancelBtn: { paddingVertical: S.md },
   cancelText: { fontSize: F.md, color: C.textMuted, fontWeight: "600" },
 

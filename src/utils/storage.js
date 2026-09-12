@@ -35,9 +35,10 @@ export const AuthToken = {
 };
 
 export const SecurePin = {
+  // Saves the server-verified PIN and/or phone independently, so a
+  // password login (save(null, phone)) never clobbers a good saved PIN.
   async save(pin, phone) {
-    if (!pin) return;
-    await SecureStore.setItemAsync(PIN_KEY, String(pin));
+    if (pin) await SecureStore.setItemAsync(PIN_KEY, String(pin));
     if (phone) await SecureStore.setItemAsync(PHONE_KEY, String(phone));
   },
   async get() {

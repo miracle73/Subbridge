@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
 import { AuthToken, SecurePin } from "../utils/storage";
+import { Biometrics } from "../utils/biometrics";
 import api from "../services/api";
 import PinDots from "../components/PinDots";
 import PinPad from "../components/PinPad";
@@ -17,11 +18,17 @@ export default function AuthScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [hasSavedPin, setHasSavedPin] = useState(false);
   const [userName, setUserName] = useState("");
+  const [bioReady, setBioReady] = useState(false);
+  const [bioLabel, setBioLabel] = useState("Fingerprint");
 
   useEffect(() => {
     SecurePin.getPhone().then((p) => { if (p) setPhone(p); });
     SecurePin.hasSavedPin().then(setHasSavedPin);
     SecurePin.getName().then((n) => { if (n) setUserName(n); });
+    Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
+      setBioReady(a && e);
+    });
+    Biometrics.label().then(setBioLabel);
   }, []);
 
   const handlePinKey = (k) => {
@@ -52,6 +59,8 @@ export default function AuthScreen({ navigation }) {
       console.log("[Auth] PIN login result:", result.success, result.message);
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // This PIN just verified against the server — persist it for biometric use
+        await SecurePin.save(value, currentPhone);
         const user = result.data?.user;
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone: currentPhone });
@@ -70,6 +79,20 @@ export default function AuthScreen({ navigation }) {
     }
   };
 
+  const loginWithBiometric = async () => {
+    if (loading) return;
+    setLoading(true);
+    setError("");
+    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric("Sign in to SubBridge");
+    if (bioError || !savedPin) {
+      setError(bioError || "Biometric sign-in failed.");
+      setLoading(false);
+      return;
+    }
+    setPin(savedPin);
+    await loginWithPin(savedPin);
+  };
+
   const loginWithPassword = async () => {
     if (!phone || phone.length < 10) return setError("Enter a valid phone number");
     if (!password) return setError("Enter your password");
@@ -82,7 +105,8 @@ export default function AuthScreen({ navigation }) {
       const result = await api.signIn(cleanPhone, password);
       console.log("[Auth] Password login result:", result.success, result.message);
       if (result.success) {
-        await SecurePin.save(password, cleanPhone);
+        // Save phone only — never store the password as the PIN
+        await SecurePin.save(null, cleanPhone);
         const user = result.data?.user;
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone: cleanPhone });
@@ -125,6 +149,12 @@ export default function AuthScreen({ navigation }) {
               </View>
             ) : null}
             <PinPad onPress={handlePinKey} />
+            {bioReady ? (
+              <TouchableOpacity style={styles.bioBtn} onPress={loginWithBiometric} disabled={loading}>
+                <Ionicons name="finger-print-outline" size={22} color={C.white} />
+                <Text style={styles.bioText}>Sign in with {bioLabel}</Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity style={styles.switchBtn} onPress={() => { setMode("password"); setPin(""); setError(""); }}>
               <Text style={styles.switchText}>Sign in with Password</Text>
             </TouchableOpacity>
@@ -187,6 +217,12 @@ const styles = StyleSheet.create({
   error: { fontSize: F.sm, color: "#FFD4D4", textAlign: "center", marginTop: S.base },
   verifyingRow: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.md },
   verifyingText: { fontSize: F.md, color: C.white, fontWeight: "600" },
+  bioBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.5)", borderRadius: R.sm,
+    paddingVertical: S.md, paddingHorizontal: S.xl, marginTop: S.base,
+  },
+  bioText: { fontSize: F.md, color: C.white, fontWeight: "700" },
   forgot: { alignSelf: "flex-end", marginTop: S.sm },
   forgotText: { fontSize: F.sm, color: "rgba(255,255,255,0.7)", fontWeight: "600" },
   btn: {

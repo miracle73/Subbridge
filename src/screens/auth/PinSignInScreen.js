@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../../utils/theme";
 import { AuthToken, SecurePin } from "../../utils/storage";
+import { Biometrics } from "../../utils/biometrics";
 import PinDots from "../../components/PinDots";
 import PinPad from "../../components/PinPad";
 import api from "../../services/api";
@@ -13,10 +14,16 @@ export default function PinSignInScreen({ navigation }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [userName, setUserName] = useState("");
+  const [bioReady, setBioReady] = useState(false);
+  const [bioLabel, setBioLabel] = useState("Fingerprint");
   const shake = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     SecurePin.getName().then((n) => { if (n) setUserName(n); });
+    Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
+      setBioReady(a && e);
+    });
+    Biometrics.label().then(setBioLabel);
   }, []);
 
   const handleKey = (k) => {
@@ -26,6 +33,20 @@ export default function PinSignInScreen({ navigation }) {
     const next = pin + k;
     setPin(next);
     if (next.length === 4) verifyPin(next);
+  };
+
+  const loginWithBiometric = async () => {
+    if (loading) return;
+    setLoading(true);
+    setError("");
+    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric("Sign in to SubBridge");
+    if (bioError || !savedPin) {
+      setError(bioError || "Biometric sign-in failed.");
+      setLoading(false);
+      return;
+    }
+    setPin(savedPin);
+    await verifyPin(savedPin);
   };
 
   const verifyPin = async (value) => {
@@ -47,6 +68,8 @@ export default function PinSignInScreen({ navigation }) {
 
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // This PIN just verified against the server — persist it for biometric use
+        await SecurePin.save(value, phone);
         const user = result.data?.user;
         const name = user?.firstName || user?.firstname || user?.lastName || user?.lastname
           ? `${user.firstName || user.firstname || ""} ${user.lastName || user.lastname || ""}`.trim()
@@ -108,6 +131,13 @@ export default function PinSignInScreen({ navigation }) {
 
       <PinPad onPress={handleKey} />
 
+      {bioReady ? (
+        <TouchableOpacity style={styles.bioBtn} onPress={loginWithBiometric} disabled={loading}>
+          <Ionicons name="finger-print-outline" size={22} color={C.primary} />
+          <Text style={styles.bioText}>Sign in with {bioLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
+
       <TouchableOpacity style={styles.forgot} onPress={() => navigation.navigate("ForgotPassword")}>
         <Text style={styles.forgotText}>Forgot PIN?</Text>
       </TouchableOpacity>
@@ -117,6 +147,12 @@ export default function PinSignInScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white, paddingTop: 60 },
+  bioBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
+    borderWidth: 1.5, borderColor: C.border, borderRadius: R.sm,
+    paddingVertical: S.md, paddingHorizontal: S.xl, marginHorizontal: S.xl, marginTop: S.sm,
+  },
+  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
   back: { paddingHorizontal: S.xl },
   center: { flex: 1, justifyContent: "center", alignItems: "center", paddingBottom: S.xl },
   profileAvatar: {
