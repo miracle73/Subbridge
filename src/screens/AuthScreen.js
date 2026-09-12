@@ -218,9 +218,9 @@ const styles = StyleSheet.create({
   verifyingRow: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.md },
   verifyingText: { fontSize: F.md, color: C.white, fontWeight: "600" },
   bioBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
+    flexDirection: "row", alignItems: "center", gap: S.sm,
     borderWidth: 1.5, borderColor: "rgba(255,255,255,0.5)", borderRadius: R.sm,
-    paddingVertical: S.md, paddingHorizontal: S.xl, marginTop: S.base,
+    paddingVertical: S.md, paddingHorizontal: S.base, marginTop: S.base, width: "100%",
   },
   bioText: { fontSize: F.md, color: C.white, fontWeight: "700" },
   forgot: { alignSelf: "flex-end", marginTop: S.sm },

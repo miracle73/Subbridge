@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
 import { Biometrics } from "../utils/biometrics";
+import { SecurePin } from "../utils/storage";
+import api from "../services/api";
 
 /**
  * First-transaction opt-in: "Enable fingerprint for easy transactions?"
@@ -25,15 +27,51 @@ export async function shouldPromptBiometric() {
 
 export default function BiometricPrompt({ visible, onClose }) {
   const [label, setLabel] = useState("Fingerprint");
+  const [step, setStep] = useState("pin"); // "pin" -> verify PIN first, then "bio"
+  const [pinCode, setPinCode] = useState("");
+  const [verifyingPin, setVerifyingPin] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (visible) {
       setError("");
+      setPinCode("");
+      setStep("pin");
+      setVerifyingPin(false);
       Biometrics.label().then(setLabel);
     }
   }, [visible]);
+
+  const verifyPinCode = async () => {
+    if (pinCode.length !== 4) {
+      setError("Enter your 4-digit transaction PIN.");
+      return;
+    }
+    setVerifyingPin(true);
+    setError("");
+    try {
+      let phone = await SecurePin.getPhone();
+      if (!phone) {
+        const userRes = await api.getUserProfile();
+        phone = userRes.data?.phone || userRes.data?.user?.phone || "";
+      }
+      const res = await api.verifyPin(phone || "", pinCode);
+      console.log("[BiometricPrompt] PIN crosscheck:", res.success);
+      if (res.success) {
+        // Cache the verified PIN so biometric logins/purchases use a good value
+        await SecurePin.save(pinCode, phone || undefined);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setStep("bio");
+      } else {
+        setError(res.message || "Incorrect PIN. Try again.");
+      }
+    } catch (e) {
+      setError("Network error. Try again.");
+    } finally {
+      setVerifyingPin(false);
+    }
+  };
 
   const enable = async () => {
     setBusy(true);
@@ -67,21 +105,59 @@ export default function BiometricPrompt({ visible, onClose }) {
           <View style={styles.iconWrap}>
             <Ionicons name="finger-print" size={40} color={C.white} />
           </View>
-          <Text style={styles.title}>Enable {label}?</Text>
-          <Text style={styles.desc}>
-            Use {label.toLowerCase()} for easy transactions — no need to type your PIN every time. Your PIN stays securely saved on this device.
-          </Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <TouchableOpacity style={[styles.enableBtn, busy && { opacity: 0.7 }]} onPress={enable} disabled={busy}>
-            {busy ? (
-              <ActivityIndicator size="small" color={C.white} />
-            ) : (
-              <Text style={styles.enableText}>Enable {label}</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.laterBtn} onPress={dismiss} disabled={busy}>
-            <Text style={styles.laterText}>Not Now</Text>
-          </TouchableOpacity>
+          {step === "pin" ? (
+            <>
+              <Text style={styles.title}>Verify it's you</Text>
+              <Text style={styles.desc}>
+                Enter your 4-digit transaction PIN to enable {label} for easy transactions.
+              </Text>
+              <TextInput
+                style={styles.pinInput}
+                value={pinCode}
+                onChangeText={(t) => setPinCode(t.replace(/\D/g, "").slice(0, 4))}
+                placeholder="••••"
+                placeholderTextColor={C.textLight}
+                keyboardType="number-pad"
+                maxLength={4}
+                secureTextEntry
+                autoFocus
+                textAlign="center"
+              />
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+              <TouchableOpacity
+                style={[styles.enableBtn, verifyingPin && { opacity: 0.7 }]}
+                onPress={verifyPinCode}
+                disabled={verifyingPin}
+              >
+                {verifyingPin ? (
+                  <ActivityIndicator size="small" color={C.white} />
+                ) : (
+                  <Text style={styles.enableText}>Verify PIN</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.laterBtn} onPress={dismiss} disabled={verifyingPin}>
+                <Text style={styles.laterText}>Not Now</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>Enable {label}?</Text>
+              <Text style={styles.desc}>
+                PIN verified. Use {label.toLowerCase()} for easy transactions — no need to type your PIN every time. Your PIN stays securely saved on this device.
+              </Text>
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+              <TouchableOpacity style={[styles.enableBtn, busy && { opacity: 0.7 }]} onPress={enable} disabled={busy}>
+                {busy ? (
+                  <ActivityIndicator size="small" color={C.white} />
+                ) : (
+                  <Text style={styles.enableText}>Enable {label}</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.laterBtn} onPress={dismiss} disabled={busy}>
+                <Text style={styles.laterText}>Not Now</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -97,6 +173,12 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: F.h3, fontWeight: "800", color: C.text },
   desc: { fontSize: F.md, color: C.textMuted, textAlign: "center", lineHeight: 21, marginTop: S.sm },
+  pinInput: {
+    width: 160, marginTop: S.lg,
+    backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
+    borderRadius: R.sm, paddingVertical: S.md,
+    fontSize: F.h2, fontWeight: "800", color: C.text, letterSpacing: 10,
+  },
   error: { fontSize: F.sm, color: C.debit, marginTop: S.sm },
   enableBtn: {
     width: "100%", backgroundColor: C.primary, borderRadius: R.sm,

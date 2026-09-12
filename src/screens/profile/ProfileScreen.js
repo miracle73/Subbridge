@@ -10,6 +10,7 @@ import { C, F, R, S } from "../../utils/theme";
 import api from "../../services/api";
 import { AuthToken, SecurePin } from "../../utils/storage";
 import { Biometrics } from "../../utils/biometrics";
+import BiometricPrompt from "../../components/BiometricPrompt";
 import Preloader from "../../components/Preloader";
 
 export default function ProfileScreen({ navigation }) {
@@ -19,6 +20,7 @@ export default function ProfileScreen({ navigation }) {
   const [bioSupported, setBioSupported] = useState(false);
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioLabel, setBioLabel] = useState("Fingerprint");
+  const [showBioSetup, setShowBioSetup] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -51,12 +53,8 @@ export default function ProfileScreen({ navigation }) {
   const toggleBiometric = async (on) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (on) {
-      const ok = await Biometrics.authenticate(`Enable ${bioLabel} for easy transactions`);
-      if (ok) {
-        await Biometrics.setEnabled(true);
-        setBioEnabled(true);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
+      // Opens the setup modal: verifies transaction PIN first, then device biometrics
+      setShowBioSetup(true);
     } else {
       await Biometrics.setEnabled(false);
       setBioEnabled(false);
@@ -137,6 +135,14 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="log-out-outline" size={20} color={C.debit} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
+
+        <BiometricPrompt
+          visible={showBioSetup}
+          onClose={(enabled) => {
+            setShowBioSetup(false);
+            setBioEnabled(!!enabled);
+          }}
+        />
       </ScrollView>
     </View>
   );
