@@ -148,13 +148,7 @@ export default function AuthScreen({ navigation }) {
                 <Text style={styles.verifyingText}>Verifying...</Text>
               </View>
             ) : null}
-            <PinPad onPress={handlePinKey} />
-            {bioReady ? (
-              <TouchableOpacity style={styles.bioBtn} onPress={loginWithBiometric} disabled={loading}>
-                <Ionicons name="finger-print-outline" size={22} color={C.white} />
-                <Text style={styles.bioText}>Sign in with {bioLabel}</Text>
-              </TouchableOpacity>
-            ) : null}
+            <PinPad onPress={handlePinKey} onBiometric={bioReady ? loginWithBiometric : undefined} />
             <TouchableOpacity style={styles.switchBtn} onPress={() => { setMode("password"); setPin(""); setError(""); }}>
               <Text style={styles.switchText}>Sign in with Password</Text>
             </TouchableOpacity>
@@ -217,12 +211,6 @@ const styles = StyleSheet.create({
   error: { fontSize: F.sm, color: "#FFD4D4", textAlign: "center", marginTop: S.base },
   verifyingRow: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.md },
   verifyingText: { fontSize: F.md, color: C.white, fontWeight: "600" },
-  bioBtn: {
-    flexDirection: "row", alignItems: "center", gap: S.sm,
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.5)", borderRadius: R.sm,
-    paddingVertical: S.md, paddingHorizontal: S.base, marginTop: S.base, width: "100%",
-  },
-  bioText: { fontSize: F.md, color: C.white, fontWeight: "700" },
   forgot: { alignSelf: "flex-end", marginTop: S.sm },
   forgotText: { fontSize: F.sm, color: "rgba(255,255,255,0.7)", fontWeight: "600" },
   btn: {
