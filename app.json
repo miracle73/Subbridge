@@ -2,7 +2,7 @@
   "expo": {
     "name": "SubBridge",
     "slug": "subbridge",
-    "owner": "devradni",
+    "owner": "drlight",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -68,7 +68,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "3e57fb7f-7550-440e-89ec-e30ac0d560a2"
+        "projectId": "7ecab4c4-7378-436e-a777-1ccbf4750ea3"
       }
     }
   }
