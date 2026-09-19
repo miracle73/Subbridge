@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,14 +10,23 @@ import { C, F, R, S } from "../../utils/theme";
 import { fmt, fmtShort } from "../../utils/format";
 import api from "../../services/api";
 import { enrichProviders, getCableLogo } from "../../utils/logos";
-import PinDots from "../../components/PinDots";
-import PinPad from "../../components/PinPad";
+import PaymentAuthSheet from "../../components/PaymentAuthSheet";
 import ProcessingOverlay from "../../components/ProcessingOverlay";
 import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
 import BeneficiaryBox from "../../components/BeneficiaryBox";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
 import { Biometrics } from "../../utils/biometrics";
+import { BiometricCrypto } from "../../services/biometric";
+
+async function signTransaction(txnId, txnData) {
+  const auth = await BiometricCrypto.authenticate();
+  if (!auth.success) return { signature: null };
+  const challengeRes = await api.requestChallenge(txnId, txnData);
+  if (!challengeRes.success) { Alert.alert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
+  const signature = await BiometricCrypto.signChallenge(challengeRes.data.challenge);
+  return { signature, transactionId: txnId, transactionData: txnData };
+}
 
 export default function CableTvScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -29,8 +38,7 @@ export default function CableTvScreen({ navigation }) {
   const [verified, setVerified] = useState(null);
   const [showProvider, setShowProvider] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showPin, setShowPin] = useState(false);
-  const [pin, setPin] = useState("");
+  const [showAuthSheet, setShowAuthSheet] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -117,7 +125,14 @@ export default function CableTvScreen({ navigation }) {
       const result = await api.verifySmartcard(provider.id, smartcard);
       console.log("[Cable] Verify result:", result.success, result.data);
       if (result.success && result.data) {
-        setVerified(result.data);
+        const rawName = (result.data.customerName || "").trim();
+        const genericNames = ["customer", "unknown", "n/a", ""];
+        const isGeneric = genericNames.includes(rawName.toLowerCase());
+        setVerified({
+          ...result.data,
+          customerName: isGeneric ? "Smartcard not found" : rawName,
+          notFound: isGeneric,
+        });
       } else {
         setError(result.message || "Verification failed. Please check the smartcard number.");
       }
@@ -138,32 +153,51 @@ export default function CableTvScreen({ navigation }) {
 
   const handleConfirmBuy = () => {
     setShowConfirm(false);
-    setShowPin(true);
-    setPin("");
+    setShowAuthSheet(true);
   };
 
-  const handlePinKey = (k) => {
-    if (k === "del") { setPin((p) => p.slice(0, -1)); return; }
-    if (pin.length >= 4) return;
-    const next = pin + k;
-    setPin(next);
-    if (next.length === 4) verifyAndPurchase(next);
+  const handlePinAuth = (pinValue) => {
+    verifyAndPurchase(pinValue);
   };
 
-  const handleBioPurchase = async () => {
-    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric(
-      `Approve ${fmt(plan?.amount || 0)} payment`
-    );
-    if (bioError || !savedPin) {
-      setError(bioError || "Biometric approval failed.");
+  const handleBiometricAuth = async () => {
+    const txnId = "CBL-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
+    const txnData = JSON.stringify({ provider: provider?.id, smartcardNumber: smartcard, planId: plan?.id, amount: plan?.amount });
+    const { signature, transactionId, transactionData } = await signTransaction(txnId, txnData);
+    if (!signature) {
+      setError("Biometric approval failed.");
       return;
     }
-    setPin(savedPin);
-    verifyAndPurchase(savedPin);
+    setShowAuthSheet(false);
+    setProcessing(true);
+    try {
+      const result = await api.purchaseCable({
+        provider: provider?.id,
+        smartcardNumber: smartcard,
+        planId: plan?.id,
+        amount: plan?.amount,
+        signature,
+        transactionId,
+        transactionData,
+      });
+      console.log("[Cable] Purchase result:", result.success, result.message);
+      if (result.success) {
+        setSuccess(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (await shouldPromptBiometric()) setShowBioPrompt(true);
+      } else {
+        setError(result.message || "Transaction failed. Please try again.");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const verifyAndPurchase = async (pinValue) => {
-    setShowPin(false);
+    setShowAuthSheet(false);
     setProcessing(true);
 
     try {
@@ -414,26 +448,12 @@ export default function CableTvScreen({ navigation }) {
         </View>
       </Modal>
 
-      <Modal visible={showPin} transparent animationType="slide">
-        <View style={styles.pinOverlay}>
-          <View style={styles.pinSheet}>
-            <Text style={styles.pinTitle}>Enter PIN to confirm</Text>
-            <Text style={styles.pinAmount}>{fmt(plan?.amount || 0)}</Text>
-            <PinDots length={4} filled={pin.length} />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <PinPad onPress={handlePinKey} />
-            {bioReady ? (
-              <TouchableOpacity style={styles.bioBtn} onPress={handleBioPurchase}>
-                <Ionicons name="finger-print-outline" size={22} color={C.primary} />
-                <Text style={styles.bioText}>Approve with {bioLabel}</Text>
-              </TouchableOpacity>
-            ) : null}
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowPin(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <PaymentAuthSheet
+        visible={showAuthSheet}
+        onClose={() => setShowAuthSheet(false)}
+        onPinAuth={handlePinAuth}
+        onBiometricAuth={handleBiometricAuth}
+      />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
     </View>
@@ -516,19 +536,6 @@ const styles = StyleSheet.create({
   confirmCancelText: { fontSize: F.md, fontWeight: "600", color: C.textMuted },
   confirmBtn: { flex: 1, backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md, alignItems: "center" },
   confirmBtnText: { fontSize: F.md, fontWeight: "700", color: C.white },
-
-  pinOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
-  pinSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, alignItems: "center" },
-  pinTitle: { fontSize: F.lg, fontWeight: "700", color: C.text },
-  pinAmount: { fontSize: F.h2, fontWeight: "900", color: C.primary, marginVertical: S.base },
-  bioBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
-    borderWidth: 1.5, borderColor: C.primary, borderRadius: R.sm,
-    paddingVertical: S.md, paddingHorizontal: S.xl, marginTop: S.md, width: "100%",
-  },
-  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
-  cancelBtn: { paddingVertical: S.md },
-  cancelText: { fontSize: F.md, color: C.textMuted, fontWeight: "600" },
 
   successWrap: { flex: 1, alignItems: "center", padding: S.xl, paddingTop: S.xxl },
   successIconWrap: {

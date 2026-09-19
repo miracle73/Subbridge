@@ -27,3 +27,29 @@ export const formatTime = (dateStr) => {
 };
 
 export const formatDateTime = (dateStr) => `${formatDate(dateStr)} \u00B7 ${formatTime(dateStr)}`;
+
+export const detectNetworkFromPhone = (phoneNumber) => {
+  const num = String(phoneNumber).replace(/\D/g, "");
+  if (num.length >= 4) {
+    const prefix = num.substring(0, 4);
+    const mtnPrefixes = ["0803", "0806", "0703", "0706", "0810", "0813", "0814", "0816", "0903", "0906", "0913", "0916"];
+    const airtelPrefixes = ["0802", "0808", "0708", "0812", "0902", "0907", "0912"];
+    const gloPrefixes = ["0805", "0807", "0705", "0811", "0815", "0905", "0915"];
+    const mobile9Prefixes = ["0809", "0817", "0818", "0909", "0908", "0918"];
+    if (mtnPrefixes.includes(prefix)) return "mtn";
+    if (airtelPrefixes.includes(prefix)) return "airtel";
+    if (gloPrefixes.includes(prefix)) return "glo";
+    if (mobile9Prefixes.includes(prefix)) return "9mobile";
+  }
+  return null;
+};
+
+export const normalizePhone = (text) => {
+  let cleaned = String(text).replace(/\s/g, "");
+  if (cleaned.startsWith("+234")) {
+    cleaned = "0" + cleaned.slice(4);
+  } else if (cleaned.startsWith("234") && cleaned.length > 10) {
+    cleaned = "0" + cleaned.slice(3);
+  }
+  return cleaned;
+};

@@ -83,7 +83,7 @@ class ApiService {
         payload = inner;
       }
 
-      const result = { success, message, data: payload };
+      const result = { success, message, data: payload, raw };
 
       // Normalize user object - API returns firstname/lastname, app uses firstName/lastName
       if (result.data?.user) {
@@ -388,6 +388,64 @@ class ApiService {
     console.log("[API] resetPassword:", phone);
     const result = await this.post("/api/reset-password/", { phone, newPassword });
     console.log("[API] resetPassword result:", result.success, result.message);
+    return result;
+  }
+
+  async registerBiometricKey(publicKeyPem) {
+    console.log("[API] registerBiometricKey");
+    const result = await this.post("/api/biometric/register-key", { publicKey: publicKeyPem });
+    console.log("[API] registerBiometricKey result:", result.success, result.message);
+    return result;
+  }
+
+  async requestChallenge(transactionId, transactionData) {
+    console.log("[API] requestChallenge:", transactionId);
+    const result = await this.post("/api/biometric/challenge", {
+      transactionId,
+      transactionData,
+    });
+    if (result.success && !result.data && result.message !== undefined) {
+      const raw = result.raw;
+      if (raw && raw.challenge) {
+        result.data = { challenge: raw.challenge, transactionId: raw.transactionId, expiresInSeconds: raw.expiresInSeconds };
+      }
+    }
+    console.log("[API] requestChallenge result:", result.success, result.data?.challenge?.substring(0, 50));
+    return result;
+  }
+
+  async verifySignature(transactionId, signature, transactionData) {
+    console.log("[API] verifySignature:", transactionId);
+    const result = await this.post("/api/biometric/verify-and-process", {
+      transactionId,
+      signature,
+      transactionData,
+    });
+    console.log("[API] verifySignature result:", result.success, result.message);
+    return result;
+  }
+
+  async getBiometricStatus() {
+    console.log("[API] getBiometricStatus");
+    const headers = { Accept: "application/json" };
+    if (this.token) headers["Authorization"] = `Token ${this.token}`;
+    try {
+      const response = await fetch(`${BASE_URL}/api/biometric/status`, { method: "GET", headers });
+      const text = await response.text();
+      let raw;
+      try { raw = text ? JSON.parse(text) : null; } catch { raw = text; }
+      console.log("[API] getBiometricStatus:", JSON.stringify(raw));
+      return raw;
+    } catch (error) {
+      console.error("[API] getBiometricStatus error:", error.message);
+      return { registered: false, active: false };
+    }
+  }
+
+  async deregisterBiometric() {
+    console.log("[API] deregisterBiometric");
+    const result = await this.delete("/api/biometric/deregister");
+    console.log("[API] deregisterBiometric result:", result.success, result.message);
     return result;
   }
 }

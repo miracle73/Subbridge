@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../../utils/theme";
-import { fmt, fmtShort } from "../../utils/format";
+import { fmt, fmtShort, detectNetworkFromPhone, normalizePhone } from "../../utils/format";
 import api from "../../services/api";
 import { enrichProviders, getNetworkLogo } from "../../utils/logos";
-import PinDots from "../../components/PinDots";
-import PinPad from "../../components/PinPad";
+import PaymentAuthSheet from "../../components/PaymentAuthSheet";
 import ProcessingOverlay from "../../components/ProcessingOverlay";
 import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
 import ContactPicker from "../../components/ContactPicker";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
 import { Biometrics } from "../../utils/biometrics";
+import { BiometricCrypto } from "../../services/biometric";
+import { SecurePin } from "../../utils/storage";
 
 function getValidityGroup(validity) {
   if (!validity) return "Other";
@@ -54,6 +55,15 @@ function dataValueToMB(v) {
   return n;
 }
 
+async function signTransaction(txnId, txnData) {
+  const auth = await BiometricCrypto.authenticate();
+  if (!auth.success) return { signature: null };
+  const challengeRes = await api.requestChallenge(txnId, txnData);
+  if (!challengeRes.success) { Alert.alert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
+  const signature = await BiometricCrypto.signChallenge(challengeRes.data.challenge);
+  return { signature, transactionId: txnId, transactionData: txnData };
+}
+
 export default function DataScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [networks, setNetworks] = useState([]);
@@ -66,8 +76,7 @@ export default function DataScreen({ navigation }) {
   const [plan, setPlan] = useState(null);
   const [showNetwork, setShowNetwork] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showPin, setShowPin] = useState(false);
-  const [pin, setPin] = useState("");
+  const [showPaymentAuth, setShowPaymentAuth] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -75,16 +84,16 @@ export default function DataScreen({ navigation }) {
   const [saveBeneficiary, setSaveBeneficiary] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
   const [balance, setBalance] = useState(0);
-  const [bioReady, setBioReady] = useState(false);
-  const [bioLabel, setBioLabel] = useState("Fingerprint");
   const [showBioPrompt, setShowBioPrompt] = useState(false);
 
   useEffect(() => {
     loadData();
-    Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
-      setBioReady(a && e);
+    SecurePin.getPhone().then((p) => {
+      if (p) {
+        const localNum = p.startsWith("234") ? "0" + p.slice(3) : p;
+        setPhone(localNum);
+      }
     });
-    Biometrics.label().then(setBioLabel);
   }, []);
 
   const loadData = async () => {
@@ -169,6 +178,22 @@ export default function DataScreen({ navigation }) {
     loadAllPlans(n.id);
   };
 
+  const handlePhoneChange = (text) => {
+    const normalized = normalizePhone(text);
+    setPhone(normalized);
+    if (normalized.length >= 4) {
+      const detected = detectNetworkFromPhone(normalized);
+      if (detected && networks.length > 0) {
+        const match = networks.find((n) => n.id === detected);
+        if (match) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setNetwork(match);
+          loadAllPlans(match.id);
+        }
+      }
+    }
+  };
+
   const handleTypeFilter = (type) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (activeType === type) {
@@ -198,32 +223,51 @@ export default function DataScreen({ navigation }) {
 
   const handleConfirmBuy = () => {
     setShowConfirm(false);
-    setShowPin(true);
-    setPin("");
+    setShowPaymentAuth(true);
   };
 
-  const handlePinKey = (k) => {
-    if (k === "del") { setPin((p) => p.slice(0, -1)); return; }
-    if (pin.length >= 4) return;
-    const next = pin + k;
-    setPin(next);
-    if (next.length === 4) verifyAndPurchase(next);
+  const handlePaymentPinAuth = (pinValue) => {
+    setShowPaymentAuth(false);
+    verifyAndPurchase(pinValue);
   };
 
-  const handleBioPurchase = async () => {
-    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric(
-      `Approve ${fmt(plan?.amount)} payment`
-    );
-    if (bioError || !savedPin) {
-      setError(bioError || "Biometric approval failed.");
-      return;
+  const handlePaymentBiometricAuth = async () => {
+    try {
+      const txnId = "DAT-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
+      const cleanPhone = "234" + phone.replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
+      const txnData = JSON.stringify({ phone: cleanPhone, provider: network?.id, planId: plan?.id, amount: plan?.amount });
+      const { signature, transactionId, transactionData } = await signTransaction(txnId, txnData);
+      if (!signature) {
+        setError("Biometric signing failed.");
+        return;
+      }
+      setShowPaymentAuth(false);
+      setProcessing(true);
+      const result = await api.purchaseData({
+        phone: cleanPhone,
+        provider: network?.id || "mtn",
+        planId: plan?.id,
+        amount: plan?.amount,
+        signature,
+        transactionId,
+        transactionData,
+      });
+      if (result.success) {
+        setSuccess(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (await shouldPromptBiometric()) setShowBioPrompt(true);
+      } else {
+        setError(result.message || "Transaction failed.");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setProcessing(false);
     }
-    setPin(savedPin);
-    verifyAndPurchase(savedPin);
   };
 
   const verifyAndPurchase = async (pinValue) => {
-    setShowPin(false);
     setProcessing(true);
 
     try {
@@ -346,7 +390,7 @@ export default function DataScreen({ navigation }) {
             <TextInput
               style={styles.phoneInput}
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={handlePhoneChange}
               placeholder="0812 345 6789"
               keyboardType="phone-pad"
               maxLength={11}
@@ -360,7 +404,7 @@ export default function DataScreen({ navigation }) {
         <ContactPicker
           visible={showContacts}
           onClose={() => setShowContacts(false)}
-          onSelect={(num) => setPhone(num)}
+          onSelect={(num) => handlePhoneChange(num)}
         />
 
         {/* Validity Grid - 3 columns */}
@@ -522,27 +566,12 @@ export default function DataScreen({ navigation }) {
         </View>
       </Modal>
 
-      {/* PIN Modal */}
-      <Modal visible={showPin} transparent animationType="slide">
-        <View style={styles.pinOverlay}>
-          <View style={styles.pinSheet}>
-            <Text style={styles.pinTitle}>Enter PIN to confirm</Text>
-            <Text style={styles.pinAmount}>{fmt(plan?.amount)}</Text>
-            <PinDots length={4} filled={pin.length} />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <PinPad onPress={handlePinKey} />
-            {bioReady ? (
-              <TouchableOpacity style={styles.bioBtn} onPress={handleBioPurchase}>
-                <Ionicons name="finger-print-outline" size={22} color={C.primary} />
-                <Text style={styles.bioText}>Approve with {bioLabel}</Text>
-              </TouchableOpacity>
-            ) : null}
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowPin(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <PaymentAuthSheet
+        visible={showPaymentAuth}
+        onClose={() => setShowPaymentAuth(false)}
+        onPinAuth={handlePaymentPinAuth}
+        onBiometricAuth={handlePaymentBiometricAuth}
+      />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
     </View>
@@ -659,20 +688,6 @@ const styles = StyleSheet.create({
 
   beneficiaryRow: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.lg },
   beneficiaryText: { fontSize: F.sm, color: C.textMuted },
-
-  bioBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
-    borderWidth: 1.5, borderColor: C.primary, borderRadius: R.sm,
-    paddingVertical: S.md, paddingHorizontal: S.xl, marginTop: S.md, width: "100%",
-  },
-  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
-
-  pinOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
-  pinSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, paddingTop: S.lg, alignItems: "center" },
-  pinTitle: { fontSize: F.lg, fontWeight: "700", color: C.text },
-  pinAmount: { fontSize: F.h2, fontWeight: "900", color: C.primary, marginVertical: S.base },
-  cancelBtn: { paddingVertical: S.md, marginTop: S.sm },
-  cancelText: { fontSize: F.md, color: C.textMuted, fontWeight: "600" },
 
   successWrap: { flex: 1, alignItems: "center", padding: S.xl, paddingTop: S.xxl },
   successIconWrap: {

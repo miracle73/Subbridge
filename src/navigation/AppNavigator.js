@@ -1,11 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, CommonActions } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { C, F } from "../utils/theme";
+import { NavState } from "../utils/storage";
 
 import SplashScreen from "../screens/SplashScreen";
 import OnboardingScreen from "../screens/OnboardingScreen";
@@ -30,6 +31,7 @@ import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import ChangePinScreen from "../screens/profile/ChangePinScreen";
 import SupportScreen from "../screens/support/SupportScreen";
 import ReceiptScreen from "../screens/ReceiptScreen";
+import BiometricSetupScreen from "../screens/BiometricSetupScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -73,10 +75,10 @@ function MainTabs() {
   );
 }
 
-export default function AppNavigator() {
+export default function AppNavigator({ initialRouteName }) {
   return (
     <Stack.Navigator
-      initialRouteName="Splash"
+      initialRouteName={initialRouteName || "Splash"}
       screenOptions={{ headerShown: false, animation: "slide_from_right" }}
     >
       <Stack.Screen name="Splash" component={SplashScreen} options={{ animation: "fade" }} />
@@ -101,6 +103,7 @@ export default function AppNavigator() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="ChangePin" component={ChangePinScreen} />
       <Stack.Screen name="Support" component={SupportScreen} />
+      <Stack.Screen name="BiometricSetup" component={BiometricSetupScreen} />
       <Stack.Screen name="Receipt" component={ReceiptScreen} />
     </Stack.Navigator>
   );

@@ -17,7 +17,6 @@ export default function AuthLock({ onUnlock }) {
   const [loading, setLoading] = useState(false);
   const [userName, setUserName] = useState("");
   const [bioReady, setBioReady] = useState(false);
-  const [bioLabel, setBioLabel] = useState("Fingerprint");
   const shake = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -25,7 +24,6 @@ export default function AuthLock({ onUnlock }) {
     Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
       setBioReady(a && e);
     });
-    Biometrics.label().then(setBioLabel);
   }, []);
 
   const handleKey = async (k) => {
@@ -52,41 +50,45 @@ export default function AuthLock({ onUnlock }) {
   };
 
   const submitPin = async (value) => {
-      setLoading(true);
-      console.log("[AuthLock] PIN entered, verifying...");
-      try {
-        const phone = await SecurePin.getPhone();
-        console.log("[AuthLock] Phone:", phone);
-        if (!phone) {
-          setError("No phone found. Please login again.");
-          setPin("");
-          setLoading(false);
-          return;
-        }
-
-        const result = await api.signInWithPin(phone, value);
-        console.log("[AuthLock] Result:", result.success, result.message);
-        if (result.success) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          // This PIN just verified against the server — persist it for biometric use
-          await SecurePin.save(value, phone);
-          onUnlock();
-        } else {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          setError(result.message || "Incorrect PIN");
-          setPin("");
-          setLoading(false);
-          Animated.sequence([
-            Animated.timing(shake, { toValue: 8, duration: 55, useNativeDriver: true }),
-            Animated.timing(shake, { toValue: -8, duration: 55, useNativeDriver: true }),
-            Animated.timing(shake, { toValue: 0, duration: 55, useNativeDriver: true }),
-          ]).start();
-        }
-      } catch (err) {
-        setError("Network error. Please try again.");
+    setLoading(true);
+    setError("");
+    try {
+      let currentPhone = await SecurePin.getPhone();
+      if (!currentPhone) {
+        const userRes = await api.getUserProfile();
+        currentPhone = userRes.data?.phone || userRes.data?.user?.phone || "";
+      }
+      if (!currentPhone) {
+        setError("No phone found. Please login again.");
         setPin("");
         setLoading(false);
+        return;
       }
+
+      const result = await api.signInWithPin(currentPhone, value);
+      if (result.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await SecurePin.save(value, currentPhone);
+        const user = result.data?.user;
+        const fullName = user ? `${user.firstName || user.firstname || ""} ${user.lastName || user.lastname || ""}`.trim() : "";
+        if (fullName) await SecurePin.setName(fullName);
+        onUnlock();
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setError(result.message || "Incorrect PIN");
+        setPin("");
+        setLoading(false);
+        Animated.sequence([
+          Animated.timing(shake, { toValue: 8, duration: 55, useNativeDriver: true }),
+          Animated.timing(shake, { toValue: -8, duration: 55, useNativeDriver: true }),
+          Animated.timing(shake, { toValue: 0, duration: 55, useNativeDriver: true }),
+        ]).start();
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+      setPin("");
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -109,7 +111,7 @@ export default function AuthLock({ onUnlock }) {
         <Text style={styles.title}>
           {userName ? `Welcome Back, ${userName.split(" ")[0]}` : "Welcome Back"}
         </Text>
-        <Text style={styles.subtitle}>{userName ? "Enter your PIN to continue" : "Enter your PIN to continue"}</Text>
+        <Text style={styles.subtitle}>Enter your PIN to continue</Text>
 
         <Animated.View style={{ transform: [{ translateX: shake }] }}>
           <PinDots length={4} filled={pin.length} />
@@ -125,15 +127,8 @@ export default function AuthLock({ onUnlock }) {
       </View>
 
       <View style={{ paddingBottom: insets.bottom }}>
-        <PinPad onPress={handleKey} />
+        <PinPad onPress={handleKey} onBiometric={bioReady ? loginWithBiometric : undefined} />
       </View>
-
-      {bioReady ? (
-        <TouchableOpacity style={styles.bioBtn} onPress={loginWithBiometric} disabled={loading}>
-          <Ionicons name="finger-print-outline" size={22} color={C.primary} />
-          <Text style={styles.bioText}>Unlock with {bioLabel}</Text>
-        </TouchableOpacity>
-      ) : null}
 
       <TouchableOpacity style={[styles.logoutBtn, { marginBottom: insets.bottom + S.sm }]} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
@@ -155,10 +150,4 @@ const styles = StyleSheet.create({
   error: { fontSize: F.sm, color: C.debit, marginTop: S.md },
   logoutBtn: { alignItems: "center", paddingVertical: S.base },
   logoutText: { fontSize: F.md, color: C.debit, fontWeight: "600" },
-  bioBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
-    borderWidth: 1.5, borderColor: C.border, borderRadius: R.sm,
-    paddingVertical: S.md, marginHorizontal: S.xl,
-  },
-  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
 });

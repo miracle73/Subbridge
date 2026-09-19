@@ -3,9 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityInd
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
+import { normalizePhone } from "../utils/format";
 import { Biometrics } from "../utils/biometrics";
 import { SecurePin } from "../utils/storage";
 import api from "../services/api";
+import { BiometricCrypto } from "../services/biometric";
 
 /**
  * First-transaction opt-in: "Enable fingerprint for easy transactions?"
@@ -27,7 +29,7 @@ export async function shouldPromptBiometric() {
 
 export default function BiometricPrompt({ visible, onClose }) {
   const [label, setLabel] = useState("Fingerprint");
-  const [step, setStep] = useState("pin"); // "pin" -> verify PIN first, then "bio"
+  const [step, setStep] = useState("pin"); // "pin" -> "bio" -> "keys"
   const [pinCode, setPinCode] = useState("");
   const [verifyingPin, setVerifyingPin] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -46,10 +48,9 @@ export default function BiometricPrompt({ visible, onClose }) {
   const onPinChange = (t) => {
     const clean = t.replace(/\D/g, "").slice(0, 4);
     setPinCode(clean);
-    // Fire immediately on the 4th digit and close the keypad
+    setError("");
     if (clean.length === 4) {
       Keyboard.dismiss();
-      verifyPinCode(clean);
     }
   };
 
@@ -67,11 +68,13 @@ export default function BiometricPrompt({ visible, onClose }) {
         const userRes = await api.getUserProfile();
         phone = userRes.data?.phone || userRes.data?.user?.phone || "";
       }
-      const res = await api.verifyPin(phone || "", pinCode);
+      const normalizedPhone = normalizePhone(phone || "");
+      console.log("[BiometricPrompt] Verifying PIN for phone:", normalizedPhone);
+      const res = await api.verifyPin(normalizedPhone, code);
       console.log("[BiometricPrompt] PIN crosscheck:", res.success);
       if (res.success) {
         // Cache the verified PIN so biometric logins/purchases use a good value
-        await SecurePin.save(pinCode, phone || undefined);
+        await SecurePin.save(code, normalizedPhone || undefined);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setStep("bio");
       } else {
@@ -92,6 +95,17 @@ export default function BiometricPrompt({ visible, onClose }) {
       if (ok) {
         await Biometrics.setEnabled(true);
         await Biometrics.markAsked();
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setStep("keys");
+        try {
+          const publicKeyPem = await BiometricCrypto.generateKeyPair();
+          const keyResult = await api.registerBiometricKey(publicKeyPem);
+          if (!keyResult.success) {
+            console.log("[BiometricPrompt] Key registration failed:", keyResult.message);
+          }
+        } catch (keyErr) {
+          console.log("[BiometricPrompt] Key generation/registration error:", keyErr);
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         onClose && onClose(true);
       } else {
@@ -150,7 +164,7 @@ export default function BiometricPrompt({ visible, onClose }) {
                 <Text style={styles.laterText}>Not Now</Text>
               </TouchableOpacity>
             </>
-          ) : (
+          ) : step === "bio" ? (
             <>
               <Text style={styles.title}>Enable {label}?</Text>
               <Text style={styles.desc}>
@@ -167,6 +181,12 @@ export default function BiometricPrompt({ visible, onClose }) {
               <TouchableOpacity style={styles.laterBtn} onPress={dismiss} disabled={busy}>
                 <Text style={styles.laterText}>Not Now</Text>
               </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>Setting up...</Text>
+              <Text style={styles.desc}>Generating secure keys for biometric payments.</Text>
+              <ActivityIndicator size="large" color={C.primary} style={{ marginTop: S.xl }} />
             </>
           )}
         </View>

@@ -212,13 +212,17 @@ export default function HomeScreen({ navigation }) {
                 </View>
                 <View style={styles.txInfo}>
                   <Text style={styles.txLabel}>{displayDesc || tx.service || "Transaction"}</Text>
-                  <Text style={styles.txDesc}>{tx.reference || ""}</Text>
+                  <Text style={styles.txDesc}>{tx.date} {"\u00B7"} {tx.time || formatTime(tx.date || tx.createdAt)}</Text>
                 </View>
                 <View style={styles.txRight}>
                   <Text style={[styles.txAmount, { color: isCredit ? C.credit : C.debit }]}>
                     {isCredit ? "+" : "-"}{fmtShort(tx.amount)}
                   </Text>
-                  <Text style={styles.txTime}>{tx.time || formatTime(tx.date || tx.createdAt)}</Text>
+                  <View style={[styles.txStatus, { backgroundColor: statusColor + "15" }]}>
+                    <Text style={[styles.txStatusText, { color: statusColor }]}>
+                      {tx.status || (isCredit ? "Credit" : "Debit")}
+                    </Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             );
@@ -307,5 +311,6 @@ const styles = StyleSheet.create({
   txDesc: { fontSize: 11, color: C.textMuted, marginTop: 1 },
   txRight: { alignItems: "flex-end" },
   txAmount: { fontSize: 13, fontWeight: "700" },
-  txTime: { fontSize: 10, color: C.textLight, marginTop: 2 },
+  txStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: R.xs, marginTop: 4 },
+  txStatusText: { fontSize: 10, fontWeight: "600" },
 });

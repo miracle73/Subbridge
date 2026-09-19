@@ -10,6 +10,7 @@ import { C, F, R, S } from "../../utils/theme";
 import api from "../../services/api";
 import { AuthToken, SecurePin } from "../../utils/storage";
 import { Biometrics } from "../../utils/biometrics";
+import { BiometricCrypto } from "../../services/biometric";
 import BiometricPrompt from "../../components/BiometricPrompt";
 import Preloader from "../../components/Preloader";
 
@@ -53,11 +54,10 @@ export default function ProfileScreen({ navigation }) {
   const toggleBiometric = async (on) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (on) {
-      // Opens the setup modal: verifies transaction PIN first, then device biometrics
       setShowBioSetup(true);
     } else {
       Alert.alert(
-        `Disable ${bioLabel} Unlock?`,
+        `Disable ${bioLabel}?`,
         `You will need to enter your PIN manually for logins and transactions.`,
         [
           { text: "Cancel", style: "cancel" },
@@ -67,6 +67,12 @@ export default function ProfileScreen({ navigation }) {
             onPress: async () => {
               await Biometrics.setEnabled(false);
               setBioEnabled(false);
+              try {
+                await api.deregisterBiometric();
+                await BiometricCrypto.deleteKeys();
+              } catch (e) {
+                console.log("[Profile] Biometric deregister error:", e);
+              }
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             },
           },
@@ -135,7 +141,7 @@ export default function ProfileScreen({ navigation }) {
         {bioSupported ? (
           <View style={styles.row}>
             <Ionicons name="finger-print-outline" size={20} color={C.primary} />
-            <Text style={styles.rowLabel}>{bioLabel} Unlock</Text>
+            <Text style={styles.rowLabel}>{bioLabel} (Auth & Payments)</Text>
             <Switch
               value={bioEnabled}
               onValueChange={toggleBiometric}

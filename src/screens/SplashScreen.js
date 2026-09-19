@@ -30,7 +30,7 @@ export default function SplashScreen({ navigation }) {
       const loggedIn = await AuthToken.isLoggedIn();
       const onboardingDone = await OnboardingFlag.get();
       if (loggedIn) {
-        navigation.replace("Home");
+        navigation.replace("Auth");
       } else if (onboardingDone) {
         navigation.replace("Auth");
       } else {

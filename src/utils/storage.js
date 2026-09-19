@@ -68,3 +68,20 @@ export const OnboardingFlag = {
   async set() { await SecureStore.setItemAsync(ONBOARDING_KEY, "done"); },
   async get() { return (await SecureStore.getItemAsync(ONBOARDING_KEY)) === "done"; },
 };
+
+const NAV_STATE_KEY = "subbridge_nav_state";
+
+export const NavState = {
+  async save(state) {
+    try { await SecureStore.setItemAsync(NAV_STATE_KEY, JSON.stringify(state)); } catch {}
+  },
+  async get() {
+    try {
+      const raw = await SecureStore.getItemAsync(NAV_STATE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  },
+  async clear() {
+    try { await SecureStore.deleteItemAsync(NAV_STATE_KEY); } catch {}
+  },
+};

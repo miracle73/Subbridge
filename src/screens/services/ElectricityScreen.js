@@ -10,14 +10,23 @@ import { C, F, R, S } from "../../utils/theme";
 import { fmt } from "../../utils/format";
 import api from "../../services/api";
 import { enrichProviders, getElectricityLogo } from "../../utils/logos";
-import PinDots from "../../components/PinDots";
-import PinPad from "../../components/PinPad";
+import PaymentAuthSheet from "../../components/PaymentAuthSheet";
 import ProcessingOverlay from "../../components/ProcessingOverlay";
 import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
 import BeneficiaryBox from "../../components/BeneficiaryBox";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
 import { Biometrics } from "../../utils/biometrics";
+import { BiometricCrypto } from "../../services/biometric";
+
+async function signTransaction(txnId, txnData) {
+  const auth = await BiometricCrypto.authenticate();
+  if (!auth.success) return { signature: null };
+  const challengeRes = await api.requestChallenge(txnId, txnData);
+  if (!challengeRes.success) { Alert.alert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
+  const signature = await BiometricCrypto.signChallenge(challengeRes.data.challenge);
+  return { signature, transactionId: txnId, transactionData: txnData };
+}
 
 export default function ElectricityScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -29,8 +38,7 @@ export default function ElectricityScreen({ navigation }) {
   const [verified, setVerified] = useState(null);
   const [showProvider, setShowProvider] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showPin, setShowPin] = useState(false);
-  const [pin, setPin] = useState("");
+  const [showAuthSheet, setShowAuthSheet] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -93,7 +101,14 @@ export default function ElectricityScreen({ navigation }) {
       const res = await api.verifyMeter(providerCode, meterNumber, meterType);
       console.log("[Electricity] Verify result:", res.success, res.data);
       if (res.success && res.data) {
-        setVerified({ name: res.data.customerName, address: res.data.customerAddress || res.data.address });
+        const rawName = (res.data.customerName || "").trim();
+        const genericNames = ["customer", "unknown", "n/a", ""];
+        const isGeneric = genericNames.includes(rawName.toLowerCase());
+        setVerified({
+          name: isGeneric ? "Meter number not found" : rawName,
+          address: isGeneric ? "" : (res.data.customerAddress || res.data.address || ""),
+          notFound: isGeneric,
+        });
       } else {
         setError(res.message || "Verification failed");
       }
@@ -116,32 +131,56 @@ export default function ElectricityScreen({ navigation }) {
 
   const handleConfirmBuy = () => {
     setShowConfirm(false);
-    setShowPin(true);
-    setPin("");
+    setShowAuthSheet(true);
   };
 
-  const handlePinKey = (k) => {
-    if (k === "del") { setPin((p) => p.slice(0, -1)); return; }
-    if (pin.length >= 4) return;
-    const next = pin + k;
-    setPin(next);
-    if (next.length === 4) verifyAndPurchase(next);
+  const handlePinAuth = (pinValue) => {
+    verifyAndPurchase(pinValue);
+  };
+
+  const handleBiometricAuth = () => {
+    handleBioPurchase();
   };
 
   const handleBioPurchase = async () => {
-    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric(
-      `Approve ${fmt(finalAmount)} payment`
-    );
-    if (bioError || !savedPin) {
-      setError(bioError || "Biometric approval failed.");
-      return;
+    setShowAuthSheet(false);
+    setProcessing(true);
+    try {
+      const transactionId = "ELC-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
+      const transactionData = JSON.stringify({ provider: provider.code || provider.id, meterNumber, meterType, amount: finalAmount });
+      const { signature } = await signTransaction(transactionId, transactionData);
+      if (!signature) {
+        setError("Biometric authentication failed.");
+        setProcessing(false);
+        return;
+      }
+      const res = await api.purchaseElectricity({
+        provider: provider.code || provider.id,
+        meterNumber,
+        meterType,
+        amount: finalAmount,
+        signature,
+        transactionId,
+        transactionData,
+      });
+      if (res.success && res.data) {
+        setPurchaseData(res.data);
+        setSuccess(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (await shouldPromptBiometric()) setShowBioPrompt(true);
+      } else {
+        setError(res.message || "Purchase failed");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } catch (e) {
+      setError("Network error. Please try again.");
+    } finally {
+      setProcessing(false);
     }
-    setPin(savedPin);
-    verifyAndPurchase(savedPin);
   };
 
   const verifyAndPurchase = async (enteredPin) => {
-    setShowPin(false);
+    setShowAuthSheet(false);
     setProcessing(true);
 
     try {
@@ -286,6 +325,7 @@ export default function ElectricityScreen({ navigation }) {
           ))}
         </View>
 
+        {meterNumber.length >= 5 && (
         <TouchableOpacity
           style={[styles.verifyBtnSolid, verifying && { opacity: 0.7 }]}
           onPress={handleVerify}
@@ -299,6 +339,7 @@ export default function ElectricityScreen({ navigation }) {
           )}
           <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Click to Verify Meter"}</Text>
         </TouchableOpacity>
+        )}
 
         {verified && (
           <View style={styles.verifiedCard}>
@@ -412,26 +453,7 @@ export default function ElectricityScreen({ navigation }) {
         </View>
       </Modal>
 
-      <Modal visible={showPin} transparent animationType="slide">
-        <View style={styles.pinOverlay}>
-          <View style={styles.pinSheet}>
-            <Text style={styles.pinTitle}>Enter PIN to confirm</Text>
-            <Text style={styles.pinAmount}>{fmt(finalAmount)}</Text>
-            <PinDots length={4} filled={pin.length} />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <PinPad onPress={handlePinKey} />
-            {bioReady ? (
-              <TouchableOpacity style={styles.bioBtn} onPress={handleBioPurchase}>
-                <Ionicons name="finger-print-outline" size={22} color={C.primary} />
-                <Text style={styles.bioText}>Approve with {bioLabel}</Text>
-              </TouchableOpacity>
-            ) : null}
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowPin(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <PaymentAuthSheet visible={showAuthSheet} onClose={() => setShowAuthSheet(false)} onPinAuth={handlePinAuth} onBiometricAuth={handleBiometricAuth} />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
     </View>
@@ -519,19 +541,6 @@ const styles = StyleSheet.create({
   confirmCancelText: { fontSize: F.md, fontWeight: "600", color: C.textMuted },
   confirmBtn: { flex: 1, backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md, alignItems: "center" },
   confirmBtnText: { fontSize: F.md, fontWeight: "700", color: C.white },
-
-  pinOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
-  pinSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, alignItems: "center" },
-  pinTitle: { fontSize: F.lg, fontWeight: "700", color: C.text },
-  pinAmount: { fontSize: F.h2, fontWeight: "900", color: C.primary, marginVertical: S.base },
-  bioBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
-    borderWidth: 1.5, borderColor: C.primary, borderRadius: R.sm,
-    paddingVertical: S.md, paddingHorizontal: S.xl, marginTop: S.md, width: "100%",
-  },
-  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
-  cancelBtn: { paddingVertical: S.md },
-  cancelText: { fontSize: F.md, color: C.textMuted, fontWeight: "600" },
 
   successWrap: { flex: 1, alignItems: "center", padding: S.xl, paddingTop: S.xxl },
   successIconWrap: {

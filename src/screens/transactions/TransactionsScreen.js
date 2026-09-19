@@ -47,6 +47,13 @@ export default function TransactionsScreen({ navigation }) {
     if (filter === "Debit") return tx.type === "debit";
     if (filter === "Credit") return tx.type === "credit";
     return true;
+  }).sort((a, b) => {
+    const dateA = a.date || "";
+    const dateB = b.date || "";
+    if (dateA !== dateB) return dateB.localeCompare(dateA);
+    const timeA = a.time || "";
+    const timeB = b.time || "";
+    return timeA.localeCompare(timeB);
   });
 
   if (loading) return <Preloader />;
@@ -94,8 +101,7 @@ export default function TransactionsScreen({ navigation }) {
                 </View>
                 <View style={styles.txInfo}>
                   <Text style={styles.txLabel}>{displayDesc || tx.category}</Text>
-                  <Text style={styles.txDesc}>{tx.reference || ""}</Text>
-                  <Text style={styles.txDate}>{tx.date} {"\u00B7"} {tx.time}</Text>
+                  <Text style={styles.txDesc}>{tx.date} {"\u00B7"} {tx.time}</Text>
                 </View>
                 <View style={styles.txRight}>
                   <Text style={[styles.txAmount, { color: isCredit ? C.credit : C.debit }]}>

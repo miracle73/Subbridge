@@ -60,9 +60,10 @@ export default function AuthScreen({ navigation }) {
       console.log("[Auth] PIN login result:", result.success, result.message);
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // This PIN just verified against the server — persist it for biometric use
         await SecurePin.save(value, currentPhone);
         const user = result.data?.user;
+        const fullName = user ? `${user.firstName || user.firstname || ""} ${user.lastName || user.lastname || ""}`.trim() : "";
+        if (fullName) await SecurePin.setName(fullName);
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone: currentPhone });
         } else {
@@ -106,9 +107,10 @@ export default function AuthScreen({ navigation }) {
       const result = await api.signIn(cleanPhone, password);
       console.log("[Auth] Password login result:", result.success, result.message);
       if (result.success) {
-        // Save phone only — never store the password as the PIN
         await SecurePin.save(null, cleanPhone);
         const user = result.data?.user;
+        const fullName = user ? `${user.firstName || user.firstname || ""} ${user.lastName || user.lastname || ""}`.trim() : "";
+        if (fullName) await SecurePin.setName(fullName);
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone: cleanPhone });
         } else {

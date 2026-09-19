@@ -7,19 +7,29 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../../utils/theme";
-import { fmt, fmtShort } from "../../utils/format";
+import { fmt, fmtShort, detectNetworkFromPhone, normalizePhone } from "../../utils/format";
 import api from "../../services/api";
 import { enrichProviders, getNetworkLogo } from "../../utils/logos";
 import Preloader from "../../components/Preloader";
-import PinDots from "../../components/PinDots";
-import PinPad from "../../components/PinPad";
+import PaymentAuthSheet from "../../components/PaymentAuthSheet";
 import ProcessingOverlay from "../../components/ProcessingOverlay";
 import ServiceBanner from "../../components/ServiceBanner";
 import ContactPicker from "../../components/ContactPicker";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
 import { Biometrics } from "../../utils/biometrics";
+import { BiometricCrypto } from "../../services/biometric";
+import { SecurePin } from "../../utils/storage";
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
+
+async function signTransaction(txnId, txnData) {
+  const auth = await BiometricCrypto.authenticate();
+  if (!auth.success) return { signature: null };
+  const challengeRes = await api.requestChallenge(txnId, txnData);
+  if (!challengeRes.success) { Alert.alert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
+  const signature = await BiometricCrypto.signChallenge(challengeRes.data.challenge);
+  return { signature, transactionId: txnId, transactionData: txnData };
+}
 
 export default function AirtimeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -30,8 +40,7 @@ export default function AirtimeScreen({ navigation }) {
   const [customAmount, setCustomAmount] = useState("");
   const [showNetwork, setShowNetwork] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showPin, setShowPin] = useState(false);
-  const [pin, setPin] = useState("");
+  const [showAuthSheet, setShowAuthSheet] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -49,6 +58,12 @@ export default function AirtimeScreen({ navigation }) {
       setBioReady(a && e);
     });
     Biometrics.label().then(setBioLabel);
+    SecurePin.getPhone().then((p) => {
+      if (p) {
+        const localNum = p.startsWith("234") ? "0" + p.slice(3) : p;
+        setPhone(localNum);
+      }
+    });
   }, []);
 
   const loadData = async () => {
@@ -84,6 +99,21 @@ export default function AirtimeScreen({ navigation }) {
     setShowNetwork(false);
   };
 
+  const handlePhoneChange = (text) => {
+    const normalized = normalizePhone(text);
+    setPhone(normalized);
+    if (normalized.length >= 4) {
+      const detected = detectNetworkFromPhone(normalized);
+      if (detected && networks.length > 0) {
+        const match = networks.find((n) => n.id === detected);
+        if (match) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setNetwork(match);
+        }
+      }
+    }
+  };
+
   const handleAmount = (a) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setAmount(a);
@@ -103,32 +133,10 @@ export default function AirtimeScreen({ navigation }) {
 
   const handleConfirmBuy = () => {
     setShowConfirm(false);
-    setShowPin(true);
-    setPin("");
-  };
-
-  const handlePinKey = (k) => {
-    if (k === "del") { setPin((p) => p.slice(0, -1)); return; }
-    if (pin.length >= 4) return;
-    const next = pin + k;
-    setPin(next);
-    if (next.length === 4) verifyAndPurchase(next);
-  };
-
-  const handleBioPurchase = async () => {
-    const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric(
-      `Approve ${fmt(finalAmount)} payment`
-    );
-    if (bioError || !savedPin) {
-      setError(bioError || "Biometric approval failed.");
-      return;
-    }
-    setPin(savedPin);
-    verifyAndPurchase(savedPin);
+    setShowAuthSheet(true);
   };
 
   const verifyAndPurchase = async (pinValue) => {
-    setShowPin(false);
     setProcessing(true);
 
     try {
@@ -249,7 +257,7 @@ export default function AirtimeScreen({ navigation }) {
             <TextInput
               style={styles.phoneInput}
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={handlePhoneChange}
               placeholder="0812 345 6789"
               keyboardType="phone-pad"
               maxLength={11}
@@ -263,7 +271,7 @@ export default function AirtimeScreen({ navigation }) {
         <ContactPicker
           visible={showContacts}
           onClose={() => setShowContacts(false)}
-          onSelect={(num) => setPhone(num)}
+          onSelect={(num) => handlePhoneChange(num)}
         />
 
         <Text style={[styles.label, { marginTop: S.lg }]}>Amount</Text>
@@ -370,27 +378,43 @@ export default function AirtimeScreen({ navigation }) {
         </View>
       </Modal>
 
-      {/* PIN Modal */}
-      <Modal visible={showPin} transparent animationType="slide">
-        <View style={styles.pinOverlay}>
-          <View style={styles.pinSheet}>
-            <Text style={styles.pinTitle}>Enter PIN to confirm</Text>
-            <Text style={styles.pinAmount}>{fmt(finalAmount)}</Text>
-            <PinDots length={4} filled={pin.length} />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <PinPad onPress={handlePinKey} />
-            {bioReady ? (
-              <TouchableOpacity style={styles.bioBtn} onPress={handleBioPurchase}>
-                <Ionicons name="finger-print-outline" size={22} color={C.primary} />
-                <Text style={styles.bioText}>Approve with {bioLabel}</Text>
-              </TouchableOpacity>
-            ) : null}
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowPin(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <PaymentAuthSheet
+        visible={showAuthSheet}
+        onClose={() => setShowAuthSheet(false)}
+        onPinAuth={async (pin) => {
+          setShowAuthSheet(false);
+          await verifyAndPurchase(pin);
+        }}
+        onBiometricAuth={async () => {
+          const cleanPhone = "234" + phone.replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
+          const txnId = "AIR-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
+          const txnData = JSON.stringify({ phone: cleanPhone, network: network?.id || "mtn", amount: finalAmount });
+          const { signature, transactionId, transactionData } = await signTransaction(txnId, txnData);
+          if (!signature) return;
+          setProcessing(true);
+          try {
+            const result = await api.post("/api/airtime/purchase/", {
+              phone: cleanPhone,
+              network: network?.id || "mtn",
+              amount: finalAmount,
+              signature,
+              transactionId,
+              transactionData,
+            });
+            if (result.success) {
+              setSuccess(true);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+              setError(result.message || "Transaction failed.");
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+          } catch (err) {
+            setError("Network error.");
+          } finally {
+            setProcessing(false);
+          }
+        }}
+      />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
     </View>
