@@ -125,6 +125,7 @@ export default function ProfileScreen({ navigation }) {
     ["SECURITY", [
       { icon: "lock-closed-outline", label: "Change PIN", screen: "ChangePin" },
       { icon: "key-outline", label: "Forgot PIN", screen: "ForgotPassword", params: { mode: "pin", phone: user?.phone || "", email: user?.email || "" } },
+      { icon: "shield-outline", label: "Change password", screen: "ForgotPassword", params: { mode: "password", phone: user?.phone || "", email: user?.email || "" } },
     ]],
     ["HELP", [
       { icon: "chatbubble-ellipses-outline", label: "Support", screen: "Support" },
@@ -166,8 +167,7 @@ export default function ProfileScreen({ navigation }) {
                   <View style={[st.row, st.rowDivider]}>
                     <TouchableOpacity
                       style={st.rowMain}
-                      disabled={!(bioEnabled && !bioKeys)}
-                      activeOpacity={bioEnabled && !bioKeys ? 0.6 : 1}
+                      activeOpacity={0.7}
                       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate("BiometricSetup"); }}
                     >
                       <View style={st.rowIcon}><Ionicons name="finger-print-outline" size={18} color={C.primary} /></View>
