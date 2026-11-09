@@ -1,0 +1,245 @@
+{
+  "project": "SubBridge",
+  "update": "Referral system + new features — backend implementation guide",
+  "date": "2026-10-16",
+  "base": {
+    "baseUrl": "https://subbridge.connectbridge.com.ng",
+    "auth": {
+      "header": "Authorization: Token <token>",
+      "note": "Same token issued by /api/sign-in-user/ and /api/sign-in-with-pin/ — no new auth needed"
+    },
+    "responseEnvelope": {
+      "success": true,
+      "message": "",
+      "data": {}
+    },
+    "conventions": [
+      "Django-style trailing slashes on all paths",
+      "All amounts in Naira (number)",
+      "Timestamps ISO-8601 UTC",
+      "Every new response uses the existing { success, message, data } envelope (same as /api/support/, /api/wallet/{id}/)"
+    ]
+  },
+  "features": {
+    "referral": {
+      "status": "Frontend currently renders demo JSON (src/utils/mockData.js -> MOCK_REWARDS). Wire these endpoints when ready and the UI changes nothing except dropping the mock.",
+      "concept": "Every user gets a unique referral code + link. A friend who signs up with that code is linked (User.referredBy). Forever after, whenever that friend pays any bill (airtime/data/cable/electricity), the referrer automatically earns a percentage commission into their referral balance. The referrer withdraws the bonus to wallet or bank from the Rewards page.",
+      "commissionRates": {
+        "unit": "percent of the bill amount",
+        "min": 0.1,
+        "max": 0.7,
+        "defaults": {
+          "airtime": 0.3,
+          "data": 0.5,
+          "cable": 0.2,
+          "electricity": 0.7
+        },
+        "note": "Admin-editable later (recommended: store in a settings table, clamp any value to 0.1..0.7)"
+      },
+      "dataModels": {
+        "User": {
+          "referralCode": "string, unique, auto-generated at signup (e.g. CHIDY2024)",
+          "referredBy": "FK -> User, nullable — set once at signup from referralCode, never changes"
+        },
+        "ReferralEarning": {
+          "referrer": "FK User (who earns)",
+          "payer": "FK User (the referred friend who paid the bill)",
+          "product": "airtime | data | cable | electricity",
+          "productAmount": "number — the bill amount that generated the earning",
+          "rate": "number — percent used (0.1..0.7)",
+          "amount": "number — commission = productAmount * rate / 100",
+          "status": "pending | paid",
+          "createdAt": "datetime"
+        },
+        "ReferralWithdrawal": {
+          "user": "FK User",
+          "amount": "number",
+          "method": "wallet | bank",
+          "bankName": "string, nullable",
+          "accountNumber": "string, nullable",
+          "status": "pending | paid | failed",
+          "createdAt": "datetime"
+        }
+      },
+      "endpoints": [
+        {
+          "purpose": "Signup with referral code (extend the EXISTING endpoint — do not create a new one)",
+          "method": "POST",
+          "path": "/api/sign-up/",
+          "change": "Accept optional field referralCode. If present: look up User by referralCode — not found -> { success:false, message:'Invalid referral code' }. If found, set new user's referredBy = that user, and generate the new user's own unique referralCode.",
+          "request": {
+            "firstName": "Chidi",
+            "lastName": "Okoro",
+            "phone": "08012345678",
+            "email": "chidi@example.com",
+            "password": "secret",
+            "referralCode": "CHIDY2024"
+          },
+          "response": {
+            "success": true,
+            "message": "Account created",
+            "data": {
+              "user": { "id": 13254, "firstName": "Chidi", "lastname": "Okoro", "referralCode": "CHIDI2024" }
+            }
+          }
+        },
+        {
+          "purpose": "Rewards page + home card referral row (single call for the whole dashboard)",
+          "method": "GET",
+          "path": "/api/referral/",
+          "auth": "required",
+          "response": {
+            "success": true,
+            "message": "",
+            "data": {
+              "referralBalance": 12500,
+              "totalEarnings": 48750,
+              "totalUsers": 14,
+              "monthEarnings": 6500,
+              "referralLink": "https://subbridge.connectbridge.com.ng/ref/CHIDY2024",
+              "referralCode": "CHIDY2024",
+              "commissionRates": { "airtime": 0.3, "data": 0.5, "cable": 0.2, "electricity": 0.7 },
+              "commission": { "perReferral": 500, "note": "One-time bonus when a referred friend completes their first bill payment" },
+              "howItWorks": [
+                "Share your referral link or code with friends and family.",
+                "They sign up on SubBridge and verify their account.",
+                "You earn a bonus once they complete their first bill payment.",
+                "Withdraw your bonus to your wallet or bank anytime."
+              ],
+              "recentEarnings": [
+                { "id": 1, "name": "Emeka O.", "product": "airtime", "productAmount": 100000, "amount": 300, "date": "2026-10-14T10:24:00Z", "status": "paid" },
+                { "id": 2, "name": "Fatima B.", "product": "data", "productAmount": 4000, "amount": 20, "date": "2026-10-12T09:15:00Z", "status": "paid" }
+              ]
+            }
+          }
+        },
+        {
+          "purpose": "Recent earnings, paged (optional — only if the list outgrows the dashboard response)",
+          "method": "GET",
+          "path": "/api/referral/earnings/?page=0&size=20",
+          "auth": "required",
+          "response": {
+            "success": true,
+            "message": "",
+            "data": {
+              "earnings": [
+                { "id": 3, "name": "Tunde A.", "product": "electricity", "productAmount": 50000, "amount": 350, "date": "2026-10-08T18:45:00Z", "status": "paid" }
+              ],
+              "total": 37
+            }
+          }
+        },
+        {
+          "purpose": "Withdraw Bonus — Rewards page button, sheet offers Transfer to Wallet / Transfer to Bank",
+          "method": "POST",
+          "path": "/api/referral/withdraw/",
+          "auth": "required",
+          "requestTransferToWallet": {
+            "amount": 12500,
+            "method": "wallet"
+          },
+          "requestTransferToBank": {
+            "amount": 5000,
+            "method": "bank",
+            "bankName": "GTBank",
+            "accountNumber": "0123456789"
+          },
+          "rules": [
+            "amount must be > 0 and <= user.referralBalance",
+            "method wallet: debit referralBalance, credit wallet balance (same wallet as /api/wallet/{id}/), status=paid",
+            "method bank: debit referralBalance, create ReferralWithdrawal with status=pending (admin payout queue), status=pending"
+          ],
+          "response": {
+            "success": true,
+            "message": "Withdrawal processing",
+            "data": { "reference": "RFW24101401", "status": "pending", "newBalance": 7500 }
+          }
+        }
+      ],
+      "integrationWithOtherFeatures": {
+        "goal": "Referral earnings must be CONTINUOUS — every bill paid by a referred user earns the referrer automatically, with zero frontend changes to the purchase flows.",
+        "hook": "Run this inside every purchase handler AFTER the purchase succeeds (HTTP success already returned to wallet debit done):",
+        "purchaseEndpoints": [
+          "/api/airtime/purchase/",
+          "/api/data/purchase/",
+          "/api/cable/purchase/",
+          "/api/electricity/purchase/"
+        ],
+        "steps": [
+          "1. buyer = the user who just paid. If buyer.referredBy is null -> stop (nothing to do).",
+          "2. rate = commissionRates[product] (airtime|data|cable|electricity), clamped to 0.1..0.7.",
+          "3. commission = round(productAmount * rate / 100, 2).",
+          "4. Create ReferralEarning(referrer=buyer.referredBy, payer=buyer, product, productAmount, rate, amount=commission, status='paid').",
+          "5. referrer.referralBalance += commission; referrer.totalEarnings += commission; referrer.monthEarnings += commission.",
+          "6. Optional one-time first-payment bonus: if this is buyer's FIRST successful purchase ever, also credit referrer with commission.perReferral (default 500)."
+        ],
+        "monthlyReset": "Cron on the 1st of each month: monthEarnings = 0 for all users. referralBalance and totalEarnings are never reset.",
+        "totalUsers": "COUNT of users where referredBy = this user (computed at signup; can be a denormalized counter incremented on each referred signup)."
+      },
+      "frontendWiring": {
+        "homeCard": "HomeScreen 'Referral' row + Withdraw Bonus button -> Rewards route; row shows data.referralBalance",
+        "rewardsPage": "RewardsScreen maps data -> 2x2 stats grid, referral link + code (copy), Share (RN Share), How it works, Referral commission, Referral commission rates box, Recent earnings (product + productAmount + amount)",
+        "withdraw": "Sticky Withdraw Bonus button -> sheet (Transfer to Wallet / Transfer to Bank) -> POST /api/referral/withdraw/"
+      }
+    },
+    "addMoney": {
+      "automatedFunding": {
+        "status": "live — no backend work needed",
+        "source": "GET /api/wallet/{userId}/ already returns bankName + accountNumber (the dedicated virtual account). The Add Money sheet displays these with a copy button."
+      },
+      "oneTimeFunding": {
+        "status": "coming soon — frontend shows a 'Coming soon' row, tapping it shows a toast",
+        "plannedEndpoint": {
+          "purpose": "Issue a short-lived one-time account for a specific amount",
+          "method": "POST",
+          "path": "/api/wallet/one-time-funding/",
+          "auth": "required",
+          "request": { "amount": 1000 },
+          "response": {
+            "success": true,
+            "message": "",
+            "data": {
+              "accountNumber": "9912345678",
+              "bankName": "Providus Bank",
+              "expiresAt": "2026-10-16T18:00:00Z",
+              "reference": "OTF24101601"
+            }
+          },
+          "creditRule": "When an inflow hits the one-time account before expiresAt, credit the wallet by the received amount and mark the reference settled."
+        }
+      }
+    },
+    "airtimeToCash": {
+      "status": "Frontend composes a professional WhatsApp message (user's SubBridge name, network, amount, bank name, account number, account name) and opens wa.me/<support-whatsapp>?text=... using the number from GET /api/support/. No API required. Optional endpoint below if you want server-side logging + admin queue.",
+      "optionalEndpoint": {
+        "purpose": "Log airtime-to-cash requests (admin processes payout offline)",
+        "method": "POST",
+        "path": "/api/airtime-to-cash/",
+        "auth": "required",
+        "request": {
+          "network": "mtn",
+          "amount": 5000,
+          "bankName": "GTBank",
+          "accountNumber": "0123456789",
+          "accountName": "Chidi Okoro"
+        },
+        "response": {
+          "success": true,
+          "message": "Request received",
+          "data": { "reference": "ATC24101601", "status": "pending" }
+        }
+      }
+    }
+  },
+  "deliveryOrder": [
+    "1. Extend /api/sign-up/ with optional referralCode + generate referralCode for every new user (backfill existing users too)",
+    "2. GET /api/referral/ (dashboard — unlocks the whole Rewards page + home card)",
+    "3. Commission hooks inside the 4 purchase endpoints (makes earnings continuous)",
+    "4. POST /api/referral/withdraw/ (Transfer to Wallet first — easiest, then bank payout queue)",
+    "5. Optional: /api/airtime-to-cash/ logging + one-time funding endpoint"
+  ],
+  "frontendNotes": {
+    "swapToLive": "When endpoints are ready: in RewardsScreen replace `import { MOCK_REWARDS }` with api.getReferral() (add it to api.js like the other endpoints); HomeScreen referral row reads the same response. Everything else stays.",
+    "airtimeToCash": "Already live on WhatsApp — the optional endpoint is only for your records."
+  }
+}

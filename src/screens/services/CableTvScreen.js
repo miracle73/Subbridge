@@ -16,8 +16,11 @@ import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
 import BeneficiaryBox from "../../components/BeneficiaryBox";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
+import PinErrorModal from "../../components/PinErrorModal";
 import { Biometrics } from "../../utils/biometrics";
 import { BiometricCrypto } from "../../services/biometric";
+import { SecurePin } from "../../utils/storage";
+import Toast from "../../components/Toast";
 
 async function signTransaction(txnId, txnData) {
   const auth = await BiometricCrypto.authenticate();
@@ -39,6 +42,7 @@ export default function CableTvScreen({ navigation }) {
   const [showProvider, setShowProvider] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showAuthSheet, setShowAuthSheet] = useState(false);
+  const [authSheetKey, setAuthSheetKey] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -48,6 +52,12 @@ export default function CableTvScreen({ navigation }) {
   const [bioReady, setBioReady] = useState(false);
   const [bioLabel, setBioLabel] = useState("Fingerprint");
   const [showBioPrompt, setShowBioPrompt] = useState(false);
+  const [showPinError, setShowPinError] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState("error");
+
+  const showToast = (msg, type = "error") => { setToastType(type); setToastMsg(msg); };
+  const fail = (msg) => { setError(msg); showToast(msg, "error"); };
 
   useEffect(() => {
     loadData();
@@ -134,10 +144,10 @@ export default function CableTvScreen({ navigation }) {
           notFound: isGeneric,
         });
       } else {
-        setError(result.message || "Verification failed. Please check the smartcard number.");
+        fail(result.message || "Verification failed. Please check the smartcard number.");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      fail("Network error. Please try again.");
     } finally {
       setVerifying(false);
     }
@@ -146,7 +156,7 @@ export default function CableTvScreen({ navigation }) {
   const handleBuy = () => {
     if (!verified) return setError("Verify smartcard first");
     if (!plan) return setError("Select a plan");
-    if (balance < plan.amount) return setError("Insufficient wallet balance");
+    if (balance < plan.amount) return fail("Insufficient wallet balance");
     setError("");
     setShowConfirm(true);
   };
@@ -164,10 +174,7 @@ export default function CableTvScreen({ navigation }) {
     const txnId = "CBL-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
     const txnData = JSON.stringify({ provider: provider?.id, smartcardNumber: smartcard, planId: plan?.id, amount: plan?.amount });
     const { signature, transactionId, transactionData } = await signTransaction(txnId, txnData);
-    if (!signature) {
-      setError("Biometric approval failed.");
-      return;
-    }
+    if (!signature) return false;
     setShowAuthSheet(false);
     setProcessing(true);
     try {
@@ -186,14 +193,15 @@ export default function CableTvScreen({ navigation }) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
-        setError(result.message || "Transaction failed. Please try again.");
+        fail(result.message || "Transaction failed. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      fail("Network error. Please try again.");
     } finally {
       setProcessing(false);
     }
+    return true;
   };
 
   const verifyAndPurchase = async (pinValue) => {
@@ -208,9 +216,9 @@ export default function CableTvScreen({ navigation }) {
       console.log("[Cable] PIN verify:", verifyRes.success, verifyRes.message);
 
       if (!verifyRes.success) {
-        setError("Incorrect PIN. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setProcessing(false);
+        setShowPinError(true);
         return;
       }
 
@@ -229,14 +237,22 @@ export default function CableTvScreen({ navigation }) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
-        setError(result.message || "Transaction failed. Please try again.");
+        fail(result.message || "Transaction failed. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      fail("Network error. Please try again.");
     } finally {
       setProcessing(false);
     }
+  };
+
+  const goForgotPin = async () => {
+    setShowPinError(false);
+    setShowAuthSheet(false);
+    let p = "";
+    try { p = (await SecurePin.getPhone()) || ""; } catch (e) {}
+    navigation.navigate("ForgotPassword", { mode: "pin", phone: p });
   };
 
   if (loading) return <Preloader />;
@@ -285,6 +301,7 @@ export default function CableTvScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
       <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
@@ -299,7 +316,7 @@ export default function CableTvScreen({ navigation }) {
         subtitle="DStv, GOtv & StarTimes \u00B7 Instant activation"
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Provider & Smartcard</Text>
         <View style={styles.comboRow}>
           <TouchableOpacity style={styles.providerLogoBtn} onPress={() => setShowProvider(true)}>
@@ -378,13 +395,22 @@ export default function CableTvScreen({ navigation }) {
 
         <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        {verified && plan && (
-          <TouchableOpacity style={styles.btn} onPress={handleBuy}>
-            <Text style={styles.btnText}>Subscribe - {fmt(plan.amount)}</Text>
-          </TouchableOpacity>
-        )}
+        <View style={{ height: 90 + insets.bottom }} />
       </ScrollView>
+
+      {/* Buy button - fixed above bottom nav */}
+      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
+        <TouchableOpacity
+          style={[styles.btn, !(verified && plan) && styles.btnInactive]}
+          onPress={handleBuy}
+          disabled={!(verified && plan)}
+          activeOpacity={verified && plan ? 0.6 : 1}
+        >
+          <Text style={[styles.btnText, !(verified && plan) && styles.btnTextInactive]}>
+            {verified && plan ? `Subscribe - ${fmt(plan.amount)}` : "Verify smartcard & select plan"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <Modal visible={showProvider} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowProvider(false)}>
@@ -449,10 +475,18 @@ export default function CableTvScreen({ navigation }) {
       </Modal>
 
       <PaymentAuthSheet
+        key={authSheetKey}
         visible={showAuthSheet}
         onClose={() => setShowAuthSheet(false)}
         onPinAuth={handlePinAuth}
         onBiometricAuth={handleBiometricAuth}
+        onForgotPin={goForgotPin}
+      />
+
+      <PinErrorModal
+        visible={showPinError}
+        onTryAgain={() => { setShowPinError(false); setAuthSheetKey((k) => k + 1); setShowAuthSheet(true); }}
+        onForgotPin={goForgotPin}
       />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
@@ -511,10 +545,16 @@ const styles = StyleSheet.create({
 
   balance: { fontSize: F.sm, color: C.textMuted, marginTop: S.base, textAlign: "center" },
   error: { fontSize: F.sm, color: C.debit, textAlign: "center", marginTop: S.sm },
-  btn: { backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2, alignItems: "center", marginTop: S.xl },
+  btn: { backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2, alignItems: "center", marginTop: 0 },
   btnInactive: { backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border },
   btnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
   btnTextInactive: { color: C.textMuted, fontSize: F.lg, fontWeight: "600" },
+  buyBar: {
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    paddingHorizontal: S.lg, paddingTop: S.sm,
+    paddingBottom: S.md, backgroundColor: C.white,
+    borderTopWidth: 1, borderTopColor: C.border,
+  },
 
   modalOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl },

@@ -84,6 +84,13 @@ export const Biometrics = {
     } catch {}
   },
 
+  /** Full local reset — clears the enabled toggle and the asked flag.
+   *  Called on logout so the next account must set up biometrics fresh. */
+  async reset() {
+    try { await SecureStore.deleteItemAsync(ENABLED_KEY); } catch {}
+    try { await SecureStore.deleteItemAsync(ASKED_KEY); } catch {}
+  },
+
   /**
    * Full flow for PIN-gated actions: biometric must be enabled and a PIN
    * saved, then the user authenticates and the saved PIN is returned.

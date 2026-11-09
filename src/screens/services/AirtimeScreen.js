@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Platform,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Platform, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,9 +16,11 @@ import ProcessingOverlay from "../../components/ProcessingOverlay";
 import ServiceBanner from "../../components/ServiceBanner";
 import ContactPicker from "../../components/ContactPicker";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
+import PinErrorModal from "../../components/PinErrorModal";
 import { Biometrics } from "../../utils/biometrics";
 import { BiometricCrypto } from "../../services/biometric";
 import { SecurePin } from "../../utils/storage";
+import Toast from "../../components/Toast";
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
 
@@ -41,6 +43,7 @@ export default function AirtimeScreen({ navigation }) {
   const [showNetwork, setShowNetwork] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showAuthSheet, setShowAuthSheet] = useState(false);
+  const [authSheetKey, setAuthSheetKey] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -51,6 +54,12 @@ export default function AirtimeScreen({ navigation }) {
   const [bioReady, setBioReady] = useState(false);
   const [bioLabel, setBioLabel] = useState("Fingerprint");
   const [showBioPrompt, setShowBioPrompt] = useState(false);
+  const [showPinError, setShowPinError] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState("error");
+
+  const showToast = (msg, type = "error") => { setToastType(type); setToastMsg(msg); };
+  const fail = (msg) => { setError(msg); showToast(msg, "error"); };
 
   useEffect(() => {
     loadData();
@@ -65,6 +74,16 @@ export default function AirtimeScreen({ navigation }) {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (phone.length < 4 || networks.length === 0) return;
+    const detected = detectNetworkFromPhone(phone);
+    if (!detected) return;
+    const match = networks.find((n) => n.id === detected);
+    if (match && network?.id !== match.id) {
+      setNetwork(match);
+    }
+  }, [phone, networks]);
 
   const loadData = async () => {
     try {
@@ -126,7 +145,7 @@ export default function AirtimeScreen({ navigation }) {
     if (!network) return setError("Select a network");
     if (!phone || phone.length < 10) return setError("Enter a valid phone number");
     if (!finalAmount || finalAmount < 50) return setError("Enter a valid amount");
-    if (balance < finalAmount) return setError("Insufficient wallet balance");
+    if (balance < finalAmount) return fail("Insufficient wallet balance");
     setError("");
     setShowConfirm(true);
   };
@@ -151,9 +170,9 @@ export default function AirtimeScreen({ navigation }) {
       console.log("[Airtime] PIN verify:", verifyRes.success, verifyRes.message);
 
       if (!verifyRes.success) {
-        setError("Incorrect PIN. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setProcessing(false);
+        setShowPinError(true);
         return;
       }
 
@@ -171,14 +190,22 @@ export default function AirtimeScreen({ navigation }) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
-        setError(result.message || "Transaction failed. Please try again.");
+        fail(result.message || "Transaction failed. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      fail("Network error. Please try again.");
     } finally {
       setProcessing(false);
     }
+  };
+
+  const goForgotPin = async () => {
+    setShowPinError(false);
+    setShowAuthSheet(false);
+    let p = "";
+    try { p = (await SecurePin.getPhone()) || ""; } catch (e) {}
+    navigation.navigate("ForgotPassword", { mode: "pin", phone: p || phone || "" });
   };
 
   if (loading) return <Preloader />;
@@ -227,6 +254,7 @@ export default function AirtimeScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
       <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
@@ -241,7 +269,7 @@ export default function AirtimeScreen({ navigation }) {
         subtitle="Instant airtime for all networks"
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Network & Phone Number</Text>
         <View style={styles.comboRow}>
           <TouchableOpacity style={styles.networkLogoBtn} onPress={() => setShowNetwork(true)}>
@@ -301,7 +329,11 @@ export default function AirtimeScreen({ navigation }) {
 
         <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        <View style={{ height: 90 + insets.bottom }} />
+      </ScrollView>
 
+      {/* Buy button - fixed above bottom nav */}
+      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
         {(() => {
           const ready = network && phone.length >= 10 && finalAmount > 0;
           return (
@@ -317,7 +349,7 @@ export default function AirtimeScreen({ navigation }) {
             </TouchableOpacity>
           );
         })()}
-      </ScrollView>
+      </View>
 
       {/* Network Picker Modal */}
       <Modal visible={showNetwork} transparent animationType="slide">
@@ -379,8 +411,10 @@ export default function AirtimeScreen({ navigation }) {
       </Modal>
 
       <PaymentAuthSheet
+        key={authSheetKey}
         visible={showAuthSheet}
         onClose={() => setShowAuthSheet(false)}
+        onForgotPin={goForgotPin}
         onPinAuth={async (pin) => {
           setShowAuthSheet(false);
           await verifyAndPurchase(pin);
@@ -390,7 +424,7 @@ export default function AirtimeScreen({ navigation }) {
           const txnId = "AIR-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
           const txnData = JSON.stringify({ phone: cleanPhone, network: network?.id || "mtn", amount: finalAmount });
           const { signature, transactionId, transactionData } = await signTransaction(txnId, txnData);
-          if (!signature) return;
+          if (!signature) return false;
           setProcessing(true);
           try {
             const result = await api.post("/api/airtime/purchase/", {
@@ -405,15 +439,22 @@ export default function AirtimeScreen({ navigation }) {
               setSuccess(true);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } else {
-              setError(result.message || "Transaction failed.");
+              fail(result.message || "Transaction failed.");
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             }
           } catch (err) {
-            setError("Network error.");
+            fail("Network error.");
           } finally {
             setProcessing(false);
           }
+          return true;
         }}
+      />
+
+      <PinErrorModal
+        visible={showPinError}
+        onTryAgain={() => { setShowPinError(false); setAuthSheetKey((k) => k + 1); setShowAuthSheet(true); }}
+        onForgotPin={goForgotPin}
       />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
@@ -491,13 +532,19 @@ const styles = StyleSheet.create({
   error: { fontSize: F.sm, color: C.debit, textAlign: "center", marginTop: S.sm },
   btn: {
     backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2,
-    alignItems: "center", marginTop: S.xl,
+    alignItems: "center", marginTop: 0,
   },
   btnInactive: {
     backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
   },
   btnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
   btnTextInactive: { color: C.textMuted, fontSize: F.lg, fontWeight: "600" },
+  buyBar: {
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    paddingHorizontal: S.lg, paddingTop: S.sm,
+    paddingBottom: S.md, backgroundColor: C.white,
+    borderTopWidth: 1, borderTopColor: C.border,
+  },
 
   modalOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl, paddingTop: S.lg },

@@ -23,7 +23,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1A3CE8"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.subbridge.app",
       "versionCode": 1,
@@ -37,6 +37,13 @@
       ]
     },
     "plugins": [
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development",
+          "smallIconAccentColor": "#1A3CE8"
+        }
+      ],
       [
         "expo-local-authentication",
         {
@@ -60,7 +67,8 @@
         }
       ],
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "react-native-quick-crypto"
     ],
     "platforms": [
       "android",

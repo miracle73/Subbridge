@@ -4,13 +4,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
-import { SecurePin, AuthToken } from "../utils/storage";
+import { SecurePin, AuthToken, NavState } from "../utils/storage";
 import { Biometrics } from "../utils/biometrics";
+import { resetBiometricState } from "../services/biometric";
 import PinDots from "./PinDots";
 import PinPad from "./PinPad";
 import api from "../services/api";
 
-export default function AuthLock({ onUnlock }) {
+export default function AuthLock({ onUnlock, onLogout, onForgotPin }) {
   const insets = useSafeAreaInsets();
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
@@ -92,10 +93,14 @@ export default function AuthLock({ onUnlock }) {
   };
 
   const handleLogout = async () => {
+    // Wipe biometric setup first — server deregister needs the live token
+    await resetBiometricState();
     await api.logout();
     await SecurePin.clear();
     await AuthToken.clear();
-    onUnlock();
+    await NavState.clear();
+    if (onLogout) onLogout();
+    else onUnlock();
   };
 
   return (
@@ -130,6 +135,12 @@ export default function AuthLock({ onUnlock }) {
         <PinPad onPress={handleKey} onBiometric={bioReady ? loginWithBiometric : undefined} />
       </View>
 
+      {onForgotPin ? (
+        <TouchableOpacity style={styles.forgotPin} onPress={onForgotPin}>
+          <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+        </TouchableOpacity>
+      ) : null}
+
       <TouchableOpacity style={[styles.logoutBtn, { marginBottom: insets.bottom + S.sm }]} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -148,6 +159,8 @@ const styles = StyleSheet.create({
   title: { fontSize: F.h3, fontWeight: "800", color: C.text, marginTop: S.base, marginBottom: S.sm },
   subtitle: { fontSize: F.md, color: C.textMuted, marginBottom: S.xl },
   error: { fontSize: F.sm, color: C.debit, marginTop: S.md },
+  forgotPin: { alignItems: "center", paddingVertical: S.sm },
+  forgotPinText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
   logoutBtn: { alignItems: "center", paddingVertical: S.base },
   logoutText: { fontSize: F.md, color: C.debit, fontWeight: "600" },
 });

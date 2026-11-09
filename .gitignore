@@ -10,4 +10,9 @@ dist/
 web-build/
 .env
 .env.local
-"Untitled.png"  
+Untitled.png
+test-apis.js
+test-summary.txt
+fix_rewards_pad.js
+migrate_icons.js
+make_adaptive.js
