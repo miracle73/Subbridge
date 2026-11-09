@@ -1,4 +1,4 @@
-import AuthBackground, { withAuthStyles } from "";
+import AuthBackground, { withAuthStyles } from "../../components/AuthBackground";
 import React, { useState, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

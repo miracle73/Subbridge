@@ -1,4 +1,4 @@
-import AuthBackground, { withAuthStyles } from "";
+import AuthBackground, { withAuthStyles } from "../components/AuthBackground";
 import { DEMO_MODE } from "../services/demoMode";
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image } from "react-native";
