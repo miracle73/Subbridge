@@ -3,7 +3,7 @@ import OneSignalService from "./OneSignalService";
 import { isEmail } from "../utils/format";
 import { ApiLog } from "./apiLog";
 
-import { demoResponse } from "./demoMode";
+import { demoResponse, DEMO_MODE } from "./demoMode";
 const BASE_URL = "https://subbridge.connectbridge.com.ng";
 
 // The backend occasionally takes 5-10s (email/WhatsApp OTP sends). If a
@@ -873,6 +873,7 @@ class ApiService {
   }
 
   async getBiometricStatus() {
+    if (DEMO_MODE) return { registered: false, active: false };
     console.log("[API] getBiometricStatus");
     const headers = { Accept: "application/json" };
     if (this.token) headers["Authorization"] = `Token ${this.token}`;
