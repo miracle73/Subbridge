@@ -15,7 +15,7 @@ import api from "../services/api";
 import PinDots from "./PinDots";
 import PinPad from "./PinPad";
 
-export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiometricAuth }) {
+export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiometricAuth, onForgotPin }) {
   const [pin, setPin] = useState("");
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioRegistered, setBioRegistered] = useState(false);
@@ -70,10 +70,17 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
     setLoading(true);
     setError("");
     try {
-      await onBiometricAuth();
+      // Result contract: true/undefined -> success, close the sheet;
+      // false -> handled, keep sheet open; { error } -> keep open + show.
+      const result = await onBiometricAuth();
+      if (result && result.error) {
+        setError(result.error);
+        return;
+      }
+      if (result === false) return;
       onClose();
     } catch (e) {
-      setError("Biometric failed.");
+      setError(e?.message ? `Biometric failed: ${e.message}` : "Biometric failed.");
     } finally {
       setLoading(false);
     }
@@ -106,6 +113,12 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
               ) : null}
             </>
           )}
+
+          {onForgotPin ? (
+            <TouchableOpacity style={styles.forgotPin} onPress={onForgotPin}>
+              <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+            </TouchableOpacity>
+          ) : null}
 
           <TouchableOpacity style={styles.cancelBtn} onPress={() => onClose()}>
             <Text style={styles.cancelText}>Cancel</Text>
@@ -165,6 +178,8 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     alignItems: "center",
   },
+  forgotPin: { alignItems: "center", paddingVertical: 8 },
+  forgotPinText: { fontSize: F.sm, color: C.primary, fontWeight: "700" },
   cancelBtn: {
     alignItems: "center",
     paddingVertical: 14,

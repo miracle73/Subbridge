@@ -8,6 +8,7 @@ import { C, F, R, S } from "../../utils/theme";
 import { fmtShort, formatDate, formatTime } from "../../utils/format";
 import api from "../../services/api";
 import Preloader from "../../components/Preloader";
+import { sortTransactions } from "../../utils/mergeTransactions";
 
 const FILTERS = ["All", "Debit", "Credit"];
 const TX_ICONS = {
@@ -43,18 +44,13 @@ export default function TransactionsScreen({ navigation }) {
     }, [fetchTransactions])
   );
 
-  const filtered = transactions.filter((tx) => {
-    if (filter === "Debit") return tx.type === "debit";
-    if (filter === "Credit") return tx.type === "credit";
-    return true;
-  }).sort((a, b) => {
-    const dateA = a.date || "";
-    const dateB = b.date || "";
-    if (dateA !== dateB) return dateB.localeCompare(dateA);
-    const timeA = a.time || "";
-    const timeB = b.time || "";
-    return timeA.localeCompare(timeB);
-  });
+  const filtered = sortTransactions(
+    transactions.filter((tx) => {
+      if (filter === "Debit") return tx.type === "debit";
+      if (filter === "Credit") return tx.type === "credit";
+      return true;
+    })
+  );
 
   if (loading) return <Preloader />;
 

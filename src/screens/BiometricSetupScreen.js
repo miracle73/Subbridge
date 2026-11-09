@@ -13,6 +13,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { C, F, R, S } from "../utils/theme";
 import api from "../services/api";
 import { BiometricCrypto } from "../services/biometric";
+import { CrashLog } from "../services/crashLog";
+
+const withTimeout = (promise, ms) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms)),
+  ]);
 
 export default function BiometricSetupScreen({ navigation }) {
   const [status, setStatus] = useState(null);
@@ -36,6 +43,26 @@ export default function BiometricSetupScreen({ navigation }) {
 
   const handleRegister = async () => {
     if (generating) return;
+    try {
+      const hasKeys = await BiometricCrypto.hasKeys();
+      if (!hasKeys && (await CrashLog.hasKeygenCrash())) {
+        Alert.alert(
+          "Key setup crashed the app before",
+          "Fingerprint key setup previously caused the app to close. What would you like to do?",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Retry", onPress: () => confirmRegister() },
+          ]
+        );
+        return;
+      }
+    } catch (e) {
+      console.log("[BiometricSetup] Gate check error:", e);
+    }
+    confirmRegister();
+  };
+
+  const confirmRegister = () => {
     Alert.alert(
       "Enable Biometric Payments",
       "Generate an RSA key pair on your device. The private key stays on your phone. This may take a moment.",
@@ -49,13 +76,18 @@ export default function BiometricSetupScreen({ navigation }) {
   const doRegister = async () => {
     setGenerating(true);
     try {
-      const publicKeyPem = await BiometricCrypto.generateKeyPair();
-      const result = await api.registerBiometricKey(publicKeyPem);
+      // Reuse an existing key pair when present — only generate when missing.
+      let publicKeyPem = await BiometricCrypto.getPublicKeyPem();
+      if (!publicKeyPem) {
+        publicKeyPem = await withTimeout(BiometricCrypto.generateKeyPair(), 8000);
+      }
+      const result = await withTimeout(api.registerBiometricKey(publicKeyPem), 8000);
       if (result.success) {
         Alert.alert("Success", "Biometric payments enabled. You can now pay with your fingerprint.");
         checkStatus();
       } else {
-        await BiometricCrypto.deleteKeys();
+        // Keep any locally generated keys so a retry can reuse them
+        // instead of running RSA key generation again.
         Alert.alert("Error", result.message || "Failed to register key.");
       }
     } catch (e) {

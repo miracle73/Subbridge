@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../utils/theme";
@@ -8,6 +8,7 @@ import { Biometrics } from "../utils/biometrics";
 import { SecurePin } from "../utils/storage";
 import api from "../services/api";
 import { BiometricCrypto } from "../services/biometric";
+import { CrashLog } from "../services/crashLog";
 
 /**
  * First-transaction opt-in: "Enable fingerprint for easy transactions?"
@@ -78,6 +79,7 @@ export default function BiometricPrompt({ visible, onClose }) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setStep("bio");
       } else {
+        setPinCode("");
         setError(res.message || "Incorrect PIN. Try again.");
       }
     } catch (e) {
@@ -87,7 +89,13 @@ export default function BiometricPrompt({ visible, onClose }) {
     }
   };
 
-  const enable = async () => {
+  const withTimeout = (promise, ms) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms)),
+    ]);
+
+  const runEnable = async (skipKeys) => {
     setBusy(true);
     setError("");
     try {
@@ -96,10 +104,21 @@ export default function BiometricPrompt({ visible, onClose }) {
         await Biometrics.setEnabled(true);
         await Biometrics.markAsked();
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (skipKeys) {
+          console.log("[BiometricPrompt] Enabled without payment key setup (chosen after prior crash)");
+          onClose && onClose(true);
+          return;
+        }
         setStep("keys");
         try {
-          const publicKeyPem = await BiometricCrypto.generateKeyPair();
-          const keyResult = await api.registerBiometricKey(publicKeyPem);
+          // Reuse an existing key pair — never regenerate when one exists.
+          // Otherwise generate (raced against a timeout so the sheet can
+          // never hang open) and register the public key with the server.
+          let publicKeyPem = await BiometricCrypto.getPublicKeyPem();
+          if (!publicKeyPem) {
+            publicKeyPem = await withTimeout(BiometricCrypto.generateKeyPair(), 8000);
+          }
+          const keyResult = await withTimeout(api.registerBiometricKey(publicKeyPem), 8000);
           if (!keyResult.success) {
             console.log("[BiometricPrompt] Key registration failed:", keyResult.message);
           }
@@ -116,6 +135,27 @@ export default function BiometricPrompt({ visible, onClose }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const enable = async () => {
+    try {
+      const hasKeys = await BiometricCrypto.hasKeys();
+      if (!hasKeys && (await CrashLog.hasKeygenCrash())) {
+        Alert.alert(
+          "Key setup crashed the app before",
+          "Fingerprint payment key setup previously caused the app to close. What would you like to do?",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Enable without payments", onPress: () => runEnable(true) },
+            { text: "Retry key setup", onPress: () => runEnable(false) },
+          ]
+        );
+        return;
+      }
+    } catch (e) {
+      console.log("[BiometricPrompt] Gate check error:", e);
+    }
+    await runEnable(false);
   };
 
   const dismiss = async () => {

@@ -44,8 +44,10 @@ export const detectNetworkFromPhone = (phoneNumber) => {
   return null;
 };
 
+export const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+
 export const normalizePhone = (text) => {
-  let cleaned = String(text).replace(/\s/g, "");
+  let cleaned = String(text).replace(/[\s\-\(\)\.]/g, "");
   if (cleaned.startsWith("+234")) {
     cleaned = "0" + cleaned.slice(4);
   } else if (cleaned.startsWith("234") && cleaned.length > 10) {
@@ -53,3 +55,36 @@ export const normalizePhone = (text) => {
   }
   return cleaned;
 };
+
+/**
+ * Safe phone field handler.
+ *
+ * The local "0" prefix is added ONLY when the user finishes typing the 10th
+ * digit. It must never be applied while deleting, otherwise every backspace
+ * on an 11 digit number re-adds a "0" and the field grows 00000.
+ */
+export const formatPhoneInput = (text, previous = "") => {
+  let v = String(text ?? "");
+
+  if (v.startsWith("+234")) {
+    v = "0" + v.slice(4).replace(/\D/g, "");
+  }
+
+  v = v.replace(/[^\d+]/g, "");
+  if (v.startsWith("+")) {
+    v = "+" + v.slice(1).replace(/\D/g, "");
+  } else {
+    v = v.replace(/\D/g, "");
+  }
+
+  const previousLength = String(previous ?? "").length;
+  const justCompletedTenDigits = v.length === 10 && previousLength < 10;
+
+  if (justCompletedTenDigits && !v.startsWith("0")) {
+    v = "0" + v;
+  }
+
+  if (v.length > 11) v = v.slice(0, 11);
+  return v;
+};
+

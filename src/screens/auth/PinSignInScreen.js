@@ -2,20 +2,22 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as SecureStore from "expo-secure-store";
 import { C, F, R, S } from "../../utils/theme";
 import { AuthToken, SecurePin } from "../../utils/storage";
 import { Biometrics } from "../../utils/biometrics";
 import PinDots from "../../components/PinDots";
 import PinPad from "../../components/PinPad";
+import ErrorModal from "../../components/ErrorModal";
 import api from "../../services/api";
 
 export default function PinSignInScreen({ navigation }) {
   const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorModalMessage, setErrorModalMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [userName, setUserName] = useState("");
   const [bioReady, setBioReady] = useState(false);
-  const [bioLabel, setBioLabel] = useState("Fingerprint");
   const shake = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -23,12 +25,11 @@ export default function PinSignInScreen({ navigation }) {
     Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
       setBioReady(a && e);
     });
-    Biometrics.label().then(setBioLabel);
   }, []);
 
   const handleKey = (k) => {
     if (loading) return;
-    if (k === "del") { setPin((p) => p.slice(0, -1)); setError(""); return; }
+    if (k === "del") { setPin((p) => p.slice(0, -1)); return; }
     if (pin.length >= 4) return;
     const next = pin + k;
     setPin(next);
@@ -38,10 +39,11 @@ export default function PinSignInScreen({ navigation }) {
   const loginWithBiometric = async () => {
     if (loading) return;
     setLoading(true);
-    setError("");
     const { pin: savedPin, error: bioError } = await Biometrics.getPinWithBiometric("Sign in to SubBridge");
     if (bioError || !savedPin) {
-      setError(bioError || "Biometric sign-in failed.");
+      setErrorModalMessage(bioError || "Biometric sign-in failed.");
+      setErrorModalVisible(true);
+      setPin("");
       setLoading(false);
       return;
     }
@@ -51,14 +53,14 @@ export default function PinSignInScreen({ navigation }) {
 
   const verifyPin = async (value) => {
     setLoading(true);
-    setError("");
     console.log("[PinSignIn] Verifying PIN...");
 
     try {
       const phone = await SecurePin.getPhone();
       console.log("[PinSignIn] Phone:", phone);
       if (!phone) {
-        setError("No phone found. Please sign in with password.");
+        setErrorModalMessage("No phone found. Please sign in with password.");
+        setErrorModalVisible(true);
         setLoading(false);
         return;
       }
@@ -68,7 +70,6 @@ export default function PinSignInScreen({ navigation }) {
 
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // This PIN just verified against the server — persist it for biometric use
         await SecurePin.save(value, phone);
         const user = result.data?.user;
         const name = user?.firstName || user?.firstname || user?.lastName || user?.lastname
@@ -82,7 +83,15 @@ export default function PinSignInScreen({ navigation }) {
         }
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        setError(result.message || "Incorrect PIN");
+        const msg = result.message || "Incorrect PIN";
+        if (/inactive|verif/i.test(msg)) {
+          setLoading(false);
+          navigation.replace("VerifyAccount", { phone });
+          return;
+        }
+        try { await SecureStore.deleteItemAsync("subbridge_pin"); } catch {}
+        setErrorModalMessage(msg);
+        setErrorModalVisible(true);
         setPin("");
         setLoading(false);
         Animated.sequence([
@@ -93,12 +102,14 @@ export default function PinSignInScreen({ navigation }) {
         ]).start();
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      setErrorModalMessage("Network error. Please try again.");
+      setErrorModalVisible(true);
       setLoading(false);
     }
   };
 
   return (
+    <>
     <View style={styles.container}>
       <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={22} color={C.text} />
@@ -120,39 +131,28 @@ export default function PinSignInScreen({ navigation }) {
           <PinDots length={4} filled={pin.length} />
         </Animated.View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
         {loading ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
             <ActivityIndicator size="small" color={C.primary} />
             <Text style={{ fontSize: F.sm, color: C.textMuted, fontWeight: "600" }}>Verifying...</Text>
           </View>
         ) : null}
+
+        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate("ForgotPassword", { mode: "pin" })}>
+          <Ionicons name="key-outline" size={16} color={C.primary} />
+          <Text style={styles.forgotText}>Forgot PIN?</Text>
+        </TouchableOpacity>
       </View>
 
-      <PinPad onPress={handleKey} />
-
-      {bioReady ? (
-        <TouchableOpacity style={styles.bioBtn} onPress={loginWithBiometric} disabled={loading}>
-          <Ionicons name="finger-print-outline" size={22} color={C.primary} />
-          <Text style={styles.bioText}>Sign in with {bioLabel}</Text>
-        </TouchableOpacity>
-      ) : null}
-
-      <TouchableOpacity style={styles.forgot} onPress={() => navigation.navigate("ForgotPassword")}>
-        <Text style={styles.forgotText}>Forgot PIN?</Text>
-      </TouchableOpacity>
+      <PinPad onPress={handleKey} onBiometric={bioReady ? loginWithBiometric : undefined} />
     </View>
+    <ErrorModal visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white, paddingTop: 60 },
-  bioBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
-    borderWidth: 1.5, borderColor: C.border, borderRadius: R.sm,
-    paddingVertical: S.md, paddingHorizontal: S.xl, marginHorizontal: S.xl, marginTop: S.sm,
-  },
-  bioText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
   back: { paddingHorizontal: S.xl },
   center: { flex: 1, justifyContent: "center", alignItems: "center", paddingBottom: S.xl },
   profileAvatar: {
@@ -162,6 +162,10 @@ const styles = StyleSheet.create({
   profileInitial: { fontSize: 32, fontWeight: "800", color: C.primary },
   title: { fontSize: F.h3, fontWeight: "800", color: C.text, marginTop: S.base, marginBottom: S.lg },
   error: { fontSize: F.sm, color: C.debit, marginTop: S.md },
-  forgot: { alignItems: "center", paddingVertical: S.base, marginBottom: S.xl },
-  forgotText: { fontSize: F.md, color: C.primary, fontWeight: "600" },
+  forgotBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: S.lg, paddingVertical: S.sm, paddingHorizontal: S.base,
+    backgroundColor: C.primaryLight, borderRadius: R.sm, borderWidth: 1, borderColor: C.primary + "22"
+  },
+  forgotText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
 });

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, ActivityIndicator, Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Print from "expo-print";
@@ -95,7 +95,7 @@ export default function ReceiptModal({ tx, onClose }) {
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View ref={receiptRef} collapsable={false} style={styles.receiptCard}>
               <View style={styles.brandRow}>
-                <Ionicons name="shield-checkmark" size={18} color={C.primary} />
+                <Image source={require("../assets/logo.jpg")} style={styles.brandLogo} resizeMode="contain" />
                 <Text style={styles.brandText}>SubBridge</Text>
               </View>
 
@@ -162,6 +162,7 @@ const styles = StyleSheet.create({
 
   receiptCard: { backgroundColor: C.white, borderRadius: R.md, borderWidth: 1.5, borderColor: C.border, padding: S.base, alignItems: "center" },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: S.base },
+  brandLogo: { width: 26, height: 26, borderRadius: 7 },
   brandText: { fontSize: F.base, fontWeight: "800", color: C.primary },
 
   statusIcon: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginBottom: S.sm },

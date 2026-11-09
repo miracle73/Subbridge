@@ -10,7 +10,7 @@ import { C, F, R, S } from "../../utils/theme";
 import api from "../../services/api";
 import { AuthToken, SecurePin } from "../../utils/storage";
 import { Biometrics } from "../../utils/biometrics";
-import { BiometricCrypto } from "../../services/biometric";
+import { BiometricCrypto, resetBiometricState } from "../../services/biometric";
 import BiometricPrompt from "../../components/BiometricPrompt";
 import Preloader from "../../components/Preloader";
 
@@ -20,8 +20,11 @@ export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [bioSupported, setBioSupported] = useState(false);
   const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioKeys, setBioKeys] = useState(false);
   const [bioLabel, setBioLabel] = useState("Fingerprint");
   const [showBioSetup, setShowBioSetup] = useState(false);
+
+  const refreshBioKeys = () => { BiometricCrypto.hasKeys().then(setBioKeys).catch(() => {}); };
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -49,6 +52,7 @@ export default function ProfileScreen({ navigation }) {
     Biometrics.isAvailable().then(setBioSupported);
     Biometrics.isEnabled().then(setBioEnabled);
     Biometrics.label().then(setBioLabel);
+    refreshBioKeys();
   }, [fetchProfile]);
 
   const toggleBiometric = async (on) => {
@@ -89,6 +93,8 @@ export default function ProfileScreen({ navigation }) {
         style: "destructive",
         onPress: async () => {
           console.log("[Profile] Logging out...");
+          // Wipe biometric setup first — server deregister needs the live token
+          await resetBiometricState();
           await api.logout();
           await AuthToken.clear();
           await SecurePin.clear();
@@ -102,6 +108,7 @@ export default function ProfileScreen({ navigation }) {
   const rows = [
     { icon: "person-outline", label: "Edit Profile", screen: "EditProfile" },
     { icon: "lock-closed-outline", label: "Change PIN", screen: "ChangePin" },
+    { icon: "key-outline", label: "Forgot PIN", screen: "ForgotPassword", params: { mode: "pin", phone: user?.phone || "" } },
     { icon: "help-circle-outline", label: "Support", screen: "Support" },
   ];
 
@@ -130,7 +137,7 @@ export default function ProfileScreen({ navigation }) {
           <TouchableOpacity
             key={i}
             style={styles.row}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate(r.screen); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate(r.screen, r.params); }}
           >
             <Ionicons name={r.icon} size={20} color={C.primary} />
             <Text style={styles.rowLabel}>{r.label}</Text>
@@ -140,8 +147,23 @@ export default function ProfileScreen({ navigation }) {
 
         {bioSupported ? (
           <View style={styles.row}>
-            <Ionicons name="finger-print-outline" size={20} color={C.primary} />
-            <Text style={styles.rowLabel}>{bioLabel} (Auth & Payments)</Text>
+            <TouchableOpacity
+              style={styles.rowMain}
+              disabled={!(bioEnabled && !bioKeys)}
+              activeOpacity={bioEnabled && !bioKeys ? 0.6 : 1}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("BiometricSetup");
+              }}
+            >
+              <Ionicons name="finger-print-outline" size={20} color={C.primary} />
+              <View style={styles.rowTexts}>
+                <Text style={styles.rowLabel}>{bioLabel} (Auth & Payments)</Text>
+                {bioEnabled && !bioKeys ? (
+                  <Text style={styles.setupHint}>Setup needed — tap to finish</Text>
+                ) : null}
+              </View>
+            </TouchableOpacity>
             <Switch
               value={bioEnabled}
               onValueChange={toggleBiometric}
@@ -161,6 +183,7 @@ export default function ProfileScreen({ navigation }) {
           onClose={(enabled) => {
             setShowBioSetup(false);
             setBioEnabled(!!enabled);
+            if (enabled) refreshBioKeys();
           }}
         />
       </ScrollView>
@@ -189,6 +212,9 @@ const styles = StyleSheet.create({
     marginBottom: S.sm, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   rowLabel: { flex: 1, fontSize: F.md, fontWeight: "600", color: C.text },
+  rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: S.md },
+  rowTexts: { flex: 1 },
+  setupHint: { fontSize: F.xs, fontWeight: "700", color: C.warning, marginTop: 2 },
 
   logoutBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,

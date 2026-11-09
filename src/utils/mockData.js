@@ -472,3 +472,36 @@ export const MOCK_BILLS_TX = [
     reference: "SBR16000104",
   },
 ];
+
+export const MOCK_REWARDS = {
+  referralBalance: 12500,
+  cashbackBalance: 0,
+  totalEarnings: 48750,
+  totalUsers: 14,
+  monthEarnings: 6500,
+  referralLink: "https://subbridge.connectbridge.com.ng/ref/CHIDY2024",
+  referralCode: "CHIDY2024",
+  commission: {
+    perReferral: 500,
+    note: "You earn a bonus when a referred friend completes their first bill payment on SubBridge.",
+  },
+  commissionRates: [
+    { id: "airtime", label: "Airtime", rate: 0.3 },
+    { id: "data", label: "Data", rate: 0.5 },
+    { id: "cable", label: "Cable TV", rate: 0.2 },
+    { id: "electricity", label: "Electricity", rate: 0.7 },
+  ],
+  howItWorks: [
+    "Share your referral link or code with friends and family.",
+    "They sign up on SubBridge and verify their account.",
+    "You earn a bonus once they complete their first bill payment.",
+    "Withdraw your bonus to your wallet or bank anytime.",
+  ],
+  recentEarnings: [
+    { id: 1, name: "Emeka O.", product: "Airtime", productAmount: 100000, amount: 300, date: "2026-10-14T10:24:00Z", status: "paid" },
+    { id: 2, name: "Fatima B.", product: "Data", productAmount: 4000, amount: 20, date: "2026-10-12T09:15:00Z", status: "paid" },
+    { id: 3, name: "Tunde A.", product: "Electricity", productAmount: 50000, amount: 350, date: "2026-10-08T18:45:00Z", status: "paid" },
+    { id: 4, name: "Blessing E.", product: "Cable TV", productAmount: 21500, amount: 43, date: "2026-10-03T14:30:00Z", status: "paid" },
+    { id: 5, name: "Kemi F.", product: "Data", productAmount: 10000, amount: 50, date: "2026-09-28T11:00:00Z", status: "paid" },
+  ],
+};

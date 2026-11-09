@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,8 +16,15 @@ import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
 import BeneficiaryBox from "../../components/BeneficiaryBox";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
+import PinErrorModal from "../../components/PinErrorModal";
 import { Biometrics } from "../../utils/biometrics";
 import { BiometricCrypto } from "../../services/biometric";
+import { SecurePin } from "../../utils/storage";
+import Toast from "../../components/Toast";
+
+// Smallest electricity payment the wallet and providers accept.
+const MIN_AMOUNT = 1000;
+const MIN_AMOUNT_LABEL = "\u20A61,000";
 
 async function signTransaction(txnId, txnData) {
   const auth = await BiometricCrypto.authenticate();
@@ -39,6 +46,7 @@ export default function ElectricityScreen({ navigation }) {
   const [showProvider, setShowProvider] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showAuthSheet, setShowAuthSheet] = useState(false);
+  const [authSheetKey, setAuthSheetKey] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -49,6 +57,12 @@ export default function ElectricityScreen({ navigation }) {
   const [bioReady, setBioReady] = useState(false);
   const [bioLabel, setBioLabel] = useState("Fingerprint");
   const [showBioPrompt, setShowBioPrompt] = useState(false);
+  const [showPinError, setShowPinError] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState("error");
+
+  const showToast = (msg, type = "error") => { setToastType(type); setToastMsg(msg); };
+  const fail = (msg) => { setError(msg); showToast(msg, "error"); };
 
   useEffect(() => {
     Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
@@ -110,10 +124,10 @@ export default function ElectricityScreen({ navigation }) {
           notFound: isGeneric,
         });
       } else {
-        setError(res.message || "Verification failed");
+        fail(res.message || "Verification failed");
       }
     } catch (e) {
-      setError("Network error. Please try again.");
+      fail("Network error. Please try again.");
     } finally {
       setVerifying(false);
     }
@@ -121,10 +135,13 @@ export default function ElectricityScreen({ navigation }) {
 
   const finalAmount = Number(amount || 0);
 
+  const canAffordMinimum = walletBalance >= MIN_AMOUNT;
+
   const handleBuy = () => {
     if (!verified) return setError("Verify meter first");
-    if (!amount || finalAmount < 100) return setError(`Enter a valid amount (min \u20A6100)`);
-    if (walletBalance < finalAmount) return setError("Insufficient wallet balance");
+    if (!canAffordMinimum) return fail(`Minimum electricity purchase is ${MIN_AMOUNT_LABEL}. Please fund your wallet.`);
+    if (!amount || finalAmount < MIN_AMOUNT) return setError(`Enter a valid amount (min ${MIN_AMOUNT_LABEL})`);
+    if (walletBalance < finalAmount) return fail("Insufficient wallet balance");
     setError("");
     setShowConfirm(true);
   };
@@ -138,44 +155,41 @@ export default function ElectricityScreen({ navigation }) {
     verifyAndPurchase(pinValue);
   };
 
-  const handleBiometricAuth = () => {
-    handleBioPurchase();
-  };
+  const handleBiometricAuth = () => handleBioPurchase();
 
   const handleBioPurchase = async () => {
-    setShowAuthSheet(false);
-    setProcessing(true);
     try {
       const transactionId = "ELC-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
       const transactionData = JSON.stringify({ provider: provider.code || provider.id, meterNumber, meterType, amount: finalAmount });
       const { signature } = await signTransaction(transactionId, transactionData);
-      if (!signature) {
-        setError("Biometric authentication failed.");
+      if (!signature) return false;
+      setShowAuthSheet(false);
+      setProcessing(true);
+      try {
+        const res = await api.purchaseElectricity({
+          provider: provider.code || provider.id,
+          meterNumber,
+          meterType,
+          amount: finalAmount,
+          signature,
+          transactionId,
+          transactionData,
+        });
+        if (res.success && res.data) {
+          setPurchaseData(res.data);
+          setSuccess(true);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          if (await shouldPromptBiometric()) setShowBioPrompt(true);
+        } else {
+          fail(res.message || "Purchase failed");
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+      } finally {
         setProcessing(false);
-        return;
       }
-      const res = await api.purchaseElectricity({
-        provider: provider.code || provider.id,
-        meterNumber,
-        meterType,
-        amount: finalAmount,
-        signature,
-        transactionId,
-        transactionData,
-      });
-      if (res.success && res.data) {
-        setPurchaseData(res.data);
-        setSuccess(true);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        if (await shouldPromptBiometric()) setShowBioPrompt(true);
-      } else {
-        setError(res.message || "Purchase failed");
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
+      return true;
     } catch (e) {
-      setError("Network error. Please try again.");
-    } finally {
-      setProcessing(false);
+      return { error: e?.message || "Biometric purchase failed." };
     }
   };
 
@@ -191,9 +205,9 @@ export default function ElectricityScreen({ navigation }) {
       console.log("[Electricity] PIN verify:", verifyRes.success, verifyRes.message);
 
       if (!verifyRes.success) {
-        setError("Incorrect PIN. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setProcessing(false);
+        setShowPinError(true);
         return;
       }
 
@@ -212,14 +226,22 @@ export default function ElectricityScreen({ navigation }) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
-        setError(res.message || "Purchase failed");
+        fail(res.message || "Purchase failed");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (e) {
-      setError("Network error. Please try again.");
+      fail("Network error. Please try again.");
     } finally {
       setProcessing(false);
     }
+  };
+
+  const goForgotPin = async () => {
+    setShowPinError(false);
+    setShowAuthSheet(false);
+    let p = "";
+    try { p = (await SecurePin.getPhone()) || ""; } catch (e) {}
+    navigation.navigate("ForgotPassword", { mode: "pin", phone: p });
   };
 
   if (loading) return <Preloader />;
@@ -274,6 +296,7 @@ export default function ElectricityScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
       <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
@@ -288,7 +311,7 @@ export default function ElectricityScreen({ navigation }) {
         subtitle={`Prepaid & Postpaid \u00B7 Instant token delivery`}
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Provider & Meter Number</Text>
         <View style={styles.comboRow}>
           <TouchableOpacity style={styles.providerLogoBtn} onPress={() => setShowProvider(true)}>
@@ -366,16 +389,32 @@ export default function ElectricityScreen({ navigation }) {
             style={styles.amountInput}
             value={amount}
             onChangeText={setAmount}
-            placeholder="Enter amount (min ₦100)"
+            placeholder={`Enter amount (min ${MIN_AMOUNT_LABEL})`}
             keyboardType="number-pad"
           />
         </View>
 
         <Text style={styles.balance}>Wallet Balance: {fmt(walletBalance)}</Text>
+        {!canAffordMinimum && (
+          <Text style={styles.minHint}>
+            Minimum electricity purchase is {MIN_AMOUNT_LABEL}. Fund your wallet to continue.
+          </Text>
+        )}
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        <View style={{ height: 90 + insets.bottom }} />
+      </ScrollView>
 
+      {/* Buy button - fixed above bottom nav */}
+      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
         {(() => {
-          const ready = verified && finalAmount >= 100;
+          const ready = verified && finalAmount >= MIN_AMOUNT && canAffordMinimum;
+          const label = !canAffordMinimum
+            ? `Minimum wallet balance is ${MIN_AMOUNT_LABEL}`
+            : !verified
+            ? "Verify meter & enter amount"
+            : finalAmount < MIN_AMOUNT
+            ? `Enter amount (min ${MIN_AMOUNT_LABEL})`
+            : `Pay Electricity - ${fmt(finalAmount)}`;
           return (
             <TouchableOpacity
               style={[styles.btn, !ready && styles.btnInactive]}
@@ -383,13 +422,11 @@ export default function ElectricityScreen({ navigation }) {
               disabled={!ready}
               activeOpacity={ready ? 0.6 : 1}
             >
-              <Text style={[styles.btnText, !ready && styles.btnTextInactive]}>
-                {ready ? `Pay Electricity - ${fmt(finalAmount)}` : "Verify meter & enter amount"}
-              </Text>
+              <Text style={[styles.btnText, !ready && styles.btnTextInactive]}>{label}</Text>
             </TouchableOpacity>
           );
         })()}
-      </ScrollView>
+      </View>
 
       <Modal visible={showProvider} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowProvider(false)}>
@@ -453,7 +490,13 @@ export default function ElectricityScreen({ navigation }) {
         </View>
       </Modal>
 
-      <PaymentAuthSheet visible={showAuthSheet} onClose={() => setShowAuthSheet(false)} onPinAuth={handlePinAuth} onBiometricAuth={handleBiometricAuth} />
+      <PaymentAuthSheet key={authSheetKey} visible={showAuthSheet} onClose={() => setShowAuthSheet(false)} onPinAuth={handlePinAuth} onBiometricAuth={handleBiometricAuth} onForgotPin={goForgotPin} />
+
+      <PinErrorModal
+        visible={showPinError}
+        onTryAgain={() => { setShowPinError(false); setAuthSheetKey((k) => k + 1); setShowAuthSheet(true); }}
+        onForgotPin={goForgotPin}
+      />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
     </View>
@@ -515,11 +558,18 @@ const styles = StyleSheet.create({
   verifiedName: { fontSize: F.md, fontWeight: "700", color: C.text },
   verifiedAddress: { fontSize: F.sm, color: C.textMuted, marginTop: 2 },
   balance: { fontSize: F.sm, color: C.textMuted, marginTop: S.base, textAlign: "center" },
+  minHint: { fontSize: F.sm, color: C.debit, textAlign: "center", marginTop: S.xs, fontWeight: "600" },
   error: { fontSize: F.sm, color: C.debit, textAlign: "center", marginTop: S.sm },
-  btn: { backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2, alignItems: "center", marginTop: S.xl },
+  btn: { backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2, alignItems: "center", marginTop: 0 },
   btnInactive: { backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border },
   btnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
   btnTextInactive: { color: C.textMuted, fontSize: F.lg, fontWeight: "600" },
+  buyBar: {
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    paddingHorizontal: S.lg, paddingTop: S.sm,
+    paddingBottom: S.md, backgroundColor: C.white,
+    borderTopWidth: 1, borderTopColor: C.border,
+  },
 
   modalOverlay: { flex: 1, backgroundColor: C.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: C.white, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: S.xl },

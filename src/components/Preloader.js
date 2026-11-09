@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, Animated, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Animated, StyleSheet, Image } from "react-native";
 import { C, F, S } from "../utils/theme";
+
+const LOGO = require("../assets/logo.jpg");
 
 export default function Preloader({ message = "Loading..." }) {
   const pulse = useRef(new Animated.Value(1)).current;
@@ -18,7 +19,7 @@ export default function Preloader({ message = "Loading..." }) {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.iconWrap, { opacity: pulse }]}>
-        <Ionicons name="shield-checkmark" size={48} color={C.primary} />
+        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
       </Animated.View>
       <Text style={styles.name}>SubBridge</Text>
       <Text style={styles.msg}>{message}</Text>
@@ -29,6 +30,7 @@ export default function Preloader({ message = "Loading..." }) {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: C.bg },
   iconWrap: { marginBottom: S.base },
+  logo: { width: 72, height: 72, borderRadius: 18 },
   name: { fontSize: F.xl, fontWeight: "800", color: C.primary, marginBottom: S.xs },
   msg: { fontSize: F.sm, color: C.textMuted },
 });

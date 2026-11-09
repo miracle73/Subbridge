@@ -1,19 +1,25 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Animated, StyleSheet } from "react-native";
 import { C, S } from "../utils/theme";
 
+const makeAnims = (n) => Array.from({ length: n }, () => new Animated.Value(1));
+
 export default function PinDots({ length = 4, filled = 0 }) {
-  const anims = useRef(Array.from({ length: length }, () => new Animated.Value(1))).current;
+  const [anims, setAnims] = useState(() => makeAnims(length));
 
   useEffect(() => {
-    if (filled > 0 && filled <= length) {
+    setAnims((prev) => (prev.length === length ? prev : makeAnims(length)));
+  }, [length]);
+
+  useEffect(() => {
+    if (filled > 0 && filled <= anims.length) {
       const idx = filled - 1;
       Animated.sequence([
         Animated.timing(anims[idx], { toValue: 1.25, duration: 100, useNativeDriver: true }),
         Animated.timing(anims[idx], { toValue: 1, duration: 100, useNativeDriver: true }),
       ]).start();
     }
-  }, [filled]);
+  }, [filled, anims]);
 
   return (
     <View style={styles.row}>

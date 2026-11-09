@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Animated, StyleSheet, StatusBar } from "react-native";
+import { View, Text, Animated, StyleSheet, StatusBar, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { C, F, S, W, H } from "../utils/theme";
 import { AuthToken, OnboardingFlag, SecurePin } from "../utils/storage";
+
+const LOGO = require("../assets/logo.jpg");
 
 export default function SplashScreen({ navigation }) {
   const logoY = useRef(new Animated.Value(40)).current;
@@ -30,7 +31,7 @@ export default function SplashScreen({ navigation }) {
       const loggedIn = await AuthToken.isLoggedIn();
       const onboardingDone = await OnboardingFlag.get();
       if (loggedIn) {
-        navigation.replace("Auth");
+        navigation.replace("Home");
       } else if (onboardingDone) {
         navigation.replace("Auth");
       } else {
@@ -45,7 +46,7 @@ export default function SplashScreen({ navigation }) {
     <LinearGradient colors={[C.primary, C.primaryDark, C.dark]} style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <Animated.View style={{ transform: [{ translateY: logoY }, { scale: logoS }], opacity }}>
-        <Ionicons name="shield-checkmark" size={80} color={C.white} />
+        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
       </Animated.View>
       <Text style={styles.name}>SubBridge</Text>
       <Text style={styles.tagline}>Bills made simple</Text>
@@ -58,6 +59,10 @@ export default function SplashScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center" },
+  logo: {
+    width: 140, height: 140, borderRadius: 28, backgroundColor: C.white,
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.35)",
+  },
   name: { fontSize: F.h1, fontWeight: "800", color: C.white, marginTop: S.base },
   tagline: { fontSize: F.md, color: "rgba(255,255,255,0.7)", marginTop: S.xs },
   progressWrap: {

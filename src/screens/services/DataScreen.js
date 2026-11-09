@@ -16,9 +16,11 @@ import Preloader from "../../components/Preloader";
 import ServiceBanner from "../../components/ServiceBanner";
 import ContactPicker from "../../components/ContactPicker";
 import BiometricPrompt, { shouldPromptBiometric } from "../../components/BiometricPrompt";
+import PinErrorModal from "../../components/PinErrorModal";
 import { Biometrics } from "../../utils/biometrics";
 import { BiometricCrypto } from "../../services/biometric";
 import { SecurePin } from "../../utils/storage";
+import Toast from "../../components/Toast";
 
 function getValidityGroup(validity) {
   if (!validity) return "Other";
@@ -77,14 +79,23 @@ export default function DataScreen({ navigation }) {
   const [showNetwork, setShowNetwork] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPaymentAuth, setShowPaymentAuth] = useState(false);
+  const [authSheetKey, setAuthSheetKey] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [apiResponse, setApiResponse] = useState("");
+  const [failure, setFailure] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saveBeneficiary, setSaveBeneficiary] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
   const [balance, setBalance] = useState(0);
   const [showBioPrompt, setShowBioPrompt] = useState(false);
+  const [showPinError, setShowPinError] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState("error");
+
+  const showToast = (msg, type = "error") => { setToastType(type); setToastMsg(msg); };
+  const fail = (msg) => { setError(msg); showToast(msg, "error"); };
 
   useEffect(() => {
     loadData();
@@ -95,6 +106,19 @@ export default function DataScreen({ navigation }) {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (phone.length < 4 || networks.length === 0) return;
+    const detected = detectNetworkFromPhone(phone);
+    if (!detected) return;
+    const match = networks.find((n) => n.id === detected);
+    if (match && network?.id !== match.id) {
+      setNetwork(match);
+      setPlan(null);
+      setActiveType(null);
+      loadAllPlans(match.id);
+    }
+  }, [phone, networks]);
 
   const loadData = async () => {
     try {
@@ -216,7 +240,7 @@ export default function DataScreen({ navigation }) {
     if (!network) return setError("Select a network");
     if (!phone || phone.length < 10) return setError("Enter a valid phone number");
     if (!plan) return setError("Select a data plan");
-    if (balance < plan.amount) return setError("Insufficient wallet balance");
+    if (balance < plan.amount) return fail("Insufficient wallet balance");
     setError("");
     setShowConfirm(true);
   };
@@ -234,17 +258,13 @@ export default function DataScreen({ navigation }) {
   const handlePaymentBiometricAuth = async () => {
     try {
       const txnId = "DAT-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
-      const cleanPhone = "234" + phone.replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
-      const txnData = JSON.stringify({ phone: cleanPhone, provider: network?.id, planId: plan?.id, amount: plan?.amount });
+      const txnData = JSON.stringify({ phone, provider: network?.id, planId: plan?.id, amount: plan?.amount });
       const { signature, transactionId, transactionData } = await signTransaction(txnId, txnData);
-      if (!signature) {
-        setError("Biometric signing failed.");
-        return;
-      }
+      if (!signature) return false;
       setShowPaymentAuth(false);
       setProcessing(true);
       const result = await api.purchaseData({
-        phone: cleanPhone,
+        phone,
         provider: network?.id || "mtn",
         planId: plan?.id,
         amount: plan?.amount,
@@ -253,25 +273,39 @@ export default function DataScreen({ navigation }) {
         transactionData,
       });
       if (result.success) {
+        setApiResponse(result.data?.api_response || "");
         setSuccess(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
-        setError(result.message || "Transaction failed.");
+        setApiResponse(result.data?.api_response || "");
+        setFailure({
+          message: result.message || "Transaction failed.",
+          data: result.data || {},
+        });
+        fail(result.message || "Transaction failed.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      return { error: err?.message || "Biometric purchase failed." };
     } finally {
       setProcessing(false);
     }
+    return true;
+  };
+
+  const goForgotPin = async () => {
+    setShowPinError(false);
+    setShowPaymentAuth(false);
+    let p = "";
+    try { p = (await SecurePin.getPhone()) || ""; } catch (e) {}
+    navigation.navigate("ForgotPassword", { mode: "pin", phone: p || phone || "" });
   };
 
   const verifyAndPurchase = async (pinValue) => {
     setProcessing(true);
 
     try {
-      const cleanPhone = "234" + phone.replace(/\s/g, "").replace(/^0/, "").replace(/^234/, "");
       console.log("[Data] Verifying PIN...");
 
       const userRes = await api.getUserProfile();
@@ -282,15 +316,15 @@ export default function DataScreen({ navigation }) {
       console.log("[Data] PIN verify:", verifyRes.success);
 
       if (!verifyRes.success) {
-        setError("Incorrect PIN. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setProcessing(false);
+        setShowPinError(true);
         return;
       }
 
-      console.log("[Data] Purchasing:", cleanPhone, network?.id, plan?.id);
+      console.log("[Data] Purchasing:", phone, network?.id, plan?.id);
       const result = await api.purchaseData({
-        phone: cleanPhone,
+        phone,
         provider: network?.id || "mtn",
         planId: plan?.id,
         amount: plan?.amount,
@@ -298,15 +332,21 @@ export default function DataScreen({ navigation }) {
       });
 
       if (result.success) {
+        setApiResponse(result.data?.api_response || "");
         setSuccess(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
-        setError(result.message || "Transaction failed.");
+        setApiResponse(result.data?.api_response || "");
+        setFailure({
+          message: result.message || "Transaction failed.",
+          data: result.data || {},
+        });
+        fail(result.message || "Transaction failed.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      fail("Network error. Please try again.");
     } finally {
       setProcessing(false);
     }
@@ -333,6 +373,12 @@ export default function DataScreen({ navigation }) {
           <Text style={styles.successAmount}>{fmt(plan?.amount)}</Text>
           <Text style={styles.successDesc}>{network?.name} {plan?.name} to {phone}</Text>
           <View style={styles.successDetails}>
+            {apiResponse ? (
+              <View style={[styles.successDetailRow, { flexDirection: 'column', alignItems: 'flex-start', borderBottomWidth: 1 }]}>
+                <Text style={styles.successDetailLabel}>API Response</Text>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: C.text, marginTop: 4, textAlign: 'left' }}>{apiResponse}</Text>
+              </View>
+            ) : null}
             <View style={styles.successDetailRow}>
               <Text style={styles.successDetailLabel}>Network</Text>
               <Text style={styles.successDetailValue}>{network?.name}</Text>
@@ -355,11 +401,79 @@ export default function DataScreen({ navigation }) {
     );
   }
 
-  const hasPlans = displayPlans.length > 0;
+  if (failure) {
+    const failedData = failure.data || {};
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={C.white} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Data</Text>
+          <View style={{ width: 22 }} />
+        </LinearGradient>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.failWrap}>
+          <View style={styles.failIconWrap}>
+            <Ionicons name="close" size={40} color={C.white} />
+          </View>
+          <Text style={styles.failTitle}>Purchase Failed</Text>
+          <Text style={styles.failAmount}>{fmt(plan?.amount)}</Text>
+          <Text style={styles.failDesc}>{failure.message}</Text>
+          <View style={styles.successDetails}>
+            {apiResponse ? (
+              <View style={[styles.successDetailRow, { flexDirection: 'column', alignItems: 'flex-start', borderBottomWidth: 1 }]}>
+                <Text style={styles.successDetailLabel}>API Response</Text>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: C.text, marginTop: 4, textAlign: 'left' }}>{apiResponse}</Text>
+              </View>
+            ) : null}
+            {failedData.transactionId ? (
+              <View style={styles.successDetailRow}>
+                <Text style={styles.successDetailLabel}>Transaction ID</Text>
+                <Text style={styles.successDetailValue}>{failedData.transactionId}</Text>
+              </View>
+            ) : null}
+            <View style={styles.successDetailRow}>
+              <Text style={styles.successDetailLabel}>Network</Text>
+              <Text style={styles.successDetailValue}>{failedData.provider || network?.name || "—"}</Text>
+            </View>
+            <View style={styles.successDetailRow}>
+              <Text style={styles.successDetailLabel}>Plan</Text>
+              <Text style={styles.successDetailValue}>{failedData.plan || failedData.dataValue || plan?.name || "—"}</Text>
+            </View>
+            {failedData.validity ? (
+              <View style={styles.successDetailRow}>
+                <Text style={styles.successDetailLabel}>Validity</Text>
+                <Text style={styles.successDetailValue}>{failedData.validity}</Text>
+              </View>
+            ) : null}
+            <View style={[styles.successDetailRow, { borderBottomWidth: 0 }]}>
+              <Text style={styles.successDetailLabel}>Phone</Text>
+              <Text style={styles.successDetailValue}>{failedData.phone || phone}</Text>
+            </View>
+          </View>
+          {failedData.status === "failed" ? (
+            <Text style={styles.failRefundNote}>Your wallet has been refunded.</Text>
+          ) : null}
+          <TouchableOpacity
+            style={styles.doneBtn}
+            onPress={() => { setFailure(null); setApiResponse(""); }}
+          >
+            <Text style={styles.doneBtnText}>Try Again</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.failCloseBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.failCloseText}>Close</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  }
 
+  const hasPlans = displayPlans.length > 0;
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
       <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
@@ -374,7 +488,7 @@ export default function DataScreen({ navigation }) {
         subtitle="Best bundles for all networks \u00B7 Fast activation"
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Network & Phone Number</Text>
         <View style={styles.comboRow}>
           <TouchableOpacity style={styles.networkLogoBtn} onPress={() => setShowNetwork(true)}>
@@ -483,8 +597,11 @@ export default function DataScreen({ navigation }) {
 
         <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        <View style={{ height: 90 + insets.bottom }} />
+      </ScrollView>
 
-        {/* Buy button - always visible, active only when plan selected */}
+      {/* Buy button - fixed above bottom nav */}
+      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
         <TouchableOpacity
           style={[styles.btn, !plan && styles.btnInactive]}
           onPress={handleBuy}
@@ -495,7 +612,7 @@ export default function DataScreen({ navigation }) {
             {plan ? `Buy Data - ${fmt(plan.amount)}` : "Select a plan to continue"}
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
 
       {/* Network Picker Modal */}
       <Modal visible={showNetwork} transparent animationType="slide">
@@ -567,10 +684,18 @@ export default function DataScreen({ navigation }) {
       </Modal>
 
       <PaymentAuthSheet
+        key={authSheetKey}
         visible={showPaymentAuth}
         onClose={() => setShowPaymentAuth(false)}
         onPinAuth={handlePaymentPinAuth}
         onBiometricAuth={handlePaymentBiometricAuth}
+        onForgotPin={goForgotPin}
+      />
+
+      <PinErrorModal
+        visible={showPinError}
+        onTryAgain={() => { setShowPinError(false); setAuthSheetKey((k) => k + 1); setShowPaymentAuth(true); }}
+        onForgotPin={goForgotPin}
       />
 
       <ProcessingOverlay visible={processing} message="Processing..." />
@@ -654,9 +779,15 @@ const styles = StyleSheet.create({
 
   balance: { fontSize: F.sm, color: C.textMuted, marginTop: S.base, textAlign: "center" },
   error: { fontSize: F.sm, color: C.debit, textAlign: "center", marginTop: S.sm },
+  buyBar: {
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    paddingHorizontal: S.lg, paddingTop: S.sm,
+    paddingBottom: S.md, backgroundColor: C.white,
+    borderTopWidth: 1, borderTopColor: C.border,
+  },
   btn: {
     backgroundColor: C.primary, borderRadius: R.sm, paddingVertical: S.md + 2,
-    alignItems: "center", marginTop: S.xl,
+    alignItems: "center", marginTop: 0,
   },
   btnInactive: {
     backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: C.border,
@@ -712,4 +843,22 @@ const styles = StyleSheet.create({
     paddingVertical: S.md + 2, alignItems: "center", marginTop: S.xl,
   },
   doneBtnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
+
+  failWrap: { flexGrow: 1, alignItems: "center", padding: S.xl, paddingTop: S.xxl },
+  failIconWrap: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: C.debit,
+    alignItems: "center", justifyContent: "center", marginBottom: S.base,
+  },
+  failTitle: { fontSize: F.h3, fontWeight: "800", color: C.text, marginBottom: S.sm },
+  failAmount: { fontSize: 36, fontWeight: "900", color: C.debit, letterSpacing: -1 },
+  failDesc: {
+    fontSize: F.md, color: C.textMuted, marginTop: S.xs,
+    textAlign: "center", lineHeight: 21,
+  },
+  failRefundNote: {
+    fontSize: F.sm, fontWeight: "700", color: C.credit,
+    marginTop: S.base, textAlign: "center",
+  },
+  failCloseBtn: { marginTop: S.md, paddingVertical: S.sm },
+  failCloseText: { color: C.textMuted, fontSize: F.md, fontWeight: "700" },
 });

@@ -9,7 +9,7 @@ const ONBOARDING_KEY = "subbridge_onboarded";
 
 export const AuthToken = {
   async save(token, user) {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    if (token) await SecureStore.setItemAsync(TOKEN_KEY, token);
     if (user) await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
   },
   async get() {
@@ -67,6 +67,25 @@ export const SecurePin = {
 export const OnboardingFlag = {
   async set() { await SecureStore.setItemAsync(ONBOARDING_KEY, "done"); },
   async get() { return (await SecureStore.getItemAsync(ONBOARDING_KEY)) === "done"; },
+};
+
+const PENDING_SIGNUP_KEY = "subbridge_pending_signup";
+
+// Holds an in-progress signup awaiting phone verification, so an app
+// kill / process death while the user copies the OTP does not lose state.
+export const PendingSignup = {
+  async save(data) {
+    try { await SecureStore.setItemAsync(PENDING_SIGNUP_KEY, JSON.stringify(data)); } catch {}
+  },
+  async get() {
+    try {
+      const raw = await SecureStore.getItemAsync(PENDING_SIGNUP_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  },
+  async clear() {
+    try { await SecureStore.deleteItemAsync(PENDING_SIGNUP_KEY); } catch {}
+  },
 };
 
 const NAV_STATE_KEY = "subbridge_nav_state";
