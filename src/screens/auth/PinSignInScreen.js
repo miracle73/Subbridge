@@ -1,4 +1,5 @@
 import AuthBackground from "../../components/AuthBackground";
+import { DEMO_MODE } from "../../services/demoMode";
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -57,7 +58,7 @@ export default function PinSignInScreen({ navigation }) {
     console.log("[PinSignIn] Verifying PIN...");
 
     try {
-      const phone = await SecurePin.getPhone();
+      const phone = (await SecurePin.getPhone()) || (DEMO_MODE ? "08114516826" : null);
       console.log("[PinSignIn] Phone:", phone);
       if (!phone) {
         setErrorModalMessage("No phone found. Please sign in with password.");

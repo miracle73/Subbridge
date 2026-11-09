@@ -1,4 +1,5 @@
 import AuthBackground, { withAuthStyles } from "";
+import { DEMO_MODE } from "../services/demoMode";
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,7 +31,7 @@ export default function AuthScreen({ navigation }) {
 
   useEffect(() => {
     SecurePin.getPhone().then((p) => { if (p) { setPhone(p); setIdentifier(p); } });
-    SecurePin.hasSavedPin().then(setHasSavedPin);
+    SecurePin.hasSavedPin().then((v) => setHasSavedPin(v || DEMO_MODE));
     SecurePin.getName().then((n) => { if (n) setUserName(n); });
     Promise.all([Biometrics.isAvailable(), Biometrics.isEnabled()]).then(([a, e]) => {
       console.log("[Auth] biometric available:", a, "enabled:", e);
@@ -50,7 +51,7 @@ export default function AuthScreen({ navigation }) {
   const loginWithPin = async (value) => {
     setLoading(true);
     // Phone is pre-loaded on mount; fall back to storage so the request fires immediately
-    const currentPhone = phone || (await SecurePin.getPhone());
+    const currentPhone = phone || (await SecurePin.getPhone()) || (DEMO_MODE ? "08114516826" : "");
     console.log("[Auth] PIN login attempt, phone:", currentPhone);
 
     try {

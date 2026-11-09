@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "../services/demoMode";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import { SecurePin } from "./storage";
@@ -57,7 +58,9 @@ export const Biometrics = {
 
   async isEnabled() {
     try {
-      return (await SecureStore.getItemAsync(ENABLED_KEY)) === "1";
+      const v = await SecureStore.getItemAsync(ENABLED_KEY);
+      // Demo: biometrics is on by default until the user switches it off.
+      return v === "1" || (DEMO_MODE && v === null);
     } catch {
       return false;
     }
@@ -66,6 +69,7 @@ export const Biometrics = {
   async setEnabled(on) {
     try {
       if (on) await SecureStore.setItemAsync(ENABLED_KEY, "1");
+      else if (DEMO_MODE) await SecureStore.setItemAsync(ENABLED_KEY, "0");
       else await SecureStore.deleteItemAsync(ENABLED_KEY);
     } catch {}
   },
@@ -99,6 +103,12 @@ export const Biometrics = {
   async getPinWithBiometric(reason) {
     const enabled = await Biometrics.isEnabled();
     if (!enabled) return { error: "Biometric unlock is not enabled." };
+    if (DEMO_MODE) {
+      // Demo: a successful fingerprint/Face ID scan is enough to sign in.
+      const ok = await Biometrics.authenticate(reason);
+      if (!ok) return { error: "Authentication cancelled." };
+      return { pin: (await SecurePin.get()) || "0000" };
+    }
     const savedPin = await SecurePin.get();
     if (!savedPin || savedPin.length < 4) {
       return { error: "No saved PIN found. Please enter your PIN." };

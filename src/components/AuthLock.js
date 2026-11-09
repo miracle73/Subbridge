@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "../services/demoMode";
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -54,7 +55,7 @@ export default function AuthLock({ onUnlock, onLogout, onForgotPin }) {
     setLoading(true);
     setError("");
     try {
-      let currentPhone = await SecurePin.getPhone();
+      let currentPhone = (await SecurePin.getPhone()) || (DEMO_MODE ? "08114516826" : null);
       if (!currentPhone) {
         const userRes = await api.getUserProfile();
         currentPhone = userRes.data?.phone || userRes.data?.user?.phone || "";
