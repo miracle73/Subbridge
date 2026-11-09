@@ -3,6 +3,7 @@ import OneSignalService from "./OneSignalService";
 import { isEmail } from "../utils/format";
 import { ApiLog } from "./apiLog";
 
+import { demoResponse } from "./demoMode";
 const BASE_URL = "https://subbridge.connectbridge.com.ng";
 
 // The backend occasionally takes 5-10s (email/WhatsApp OTP sends). If a
@@ -107,6 +108,8 @@ class ApiService {
   }
 
   async request(endpoint, method = "POST", body = null) {
+    const demo = demoResponse(endpoint);
+    if (demo) { console.log(`[API][DEMO] ${method} ${endpoint}`); return demo; }
     const headers = {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -138,6 +141,9 @@ class ApiService {
         method === "GET" ? READ_TIMEOUT_MS : WRITE_TIMEOUT_MS
       );
 
+      if (response.status === 401 && this.token === "demo-token") {
+        return { success: false, message: "Demo mode", data: null };
+      }
       if (response.status === 401) {
         console.log("[API] 401 Unauthorized — clearing token, redirecting to auth");
         this.token = null;
@@ -368,6 +374,8 @@ class ApiService {
   // The mobile API has no signup-OTP route; activation reuses the browser
   // endpoints documented in the "Browser Password & PIN Recovery" folder.
   async postForm(endpoint, fields) {
+    const demo = demoResponse(endpoint);
+    if (demo) { console.log(`[API][DEMO] POST-FORM ${endpoint}`); return demo; }
     const body = Object.entries(fields)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join("&");
