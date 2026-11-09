@@ -2,7 +2,6 @@
   "expo": {
     "name": "SubBridge",
     "slug": "subbridge",
-    "owner": "drlight",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -76,8 +75,26 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "7ecab4c4-7378-436e-a777-1ccbf4750ea3"
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "OneSignalNotificationServiceExtension",
+                  "bundleIdentifier": "com.subbridge.app.OneSignalNotificationServiceExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.subbridge.app.onesignal"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "b87b384c-e367-4def-9b2b-086bb63f234f"
       }
-    }
+    },
+    "owner": "mirack"
   }
 }
