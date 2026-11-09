@@ -1,3 +1,4 @@
+import AuthBackground, { withAuthStyles } from "";
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -72,7 +73,7 @@ export default function AuthScreen({ navigation }) {
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone: currentPhone });
         } else {
-          navigation.replace("Home");
+          navigation.replace("Announcement");
         }
       } else {
         setErrorModalMessage(result.message || "Incorrect PIN");
@@ -124,7 +125,7 @@ export default function AuthScreen({ navigation }) {
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone: savedPhone || undefined });
         } else {
-          navigation.replace("Home");
+          navigation.replace("Announcement");
         }
       } else {
         const msg = result.message || "Invalid credentials.";
@@ -154,6 +155,7 @@ export default function AuthScreen({ navigation }) {
     return (
       <>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
         <View style={styles.inner}>
           <View style={styles.profileAvatar}>
             {userName ? (
@@ -186,7 +188,7 @@ export default function AuthScreen({ navigation }) {
           {signupLink}
         </View>
       </KeyboardAvoidingView>
-      <ErrorModal visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
+      <ErrorModal title="Login failed" visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
       </>
     );
   }
@@ -194,6 +196,7 @@ export default function AuthScreen({ navigation }) {
   return (
     <>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
       <ScrollView
         contentContainerStyle={styles.innerScroll}
         keyboardShouldPersistTaps="handled"
@@ -257,17 +260,17 @@ export default function AuthScreen({ navigation }) {
         {signupLink}
       </ScrollView>
     </KeyboardAvoidingView>
-    <ErrorModal visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
+    <ErrorModal title="Login failed" visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
     </>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   inner: { flex: 1, justifyContent: "center", alignItems: "center", padding: S.xl },
   innerScroll: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: S.xl },
   avatarWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)",
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "#FFB020",
     justifyContent: "center", alignItems: "center", marginBottom: S.base,
   },
   logo: { width: 64, height: 64, borderRadius: 16 },
@@ -304,4 +307,4 @@ const styles = StyleSheet.create({
   signupLink: { marginTop: S.xl },
   signupText: { fontSize: F.md, color: "rgba(255,255,255,0.6)" },
   signupBold: { color: C.white, fontWeight: "700" },
-});
+}));

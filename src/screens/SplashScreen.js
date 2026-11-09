@@ -43,13 +43,19 @@ export default function SplashScreen({ navigation }) {
   }, []);
 
   return (
-    <LinearGradient colors={[C.primary, C.primaryDark, C.dark]} style={styles.container}>
+    <LinearGradient colors={["#2A4BFF", C.primary, "#081257"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <View style={[styles.blob, { width: 420, height: 420, top: -80, left: -120 }]} />
+      <View style={[styles.blob, { width: 380, height: 380, bottom: -60, right: -120 }]} />
+      <View style={[styles.blob, { width: 220, height: 220, backgroundColor: C.gold + "33" }]} />
+      <Text style={[styles.spark, { top: "34%", left: "22%" }]}>✦</Text>
+      <Text style={[styles.spark, { top: "36%", right: "20%", fontSize: 14 }]}>✦</Text>
+      <Text style={[styles.spark, { top: "56%", right: "22%", fontSize: 24 }]}>✦</Text>
       <Animated.View style={{ transform: [{ translateY: logoY }, { scale: logoS }], opacity }}>
         <Image source={LOGO} style={styles.logo} resizeMode="contain" />
       </Animated.View>
       <Text style={styles.name}>SubBridge</Text>
-      <Text style={styles.tagline}>Bills made simple</Text>
+      <Text style={styles.tagline}>Bills paid. Life sorted.</Text>
       <View style={styles.progressWrap}>
         <View style={[styles.progressFill, { width: `${progress}%` }]} />
       </View>
@@ -59,15 +65,14 @@ export default function SplashScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  logo: {
-    width: 140, height: 140, borderRadius: 28, backgroundColor: C.white,
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.35)",
-  },
+  blob: { position: "absolute", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.06)" },
+  spark: { position: "absolute", color: "#FFD36B", fontSize: 20, fontWeight: "800" },
+  logo: { width: 104, height: 104, borderRadius: 30, backgroundColor: C.white },
   name: { fontSize: F.h1, fontWeight: "800", color: C.white, marginTop: S.base },
   tagline: { fontSize: F.md, color: "rgba(255,255,255,0.7)", marginTop: S.xs },
   progressWrap: {
     width: 160, height: 4, backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 2, marginTop: S.xl, overflow: "hidden",
   },
-  progressFill: { height: "100%", backgroundColor: C.white, borderRadius: 2 },
+  progressFill: { height: "100%", backgroundColor: C.gold, borderRadius: 2 },
 });

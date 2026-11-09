@@ -1,3 +1,4 @@
+import AuthBackground, { withAuthStyles } from "";
 import React, { useState, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -81,6 +82,7 @@ export default function SetupPinScreen({ navigation, route }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <AuthBackground />
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Ionicons name="shield-checkmark" size={48} color={C.white} />
@@ -106,7 +108,7 @@ export default function SetupPinScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   header: { alignItems: "center", paddingTop: S.xl, paddingHorizontal: S.xl },
   title: { fontSize: F.h2, fontWeight: "800", color: C.white, marginTop: S.base },
@@ -122,4 +124,4 @@ const styles = StyleSheet.create({
   },
   error: { fontSize: F.sm, color: "#FFD4D4", marginTop: S.md },
   busy: { fontSize: F.sm, color: "rgba(255,255,255,0.7)", marginTop: S.md },
-});
+}));

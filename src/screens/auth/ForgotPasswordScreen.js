@@ -1,3 +1,4 @@
+import AuthBackground, { withAuthStyles } from "";
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,7 +10,7 @@ import api from "../../services/api";
 export default function ForgotPasswordScreen({ navigation, route }) {
   const mode = route.params?.mode === "pin" ? "pin" : "password";
   const [phone, setPhone] = useState(() => normalizePhone(route.params?.phone || ""));
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(route.params?.email || "");
   const [inputType, setInputType] = useState(mode === "pin" ? "phone" : "email");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -100,6 +101,7 @@ export default function ForgotPasswordScreen({ navigation, route }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
       <View style={styles.inner}>
         <TouchableOpacity style={styles.back} onPress={goBack}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
@@ -188,12 +190,12 @@ export default function ForgotPasswordScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   inner: { flex: 1, justifyContent: "center", alignItems: "center", padding: S.xl },
   back: { position: "absolute", top: 60, left: S.xl, zIndex: 10 },
   avatarWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)",
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "#FFB020",
     justifyContent: "center", alignItems: "center", marginBottom: S.base,
   },
   title: { fontSize: F.h2, fontWeight: "800", color: C.white },
@@ -251,4 +253,4 @@ const styles = StyleSheet.create({
   },
   btnText: { color: C.primary, fontSize: F.lg, fontWeight: "700" },
   linkText: { fontSize: F.md, color: "rgba(255,255,255,0.6)", marginTop: S.xl, fontWeight: "600" },
-});
+}));

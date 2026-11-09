@@ -1,3 +1,4 @@
+import { useDarkMode, darkVariant, DARK } from "../utils/darkMode";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
@@ -18,10 +19,12 @@ import Toast from "../components/Toast";
 import AddMoneySheet from "../components/AddMoneySheet";
 
 const SERVICES = [
-  { id: "airtime", icon: "phone-portrait-outline", label: "Airtime", screen: "Airtime" },
-  { id: "data", icon: "wifi-outline", label: "Data", screen: "Data" },
-  { id: "cable", icon: "tv-outline", label: "Cable TV", screen: "CableTv" },
-  { id: "electricity", icon: "flash-outline", label: "Electricity", screen: "Electricity" },
+  { id: "airtime", icon: "phone-portrait-outline", label: "Airtime", screen: "Airtime", tint: "#E8EDFF", color: "#1A3CE8" },
+  { id: "data", icon: "wifi-outline", label: "Data", screen: "Data", tint: "#FFF3D6", color: "#E08A00" },
+  { id: "cable", icon: "tv-outline", label: "Cable TV", screen: "CableTv", tint: "#E3F8EE", color: "#0E9F5A" },
+  { id: "electricity", icon: "flash-outline", label: "Electricity", screen: "Electricity", tint: "#FFE8E6", color: "#F04438" },
+  { id: "a2c", icon: "swap-horizontal-outline", label: "Airtime to Cash", screen: "AirtimeToCash", tint: "#EFE6FF", color: "#7A3CE8" },
+  { id: "ref", icon: "people-outline", label: "Referral", screen: "Rewards", tint: "#E0F6FF", color: "#0A8BC2" },
 ];
 
 const TX_ICONS = {
@@ -31,6 +34,8 @@ const TX_ICONS = {
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [dark, toggleDark] = useDarkMode();
+  const st = dark ? darkStyles : styles;
   const [balance, setBalance] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -173,210 +178,177 @@ export default function HomeScreen({ navigation }) {
 
   if (loading) return <Preloader />;
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+  const first = user?.firstName || "";
+  const initials = `${user?.firstName?.charAt(0) || ""}${user?.lastName?.charAt(0) || ""}`;
+  const acctName = user?.virtualAccount?.accountName || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Your account";
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={[styles.header, { paddingTop: insets.top + S.xs }]}>
-        <View style={styles.headerLeft}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
-          </View>
+  return (
+    <View style={st.container}>
+      <StatusBar barStyle={dark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+
+      <View style={[st.header, { paddingTop: insets.top + S.md }]}>
+        <View style={st.headerLeft}>
+          <View style={st.avatar}><Text style={st.avatarText}>{initials}</Text></View>
           <View>
-            <Text style={styles.greeting}>Hello, {user?.firstName}</Text>
-            <Text style={styles.username}>{user?.firstName} {user?.lastName}</Text>
+            <Text style={st.greeting}>{greet} 👋</Text>
+            <Text style={st.username}>{first}</Text>
           </View>
         </View>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => go("Profile")}>
-            <Ionicons name="person-outline" size={18} color={C.white} />
+        <View style={st.headerRight}>
+          <TouchableOpacity style={st.iconBtn} onPress={toggleDark}>
+            <Ionicons name={dark ? "sunny-outline" : "moon-outline"} size={18} color={dark ? C.gold : C.text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={st.iconBtn} onPress={() => go("Notifications")}>
+            <Ionicons name="notifications-outline" size={18} color={dark ? DARK.text : C.text} />
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Balance Card */}
-        <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.balanceCard}>
-          <View style={styles.balanceTop}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: S.xs }}>
-              <Text style={styles.balanceLabel}>Available Balance</Text>
-              <TouchableOpacity onPress={() => setShowBalance(!showBalance)}>
-                <Ionicons name={showBalance ? "eye-outline" : "eye-off-outline"} size={14} color="rgba(255,255,255,0.7)" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <Text style={[styles.balanceAmount, { marginTop: S.xs }]}>{fmt(balance, !showBalance)}</Text>
-
-          <View style={styles.statsRow}>
-            <TouchableOpacity style={styles.statItem} activeOpacity={0.7} onPress={() => go("Rewards")}>
-              <Text style={styles.statLabel}>Referral</Text>
-              <Text style={styles.statValue}>{fmt(referralBalance)}</Text>
-              <Ionicons name="chevron-forward" size={12} color="rgba(255,255,255,0.7)" />
+        <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.balanceCard}>
+          <View style={[st.blob, { width: 180, height: 180, top: -50, right: -40 }]} />
+          <View style={[st.blob, { width: 110, height: 110, bottom: -40, right: 30, backgroundColor: C.gold + "40" }]} />
+          <View style={st.balanceTop}>
+            <TouchableOpacity style={st.row} onPress={() => setShowBalance(!showBalance)}>
+              <Text style={st.balanceLabel}>Wallet balance</Text>
+              <Ionicons name={showBalance ? "eye-outline" : "eye-off-outline"} size={14} color={C.onPrimaryMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => go("Rewards")}>
+              <Text style={st.bonus}>🎁 Bonus {fmtShort(referralBalance)}</Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.8} onPress={() => go("Rewards")}>
-              <Ionicons name="gift-outline" size={15} color={C.primary} />
-              <Text style={styles.actionBtnText}>Withdraw Bonus</Text>
+          <Text style={st.balanceAmount}>{fmt(balance, !showBalance)}</Text>
+          <View style={st.actionRow}>
+            <TouchableOpacity style={st.actionBtn} activeOpacity={0.85} onPress={() => navigation.navigate("AddMoney", { balance, accountName: acctName, accounts: acctNo ? [{ bankName, accountNumber: acctNo }] : [] })}>
+              <Text style={st.actionBtnText}>+ Add Funds</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.8} onPress={() => setShowAdd(true)}>
-              <Ionicons name="add-circle-outline" size={15} color={C.primary} />
-              <Text style={styles.actionBtnText}>Add Money</Text>
+            <TouchableOpacity style={[st.actionBtn, st.actionGhost]} activeOpacity={0.85} onPress={() => go("Rewards")}>
+              <Text style={[st.actionBtnText, { color: C.white }]}>Withdraw</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
 
-        {/* Virtual Account — bank + account number live here, not on the balance card */}
-        <View style={styles.accountCard}>
-          <View style={styles.accountCardTop}>
-            <View style={styles.accountLabelWrap}>
-              <View style={styles.accountLabelDot} />
-              <Text style={styles.accountLabel}>YOUR ACCOUNT</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={312} decelerationRate="fast" contentContainerStyle={{ paddingHorizontal: S.xl, gap: S.md }} style={{ marginTop: S.lg }}>
+          <LinearGradient colors={[C.primaryMid, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.acctCard}>
+            <View style={[st.blob, { width: 140, height: 140, top: -40, right: -30 }]} />
+            <View style={st.rowBetween}>
+              <Text style={st.acctNo} selectable>{acctNo || "—"}</Text>
+              <TouchableOpacity style={st.copyBtn} onPress={copyAccount} disabled={!acctNo}>
+                <Ionicons name="copy-outline" size={16} color={C.white} />
+              </TouchableOpacity>
             </View>
-            <View style={styles.accountBankPill}>
-              <Ionicons name="business-outline" size={11} color={C.primary} />
-              <Text style={styles.accountBankPillText} numberOfLines={1}>{bankName}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.accountNumberText} selectable numberOfLines={1}>
-            {acctNo ? `${acctNo.slice(0, 3)} ${acctNo.slice(3, 6)} ${acctNo.slice(6)}` : "—"}
-          </Text>
-
-          <View style={styles.accountBottomRow}>
-            <Text style={styles.accountHolder} numberOfLines={1}>
-              {user?.virtualAccount?.accountName || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Your account"}
-            </Text>
-            <TouchableOpacity style={styles.accountCopyBtn} onPress={copyAccount} disabled={!acctNo} activeOpacity={0.85}>
-              <Ionicons name="copy-outline" size={13} color={C.primary} />
-              <Text style={styles.accountCopyText}>Copy</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.accountFooter}>
-            <Ionicons name="flash" size={12} color={C.credit} />
-            <Text style={styles.accountFooterText}>Transfers to this account fund your wallet instantly.</Text>
-          </View>
-        </View>
-
-        {/* Services */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Our Services</Text>
-        </View>
-        <View style={styles.servicesGrid}>
-          {SERVICES.map((s) => (
-            <TouchableOpacity key={s.id} style={styles.serviceItem} onPress={() => go(s.screen)} activeOpacity={0.6}>
-              <View style={styles.serviceIcon}>
-                <Ionicons name={s.icon} size={22} color={C.primary} />
-              </View>
-              <Text style={styles.serviceLabel}>{s.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* SubBridge Banner */}
-        <View style={styles.bannerCard}>
-          <LinearGradient colors={[C.primaryDark, "#1A2F6E"]} style={styles.bannerGradient}>
-            <View style={styles.bannerIconWrap}>
-              <Ionicons name="shield-checkmark-outline" size={22} color={C.white} />
-            </View>
-            <View style={styles.bannerContent}>
-              <Text style={styles.bannerTitle}>SubBridge</Text>
-              <Text style={styles.bannerDesc}>Your all-in-one bill payment platform. {"\n"}Airtime, Data, Cable TV & Electricity.</Text>
+            <Text style={st.acctLabel}>ACCOUNT NAME</Text>
+            <Text style={st.acctName} numberOfLines={1}>{acctName}</Text>
+            <View style={[st.row, { marginTop: S.sm }]}>
+              <View style={st.bankPill}><Text style={st.bankPillText} numberOfLines={1}>{bankName}</Text></View>
+              <Text style={st.fee}>Instant funding</Text>
             </View>
           </LinearGradient>
+          <TouchableOpacity onPress={() => go("Data")} activeOpacity={0.9}>
+            <LinearGradient colors={[C.gold, "#FF6B2C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[st.acctCard, { width: 220, flex: 1 }]}>
+              <Text style={st.promoTitle}>🎁 Hot data deals</Text>
+              <Text style={st.promoSub}>Cheap bundles on all networks. Tap to buy.</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+
+        <View style={st.servicesCard}>
+          <Text style={st.sectionTitle}>Services</Text>
+          <View style={st.servicesGrid}>
+            {SERVICES.map((s) => (
+              <TouchableOpacity key={s.id} style={st.serviceItem} onPress={() => go(s.screen)} activeOpacity={0.7}>
+                <View style={[st.serviceIcon, { backgroundColor: s.tint }]}>
+                  <Ionicons name={s.icon} size={22} color={s.color} />
+                </View>
+                <Text style={st.serviceLabel} numberOfLines={2}>{s.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
-        {/* Recent Transactions */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <TouchableOpacity style={styles.viewAllBtn} onPress={() => go("TransactionsTab")}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <Ionicons name="chevron-forward" size={14} color={C.primary} />
-          </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => go("Rewards")} style={{ marginHorizontal: S.xl, marginTop: S.lg }}>
+          <LinearGradient colors={[C.gold, "#FF6B2C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.referBanner}>
+            <View style={[st.blob, { width: 120, height: 120, top: -30, right: -20 }]} />
+            <View style={{ flex: 1 }}>
+              <Text style={st.referTitle}>Refer & earn</Text>
+              <Text style={st.referSub}>Earn a bonus for every friend who joins</Text>
+            </View>
+            <Text style={{ fontSize: 34 }}>🎉</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <View style={st.sectionHeader}>
+          <Text style={st.sectionTitle}>Recent transactions</Text>
+          <TouchableOpacity onPress={() => go("TransactionsTab")}><Text style={st.viewAllText}>See all</Text></TouchableOpacity>
         </View>
         {recentTx.length === 0 ? (
-          <View style={{ paddingHorizontal: S.xl, paddingVertical: S.lg }}>
-            <Text style={{ fontSize: F.sm, color: C.textMuted, textAlign: "center" }}>No transactions yet</Text>
+          <View style={st.empty}>
+            <Text style={{ fontSize: 30 }}>🧾</Text>
+            <Text style={st.emptyTitle}>No transactions yet</Text>
+            <Text style={st.emptySub}>Your payments will show up here.</Text>
           </View>
-        ) : (
-          recentTx.map((tx) => {
-            const isCredit = tx.type === "credit";
-            const statusColor = tx.status === "success" ? C.credit : tx.status === "failed" ? C.debit : tx.status === "pending" ? "#F59E0B" : C.primary;
-            let displayDesc = tx.description || "";
-            if (tx.category && displayDesc && !displayDesc.toLowerCase().startsWith(tx.category.toLowerCase())) {
-              displayDesc = tx.category + " - " + displayDesc.replace(/^[\s-]+/, "");
-            } else if (tx.category && !displayDesc) {
-              displayDesc = tx.category;
-            }
-            return (
-              <TouchableOpacity key={tx.id || tx.reference} style={styles.txItem} activeOpacity={0.6} onPress={() => openReceipt(tx)}>
-                <View style={[styles.txIconWrap, { backgroundColor: statusColor + "15" }]}>
-                  <Ionicons name={TX_ICONS[tx.category] || "receipt-outline"} size={18} color={statusColor} />
+        ) : recentTx.map((tx) => {
+          const isCredit = tx.type === "credit";
+          const sc = tx.status === "success" ? C.credit : tx.status === "failed" ? C.debit : tx.status === "pending" ? C.gold : C.primary;
+          let desc = tx.description || "";
+          if (tx.category && desc && !desc.toLowerCase().startsWith(tx.category.toLowerCase())) desc = tx.category + " - " + desc.replace(/^[\s-]+/, "");
+          else if (tx.category && !desc) desc = tx.category;
+          return (
+            <TouchableOpacity key={tx.id || tx.reference} style={st.txItem} activeOpacity={0.7} onPress={() => openReceipt(tx)}>
+              <View style={[st.txIconWrap, { backgroundColor: sc + "1F" }]}>
+                <Ionicons name={TX_ICONS[tx.category] || "receipt-outline"} size={18} color={sc} />
+              </View>
+              <View style={st.txInfo}>
+                <Text style={st.txLabel} numberOfLines={1}>{desc || tx.service || "Transaction"}</Text>
+                <Text style={st.txDesc}>{tx.date} · {tx.time || formatTime(tx.date || tx.createdAt)}</Text>
+              </View>
+              <View style={st.txRight}>
+                <Text style={[st.txAmount, { color: isCredit ? C.credit : dark ? DARK.text : C.text }]}>{isCredit ? "+" : "-"}{fmtShort(tx.amount)}</Text>
+                <View style={[st.txStatus, { backgroundColor: sc + "1F" }]}>
+                  <Text style={[st.txStatusText, { color: sc }]}>{tx.status || (isCredit ? "Credit" : "Debit")}</Text>
                 </View>
-                <View style={styles.txInfo}>
-                  <Text style={styles.txLabel}>{displayDesc || tx.service || "Transaction"}</Text>
-                  <Text style={styles.txDesc}>{tx.date} {"\u00B7"} {tx.time || formatTime(tx.date || tx.createdAt)}</Text>
-                </View>
-                <View style={styles.txRight}>
-                  <Text style={[styles.txAmount, { color: isCredit ? C.credit : C.debit }]}>
-                    {isCredit ? "+" : "-"}{fmtShort(tx.amount)}
-                  </Text>
-                  <View style={[styles.txStatus, { backgroundColor: statusColor + "15" }]}>
-                    <Text style={[styles.txStatusText, { color: statusColor }]}>
-                      {tx.status || (isCredit ? "Credit" : "Debit")}
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
-      <AddMoneySheet
-        visible={showAdd}
-        onClose={() => setShowAdd(false)}
-        bankName={bankName}
-        accountNumber={acctNo}
-        onSelect={onAddSelect}
-        onToast={showToast}
-      />
-      {/* Notification overlay — rendered inline (not a native Modal) so it can
-          never outlive this screen or float above the auth screens. */}
+      <AddMoneySheet visible={showAdd} onClose={() => setShowAdd(false)} bankName={bankName} accountNumber={acctNo} onSelect={onAddSelect} onToast={showToast} />
+
       {isFocused && showNotificationModal && (
-        <View style={styles.notificationOverlay}>
-          <View style={styles.notificationCard}>
-            <View style={styles.notificationHeader}>
-              <Image source={require("../assets/logo.jpg")} style={styles.notificationLogo} resizeMode="contain" />
-              <Text style={styles.notificationHeaderTitle}>SubBridge</Text>
-              <TouchableOpacity style={styles.notificationClose} onPress={() => setShowNotificationModal(false)}>
-                <Ionicons name="close" size={22} color={C.textMuted} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.notificationIconWrap}>
-              <View style={styles.notificationIconBadge}>
-                <Ionicons name="shield-checkmark" size={28} color={C.white} />
+        <View style={st.nOverlay}>
+          <View style={[st.blob, { width: 280, height: 280, bottom: 80, left: -80, backgroundColor: C.primary + "55" }]} />
+          <View style={[st.rowBetween, { paddingTop: insets.top + S.lg }]}>
+            <View style={st.row}>
+              <View style={st.nLogo}><Image source={require("../assets/logo.jpg")} style={{ width: 30, height: 30 }} resizeMode="contain" /></View>
+              <View>
+                <Text style={st.nBrand}>SUBBRIDGE</Text>
+                <Text style={st.nSub}>Announcement</Text>
               </View>
             </View>
-            <Text style={styles.notificationTitle}>Important Notice</Text>
-            <Text style={styles.notificationMessage}>{notificationMessage}</Text>
-            <View style={styles.notificationActionsRow}>
-              <TouchableOpacity style={styles.notificationBtnPrimary} onPress={() => Linking.openURL('https://wa.me/+2348012345678')}>
-                <Ionicons name="logo-whatsapp" size={18} color={C.white} />
-                <Text style={styles.notificationBtnTextPrimary}>WhatsApp Group</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.notificationBtnSecondary} onPress={() => Linking.openURL('https://wa.me/+2348012345678')}>
-                <Ionicons name="headset-outline" size={18} color={C.primary} />
-                <Text style={styles.notificationBtnTextSecondary}>Customer Support</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={st.nClose} onPress={() => setShowNotificationModal(false)}>
+              <Ionicons name="close" size={20} color={C.white} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[st.nSub, { marginTop: 40 }]}>Hi {first},</Text>
+          <Text style={st.nTitle}>You have a new update 🔔</Text>
+          <View style={st.nGlass}>
+            <Text style={st.nMsg}>{notificationMessage}</Text>
+          </View>
+          <View style={[st.row, { marginTop: S.xl, gap: S.md }]}>
+            <TouchableOpacity style={st.nGhost} onPress={() => Linking.openURL("https://wa.me/+2348012345678")}>
+              <Ionicons name="chatbubble-ellipses-outline" size={16} color={C.white} />
+              <Text style={st.nGhostText}>Join channel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={st.nBtn} onPress={() => setShowNotificationModal(false)}>
+              <Text style={st.nBtnText}>Dismiss</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -385,232 +357,97 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
+const shadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 18, elevation: 3 };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
+  row: { flexDirection: "row", alignItems: "center", gap: 6 },
+  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  blob: { position: "absolute", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)" },
 
-  notificationOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: S.xl,
-    zIndex: 100,
-  },
-  notificationCard: {
-    backgroundColor: C.white,
-    borderRadius: R.md,
-    padding: S.xl,
-    width: '100%',
-    maxWidth: 420,
-    elevation: 0,
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    borderWidth: 0,
-  },
-  notificationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: S.lg,
-  },
-  notificationLogo: {
-    width: 28,
-    height: 28,
-    marginRight: S.sm,
-  },
-  notificationHeaderTitle: {
-    flex: 1,
-    fontSize: F.md,
-    fontWeight: '800',
-    color: C.primary,
-  },
-  notificationClose: {
-    padding: S.sm,
-  },
-  notificationIconWrap: {
-    alignItems: 'center',
-    marginBottom: S.md,
-  },
-  notificationIconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: C.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: S.md,
-  },
-  notificationTitle: {
-    fontSize: F.h3,
-    fontWeight: '800',
-    color: C.text,
-    textAlign: 'center',
-    marginBottom: S.sm,
-  },
-  notificationMessage: {
-    fontSize: F.md,
-    color: C.textMuted,
-    textAlign: 'center',
-    marginBottom: S.xl,
-    lineHeight: 22,
-  },
-  notificationActionsRow: {
-    flexDirection: 'row',
-    gap: S.sm,
-    marginTop: S.md,
-  },
-  notificationBtnPrimary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: S.sm,
-    backgroundColor: C.primary,
-    borderRadius: R.sm,
-    paddingVertical: S.md,
-    paddingHorizontal: S.base,
-  },
-  notificationBtnSecondary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: S.sm,
-    backgroundColor: C.inputBg,
-    borderRadius: R.sm,
-    paddingVertical: S.md,
-    paddingHorizontal: S.base,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  notificationBtnTextPrimary: {
-    fontSize: F.base,
-    fontWeight: '800',
-    color: C.white,
-  },
-  notificationBtnTextSecondary: {
-    fontSize: F.base,
-    fontWeight: '700',
-    color: C.primary,
-  },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingBottom: S.md },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: S.md },
+  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.primaryLight, justifyContent: "center", alignItems: "center" },
+  avatarText: { fontSize: F.base, fontWeight: "800", color: C.primary },
+  greeting: { fontSize: F.sm, color: C.textMuted, fontWeight: "500" },
+  username: { fontSize: F.xxl, fontWeight: "800", color: C.text },
+  headerRight: { flexDirection: "row", gap: S.sm },
+  iconBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.white, justifyContent: "center", alignItems: "center", ...shadow },
 
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingBottom: S.sm },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: S.sm },
-  avatar: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center", alignItems: "center", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.4)",
-  },
-  avatarText: { fontSize: F.sm, fontWeight: "800", color: C.white },
-  greeting: { fontSize: 10, color: "rgba(255,255,255,0.7)" },
-  username: { fontSize: F.base, fontWeight: "800", color: C.white },
-  headerRight: { flexDirection: "row", gap: S.xs },
-  iconBtn: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center", alignItems: "center",
-  },
-  badge: {
-    position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: 8,
-    backgroundColor: C.debit, justifyContent: "center", alignItems: "center",
-  },
-  badgeText: { fontSize: 9, fontWeight: "700", color: C.white },
-
-  balanceCard: {
-    marginHorizontal: S.xl, borderRadius: R.md, padding: S.base, marginTop: S.md,
-    shadowOpacity: 0, shadowRadius: 0, elevation: 0,
-  },
+  balanceCard: { marginHorizontal: S.xl, marginTop: S.sm, borderRadius: 26, padding: S.xl, overflow: "hidden", ...shadow },
   balanceTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  balanceLabel: { fontSize: 11, color: "rgba(255,255,255,0.7)" },
-  balanceAmount: { fontSize: 32, fontWeight: "900", color: C.white, letterSpacing: -1.2 },
+  balanceLabel: { fontSize: F.sm, color: C.onPrimaryMuted, fontWeight: "500" },
+  bonus: { fontSize: F.sm, fontWeight: "800", color: C.gold },
+  balanceAmount: { fontSize: 32, fontWeight: "900", color: C.white, letterSpacing: -1, marginTop: S.sm },
+  actionRow: { flexDirection: "row", gap: S.md, marginTop: S.lg },
+  actionBtn: { flex: 1, alignItems: "center", backgroundColor: C.white, borderRadius: 14, paddingVertical: 12 },
+  actionGhost: { backgroundColor: "rgba(255,255,255,0.16)" },
+  actionBtnText: { fontSize: F.md, fontWeight: "800", color: C.primary },
 
-  accountCard: {
-    marginHorizontal: S.xl, marginTop: S.md, backgroundColor: C.white,
-    borderRadius: R.md, padding: S.base, borderWidth: 1, borderColor: C.border,
-    shadowColor: "#0B1B4B", shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
-  },
-  accountCardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  accountLabelWrap: { flexDirection: "row", alignItems: "center", gap: 5 },
-  accountLabelDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.credit },
-  accountLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: C.textMuted },
-  accountBankPill: {
-    flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "62%",
-    backgroundColor: C.primary + "12", paddingHorizontal: S.sm,
-    paddingVertical: 4, borderRadius: R.full,
-  },
-  accountBankPillText: { fontSize: 10, fontWeight: "800", color: C.primary },
-  accountNumberText: { fontSize: 26, fontWeight: "900", color: C.text, letterSpacing: 3, marginTop: S.sm },
-  accountBottomRow: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginTop: S.xs, gap: S.sm,
-  },
-  accountHolder: { flex: 1, fontSize: F.sm, fontWeight: "600", color: C.textMuted },
-  accountCopyBtn: {
-    flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.primary + "12",
-    paddingHorizontal: S.sm + 2, paddingVertical: 6, borderRadius: R.full,
-  },
-  accountCopyText: { fontSize: F.xs, fontWeight: "800", color: C.primary },
-  accountFooter: {
-    flexDirection: "row", alignItems: "center", gap: 5,
-    marginTop: S.sm, paddingTop: S.sm, borderTopWidth: 1, borderTopColor: C.border,
-  },
-  accountFooterText: { flex: 1, fontSize: 10.5, color: C.textMuted },
-  statsRow: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.12)", borderRadius: R.sm,
-    paddingHorizontal: S.base, paddingVertical: S.sm + 2, marginTop: S.sm,
-  },
-  statItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  statLabel: { fontSize: F.xs, color: "rgba(255,255,255,0.85)", fontWeight: "600" },
-  statValue: { fontSize: F.xs, fontWeight: "800", color: C.white },
-  actionRow: { flexDirection: "row", gap: S.sm, marginTop: S.sm },
-  actionBtn: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
-    backgroundColor: C.white, borderRadius: R.sm, paddingVertical: S.sm + 3,
-  },
-  actionBtnText: { fontSize: F.sm, fontWeight: "800", color: C.primary },
+  acctCard: { width: 300, borderRadius: 22, padding: S.lg, overflow: "hidden" },
+  acctNo: { fontSize: 24, fontWeight: "900", color: C.white, letterSpacing: 1 },
+  copyBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" },
+  acctLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 1, color: C.onPrimaryMuted, marginTop: S.sm },
+  acctName: { fontSize: F.md, fontWeight: "700", color: C.white, marginTop: 2 },
+  bankPill: { backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, maxWidth: 150 },
+  bankPillText: { fontSize: 11, fontWeight: "800", color: C.white },
+  fee: { fontSize: 11, fontWeight: "800", color: C.gold },
+  promoTitle: { fontSize: F.lg, fontWeight: "900", color: C.white },
+  promoSub: { fontSize: F.sm, color: C.white, marginTop: 6, fontWeight: "600" },
 
-  sectionHeader: {
-    paddingHorizontal: S.xl,
-    marginTop: S.md,
-    marginBottom: S.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sectionTitle: { fontSize: F.md, fontWeight: "800", color: C.text },
-  viewAllBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
-  viewAllText: { fontSize: F.sm, fontWeight: "700", color: C.primary },
+  servicesCard: { marginHorizontal: S.xl, marginTop: S.lg, backgroundColor: C.white, borderRadius: 24, padding: S.lg, ...shadow },
+  servicesGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: S.md, rowGap: S.lg },
+  serviceItem: { width: "33.33%", alignItems: "center" },
+  serviceIcon: { width: 54, height: 54, borderRadius: 27, justifyContent: "center", alignItems: "center", marginBottom: 6 },
+  serviceLabel: { fontSize: F.sm, fontWeight: "600", color: C.text, textAlign: "center" },
 
-  servicesGrid: { flexDirection: "row", paddingHorizontal: S.lg },
-  serviceItem: { width: "25%", alignItems: "center", paddingVertical: S.sm },
-  serviceIcon: {
-    width: 48, height: 48, borderRadius: R.sm, backgroundColor: C.white,
-    justifyContent: "center", alignItems: "center", marginBottom: S.xs,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 2,
-  },
-  serviceLabel: { fontSize: 10, fontWeight: "600", color: C.text },
+  referBanner: { borderRadius: 22, padding: S.lg, flexDirection: "row", alignItems: "center", overflow: "hidden" },
+  referTitle: { fontSize: F.xxl, fontWeight: "900", color: C.white },
+  referSub: { fontSize: F.sm, color: C.white, marginTop: 4, fontWeight: "600" },
 
-  bannerCard: { marginHorizontal: S.xl, borderRadius: R.sm, overflow: "hidden" },
-  bannerGradient: {
-    borderRadius: R.sm, padding: S.base, flexDirection: "row", alignItems: "center", gap: S.md, overflow: "hidden",
-  },
-  bannerIconWrap: {
-    width: 44, height: 44, borderRadius: R.sm,
-    backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center",
-  },
-  bannerContent: { flex: 1 },
-  bannerTitle: { fontSize: F.base, fontWeight: "800", color: C.white },
-  bannerDesc: { fontSize: 10, color: "rgba(255,255,255,0.8)", marginTop: 2, lineHeight: 14 },
+  sectionHeader: { paddingHorizontal: S.xl, marginTop: S.xl, marginBottom: S.sm, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  sectionTitle: { fontSize: F.lg, fontWeight: "800", color: C.text },
+  viewAllText: { fontSize: F.sm, fontWeight: "800", color: C.primary },
+  empty: { alignItems: "center", padding: S.xl, marginHorizontal: S.xl, backgroundColor: C.white, borderRadius: 20 },
+  emptyTitle: { fontSize: F.base, fontWeight: "800", color: C.text, marginTop: S.sm },
+  emptySub: { fontSize: F.sm, color: C.textMuted, marginTop: 2 },
 
-  txItem: {
-    flexDirection: "row", alignItems: "center", marginHorizontal: S.xl,
-    paddingVertical: S.md, borderBottomWidth: 1, borderBottomColor: C.border,
-  },
-  txIconWrap: { width: 36, height: 36, borderRadius: R.xs, justifyContent: "center", alignItems: "center" },
-  txInfo: { flex: 1, marginLeft: S.sm },
-  txLabel: { fontSize: 13, fontWeight: "700", color: C.text },
-  txDesc: { fontSize: 11, color: C.textMuted, marginTop: 1 },
+  txItem: { flexDirection: "row", alignItems: "center", marginHorizontal: S.xl, marginBottom: S.sm, padding: S.md, backgroundColor: C.white, borderRadius: 18 },
+  txIconWrap: { width: 42, height: 42, borderRadius: 13, justifyContent: "center", alignItems: "center" },
+  txInfo: { flex: 1, marginLeft: S.md },
+  txLabel: { fontSize: F.md, fontWeight: "700", color: C.text },
+  txDesc: { fontSize: F.xs, color: C.textMuted, marginTop: 2 },
   txRight: { alignItems: "flex-end" },
-  txAmount: { fontSize: 13, fontWeight: "700" },
-  txStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: R.xs, marginTop: 4 },
-  txStatusText: { fontSize: 10, fontWeight: "600" },
+  txAmount: { fontSize: F.md, fontWeight: "800" },
+  txStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginTop: 4 },
+  txStatusText: { fontSize: 10, fontWeight: "800", textTransform: "capitalize" },
+
+  nOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,16,48,0.88)", paddingHorizontal: S.xl, zIndex: 100, overflow: "hidden" },
+  nLogo: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  nBrand: { fontSize: F.base, fontWeight: "900", color: C.white, letterSpacing: 0.5 },
+  nSub: { fontSize: F.sm, color: C.onPrimaryMuted, fontWeight: "500" },
+  nClose: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
+  nTitle: { fontSize: 26, fontWeight: "900", color: C.white, marginTop: 4 },
+  nGlass: { marginTop: S.lg, padding: S.lg, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" },
+  nMsg: { fontSize: F.md, color: C.white, lineHeight: 22, fontWeight: "500" },
+  nGhost: { flex: 1, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", paddingVertical: 16, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)" },
+  nGhostText: { fontSize: F.base, fontWeight: "800", color: C.white },
+  nBtn: { flex: 1, alignItems: "center", paddingVertical: 16, borderRadius: 18, backgroundColor: C.white },
+  nBtnText: { fontSize: F.base, fontWeight: "800", color: C.primary },
+});
+
+const darkStyles = darkVariant(styles, {
+  container: { backgroundColor: DARK.bg },
+  username: { color: DARK.text },
+  greeting: { color: DARK.muted },
+  iconBtn: { backgroundColor: DARK.card },
+  avatar: { backgroundColor: DARK.cardAlt },
+  servicesCard: { backgroundColor: DARK.card },
+  serviceLabel: { color: DARK.text },
+  sectionTitle: { color: DARK.text },
+  txItem: { backgroundColor: DARK.card },
+  txLabel: { color: DARK.text },
+  txDesc: { color: DARK.muted },
+  empty: { backgroundColor: DARK.card },
+  emptyTitle: { color: DARK.text },
+  emptySub: { color: DARK.muted },
 });

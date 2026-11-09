@@ -1,3 +1,4 @@
+import AuthBackground from "../../components/AuthBackground";
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -79,7 +80,7 @@ export default function PinSignInScreen({ navigation }) {
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone });
         } else {
-          navigation.replace("Home");
+          navigation.replace("Announcement");
         }
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -111,11 +112,12 @@ export default function PinSignInScreen({ navigation }) {
   return (
     <>
     <View style={styles.container}>
-      <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={22} color={C.text} />
-      </TouchableOpacity>
-
-      <View style={styles.center}>
+      <View style={styles.top}>
+        <AuthBackground />
+        <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={C.white} />
+        </TouchableOpacity>
+        <View style={styles.topRow}>
         <View style={styles.profileAvatar}>
           {userName ? (
             <Text style={styles.profileInitial}>{userName.charAt(0).toUpperCase()}</Text>
@@ -123,9 +125,15 @@ export default function PinSignInScreen({ navigation }) {
             <Ionicons name="person" size={36} color={C.primary} />
           )}
         </View>
-        <Text style={styles.title}>
-          {userName ? `Welcome Back, ${userName.split(" ")[0]}` : "Enter your PIN"}
-        </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.welcome}>Welcome back,</Text>
+            <Text style={styles.title}>{userName ? userName.split(" ")[0].toUpperCase() : "THERE"}</Text>
+          </View>
+        </View>
+        <Text style={styles.hint}>Enter your passcode to continue.</Text>
+      </View>
+
+      <View style={styles.sheet}>
 
         <Animated.View style={{ transform: [{ translateX: shake }] }}>
           <PinDots length={4} filled={pin.length} />
@@ -145,6 +153,10 @@ export default function PinSignInScreen({ navigation }) {
       </View>
 
       <PinPad onPress={handleKey} onBiometric={bioReady ? loginWithBiometric : undefined} />
+      <View style={styles.ncc}>
+        <Ionicons name="shield-checkmark-outline" size={14} color={C.textMuted} />
+        <Text style={styles.nccText}>Secured by SubBridge</Text>
+      </View>
     </View>
     <ErrorModal visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
     </>
@@ -152,15 +164,15 @@ export default function PinSignInScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.white, paddingTop: 60 },
-  back: { paddingHorizontal: S.xl },
+  container: { flex: 1, backgroundColor: C.white },
+  back: { width: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", paddingBottom: S.xl },
   profileAvatar: {
     width: 72, height: 72, borderRadius: 36, backgroundColor: C.primaryLight,
     justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: C.primary,
   },
   profileInitial: { fontSize: 32, fontWeight: "800", color: C.primary },
-  title: { fontSize: F.h3, fontWeight: "800", color: C.text, marginTop: S.base, marginBottom: S.lg },
+  title: { fontSize: 26, fontWeight: "900", color: C.white },
   error: { fontSize: F.sm, color: C.debit, marginTop: S.md },
   forgotBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -168,4 +180,12 @@ const styles = StyleSheet.create({
     backgroundColor: C.primaryLight, borderRadius: R.sm, borderWidth: 1, borderColor: C.primary + "22"
   },
   forgotText: { fontSize: F.md, color: C.primary, fontWeight: "700" },
+  top: { paddingTop: 60, paddingHorizontal: S.xl, paddingBottom: 56, overflow: "hidden" },
+  topRow: { flexDirection: "row", alignItems: "center", gap: S.base, marginTop: S.xl },
+  welcome: { fontSize: F.base, color: C.onPrimaryMuted },
+  hint: { fontSize: F.base, color: C.onPrimaryMuted, marginTop: S.base },
+  sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -32, alignItems: "center", paddingTop: S.xl },
+  ncc: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingBottom: S.xl },
+  nccText: { fontSize: F.sm, color: C.textMuted, fontWeight: "600" },
 });
+

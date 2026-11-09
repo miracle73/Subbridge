@@ -1,3 +1,4 @@
+import { withPayStyles } from "../../components/payStyles";
 import React, { useState, useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated, StatusBar, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -127,14 +128,14 @@ export default function ChangePinScreen({ navigation }) {
   if (success) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-        <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+        <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+        <View style={[styles.header]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={C.white} />
+            <Ionicons name="arrow-back" size={22} color={C.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Change PIN</Text>
           <View style={{ width: 22 }} />
-        </LinearGradient>
+        </View>
         <View style={styles.successWrap}>
           <View style={styles.successIconWrap}>
             <Ionicons name="checkmark" size={40} color={C.white} />
@@ -151,16 +152,19 @@ export default function ChangePinScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <View style={[styles.header]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.white} />
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Change PIN</Text>
         <View style={{ width: 22 }} />
-      </LinearGradient>
+      </View>
 
       <View style={[styles.center, { paddingBottom: insets.bottom + S.xl }]}>
+        <View style={{ flexDirection: "row", gap: 8, alignSelf: "stretch", paddingHorizontal: S.xl, marginBottom: S.base }}>
+          {[1, 2, 3].map((n) => <View key={n} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: n <= step ? C.primary : "#E1E5F2" }} />)}
+        </View>
         <Text style={styles.stepLabel}>Step {step} of 3</Text>
         <Text style={styles.title}>{titles[step]}</Text>
         <Animated.View style={{ transform: [{ translateX: shake }] }}>
@@ -177,7 +181,7 @@ export default function ChangePinScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
@@ -197,4 +201,4 @@ const styles = StyleSheet.create({
     paddingVertical: S.md + 2, alignItems: "center", marginTop: S.xl,
   },
   doneBtnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
-});
+}));

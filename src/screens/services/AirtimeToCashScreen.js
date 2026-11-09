@@ -1,3 +1,4 @@
+import { withPayStyles } from "../../components/payStyles";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Linking,
@@ -88,16 +89,16 @@ export default function AirtimeToCashScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
 
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <View style={[styles.header]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.white} />
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Airtime to Cash</Text>
         <View style={{ width: 22 }} />
-      </LinearGradient>
+      </View>
 
       <ServiceBanner
         icon="cash-outline"
@@ -192,7 +193,7 @@ export default function AirtimeToCashScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   header: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
@@ -274,4 +275,4 @@ const styles = StyleSheet.create({
     paddingVertical: S.md, borderBottomWidth: 1, borderBottomColor: C.border,
   },
   bankRowText: { fontSize: F.md, fontWeight: "600", color: C.text },
-});
+}));

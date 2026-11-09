@@ -1,3 +1,4 @@
+import AuthBackground, { withAuthStyles } from "";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -120,6 +121,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
   if (done) {
     return (
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
         <View style={styles.inner}>
           <View style={styles.avatarWrap}>
             <Ionicons name="checkmark-circle" size={80} color={C.white} />
@@ -136,6 +138,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
       <TouchableOpacity style={styles.back} onPress={goBack}>
         <Ionicons name="arrow-back" size={22} color={C.white} />
       </TouchableOpacity>
@@ -205,12 +208,12 @@ export default function ResetPasswordScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   inner: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: S.xl },
   back: { position: "absolute", top: 60, left: S.xl, zIndex: 10 },
   avatarWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)",
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "#FFB020",
     justifyContent: "center", alignItems: "center", marginBottom: S.base,
   },
   title: { fontSize: F.h2, fontWeight: "800", color: C.white },
@@ -231,4 +234,4 @@ const styles = StyleSheet.create({
     width: "100%", alignItems: "center", marginTop: S.lg, marginBottom: S.lg,
   },
   btnText: { color: C.primary, fontSize: F.lg, fontWeight: "700" },
-});
+}));

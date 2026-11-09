@@ -1,3 +1,4 @@
+import AuthBackground, { withAuthStyles } from "";
 import React, { useRef, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -258,25 +259,25 @@ export default function SignUpScreen({ navigation }) {
   return (
     <>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
       <TouchableOpacity style={styles.back} onPress={goBack}>
         <Ionicons name="arrow-back" size={22} color={C.white} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <View style={styles.avatarWrap}>
-          <Ionicons name="person-add" size={40} color={C.white} />
-        </View>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Step {step} of 3</Text>
-
-        <View style={styles.progressWrap}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        <View style={{ alignSelf: "stretch" }}>
+          <Text style={styles.stepLabel}>Step {step === 1 ? 1 : 2} of 2</Text>
+          <Text style={[styles.title, { textAlign: "left" }]}>{step === 1 ? "Create your account" : "Set your transaction PIN"}</Text>
+          <View style={styles.segRow}>
+            <View style={[styles.seg, styles.segOn]} />
+            <View style={[styles.seg, step > 1 && styles.segOn]} />
+          </View>
         </View>
 
         {step === 1 && (
           <View style={styles.form}>
-            <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} placeholder="First Name" placeholderTextColor="rgba(255,255,255,0.4)" />
-            <TextInput style={styles.input} value={lastName} onChangeText={setLastName} placeholder="Last Name" placeholderTextColor="rgba(255,255,255,0.4)" />
+            <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} placeholder="First name" placeholderTextColor="#C9D2FF" />
+            <TextInput style={styles.input} value={lastName} onChangeText={setLastName} placeholder="Last name" placeholderTextColor="#C9D2FF" />
             <View style={styles.phoneRow}>
               <View style={styles.prefix}><Text style={styles.prefixText}>+234</Text></View>
               <TextInput
@@ -284,7 +285,7 @@ export default function SignUpScreen({ navigation }) {
                 value={phone}
                 onChangeText={(t) => { setPhone(formatPhoneInput(t, phone)); setError(""); }}
                 placeholder="812 345 6789"
-                placeholderTextColor="rgba(255,255,255,0.4)"
+                placeholderTextColor="#C9D2FF"
                 keyboardType="phone-pad"
                 maxLength={11}
               />
@@ -294,12 +295,12 @@ export default function SignUpScreen({ navigation }) {
               value={email}
               onChangeText={(t) => { setEmail(t); setError(""); }}
               placeholder="Email address"
-              placeholderTextColor="rgba(255,255,255,0.4)"
+              placeholderTextColor="#C9D2FF"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <TextInput style={styles.input} value={referral} onChangeText={(t) => { setReferral(t); setError(""); }} placeholder="Referral code (optional)" placeholderTextColor="rgba(255,255,255,0.4)" autoCapitalize="none" autoCorrect={false} />
+            <TextInput style={styles.input} value={referral} onChangeText={(t) => { setReferral(t); setError(""); }} placeholder="Referral code (optional)" placeholderTextColor="#C9D2FF" autoCapitalize="none" autoCorrect={false} />
           </View>
         )}
 
@@ -320,7 +321,7 @@ export default function SignUpScreen({ navigation }) {
                   setError("");
                 }}
                 placeholder={passStage === "new" ? "Password (numbers only)" : "Confirm password (numbers only)"}
-                placeholderTextColor="rgba(255,255,255,0.4)"
+                placeholderTextColor="#C9D2FF"
                 keyboardType="number-pad"
                 secureTextEntry={!showPass}
                 maxLength={7}
@@ -335,13 +336,13 @@ export default function SignUpScreen({ navigation }) {
         {step === 3 && (
           <View style={styles.form}>
             <View style={styles.passWrap}>
-              <TextInput style={[styles.input, { paddingRight: 48 }]} value={pin} onChangeText={(t) => { setPin(t.replace(/\D/g, "").slice(0, 4)); setError(""); }} placeholder="Create 4-digit PIN" placeholderTextColor="rgba(255,255,255,0.4)" keyboardType="number-pad" maxLength={4} secureTextEntry={!showPin} />
+              <TextInput style={[styles.input, { paddingRight: 48 }]} value={pin} onChangeText={(t) => { setPin(t.replace(/\D/g, "").slice(0, 4)); setError(""); }} placeholder="Create 4-digit PIN" placeholderTextColor="#C9D2FF" keyboardType="number-pad" maxLength={4} secureTextEntry={!showPin} />
               <TouchableOpacity style={styles.eye} onPress={() => setShowPin((v) => !v)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name={showPin ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.7)" />
               </TouchableOpacity>
             </View>
             <View style={styles.passWrap}>
-              <TextInput style={[styles.input, { paddingRight: 48 }]} value={confirmPin} onChangeText={(t) => { setConfirmPin(t.replace(/\D/g, "").slice(0, 4)); setError(""); }} placeholder="Confirm PIN" placeholderTextColor="rgba(255,255,255,0.4)" keyboardType="number-pad" maxLength={4} secureTextEntry={!showPin} />
+              <TextInput style={[styles.input, { paddingRight: 48 }]} value={confirmPin} onChangeText={(t) => { setConfirmPin(t.replace(/\D/g, "").slice(0, 4)); setError(""); }} placeholder="Confirm PIN" placeholderTextColor="#C9D2FF" keyboardType="number-pad" maxLength={4} secureTextEntry={!showPin} />
               <TouchableOpacity style={styles.eye} onPress={() => setShowPin((v) => !v)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name={showPin ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.7)" />
               </TouchableOpacity>
@@ -383,18 +384,18 @@ export default function SignUpScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   inner: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: S.xl },
   back: { position: "absolute", top: 60, left: S.xl, zIndex: 10 },
   avatarWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)",
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "#FFB020",
     justifyContent: "center", alignItems: "center", marginBottom: S.base,
   },
   title: { fontSize: F.h2, fontWeight: "800", color: C.white },
   subtitle: { fontSize: F.md, color: "rgba(255,255,255,0.7)", marginTop: S.xs },
-  progressWrap: { width: 160, height: 4, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 2, marginTop: S.base, overflow: "hidden" },
-  progressFill: { height: "100%", backgroundColor: C.white, borderRadius: 2 },
+  progressWrap: { width: "100%", height: 6, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 3, marginTop: S.base, overflow: "hidden" },
+  progressFill: { height: "100%", backgroundColor: C.gold, borderRadius: 3 },
   form: { width: "100%", gap: S.md, marginTop: S.xl, alignItems: "center" },
   stageHint: { fontSize: F.sm, color: "rgba(255,255,255,0.8)", fontWeight: "600", textAlign: "center" },
   input: {
@@ -424,4 +425,8 @@ const styles = StyleSheet.create({
   signupLink: { marginTop: S.xl },
   signupText: { fontSize: F.md, color: "rgba(255,255,255,0.6)" },
   signupBold: { color: C.white, fontWeight: "700" },
-});
+  stepLabel: { fontSize: 13, fontWeight: "800", color: C.gold, marginBottom: 6 },
+  segRow: { flexDirection: "row", gap: 8, marginTop: S.base, marginBottom: S.lg },
+  seg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.2)" },
+  segOn: { backgroundColor: C.gold },
+}));

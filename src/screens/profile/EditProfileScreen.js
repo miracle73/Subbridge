@@ -1,3 +1,4 @@
+import { withPayStyles } from "../../components/payStyles";
 import React, { useState, useCallback } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -72,14 +73,14 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <View style={[styles.header]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.white} />
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <View style={{ width: 22 }} />
-      </LinearGradient>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.avatarSection}>
@@ -114,7 +115,7 @@ export default function EditProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
@@ -139,4 +140,4 @@ const styles = StyleSheet.create({
     alignItems: "center", marginTop: S.xl,
   },
   btnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
-});
+}));

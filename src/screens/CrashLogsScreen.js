@@ -45,7 +45,7 @@ export default function CrashLogsScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { overflow: "hidden", borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }]}><View pointerEvents="none" style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, top: -90, right: -60, backgroundColor: "rgba(255,255,255,0.08)" }} /><View pointerEvents="none" style={{ position: "absolute", width: 140, height: 140, borderRadius: 70, bottom: -70, left: -30, backgroundColor: "rgba(255,176,32,0.18)" }} /><Text pointerEvents="none" style={{ position: "absolute", top: 14, right: 70, color: "#FFD36B", fontSize: 14 }}>✦</Text>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
         </TouchableOpacity>

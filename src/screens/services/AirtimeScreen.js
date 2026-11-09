@@ -1,3 +1,5 @@
+import { withPayStyles } from "../../components/payStyles";
+import PaymentSummary from "../../components/PaymentSummary";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Platform, Alert,
@@ -213,14 +215,14 @@ export default function AirtimeScreen({ navigation }) {
   if (success) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-        <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+        <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+        <View style={[styles.header]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={C.white} />
+            <Ionicons name="arrow-back" size={22} color={C.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Airtime</Text>
           <View style={{ width: 22 }} />
-        </LinearGradient>
+        </View>
         <View style={styles.successWrap}>
           <View style={styles.successIconWrap}>
             <Ionicons name="checkmark" size={40} color={C.white} />
@@ -253,15 +255,15 @@ export default function AirtimeScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <View style={[styles.header]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.white} />
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Buy Airtime</Text>
         <View style={{ width: 22 }} />
-      </LinearGradient>
+      </View>
 
       <ServiceBanner
         icon="call-outline"
@@ -376,41 +378,19 @@ export default function AirtimeScreen({ navigation }) {
       </Modal>
 
       {/* Confirmation Modal */}
-      <Modal visible={showConfirm} transparent animationType="fade">
-        <View style={styles.confirmOverlay}>
-          <View style={styles.confirmSheet}>
-            <Text style={styles.confirmTitle}>Confirm Purchase</Text>
-            <View style={styles.confirmDetails}>
-              <View style={styles.confirmRow}>
-                <Text style={styles.confirmLabel}>Network</Text>
-                <Text style={styles.confirmValue}>{network?.name}</Text>
-              </View>
-              <View style={styles.confirmRow}>
-                <Text style={styles.confirmLabel}>Phone</Text>
-                <Text style={styles.confirmValue}>{phone}</Text>
-              </View>
-              <View style={styles.confirmRow}>
-                <Text style={styles.confirmLabel}>Amount</Text>
-                <Text style={[styles.confirmValue, { color: C.primary, fontWeight: "900" }]}>{fmt(finalAmount)}</Text>
-              </View>
-              <View style={[styles.confirmRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.confirmLabel}>Balance</Text>
-                <Text style={styles.confirmValue}>{fmt(balance)}</Text>
-              </View>
-            </View>
-            <View style={styles.confirmActions}>
-              <TouchableOpacity style={styles.confirmCancel} onPress={() => setShowConfirm(false)}>
-                <Text style={styles.confirmCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmBuy}>
-                <Text style={styles.confirmBtnText}>Proceed</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <PaymentSummary
+        visible={showConfirm}
+        product="Airtime"
+        subtitle={network?.name}
+        amount={finalAmount}
+        balance={balance}
+        rows={[["Network", network?.name], ["Phone", phone]]}
+        onCancel={() => setShowConfirm(false)}
+        onPay={handleConfirmBuy}
+      />
 
       <PaymentAuthSheet
+        subtitle={`Airtime · ${fmt(finalAmount)}`}
         key={authSheetKey}
         visible={showAuthSheet}
         onClose={() => setShowAuthSheet(false)}
@@ -462,7 +442,7 @@ export default function AirtimeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
@@ -604,4 +584,4 @@ const styles = StyleSheet.create({
     paddingVertical: S.md + 2, alignItems: "center", marginTop: S.xl,
   },
   doneBtnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
-});
+}));

@@ -1,3 +1,4 @@
+import AuthBackground from "../components/AuthBackground";
 import React, { useRef, useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, StatusBar, Image,
@@ -59,7 +60,8 @@ export default function ReceiptScreen({ navigation, route }) {
   if (!tx || !mergedTx) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <AuthBackground />
+        <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { overflow: "hidden", borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }]}><View pointerEvents="none" style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, top: -90, right: -60, backgroundColor: "rgba(255,255,255,0.08)" }} /><View pointerEvents="none" style={{ position: "absolute", width: 140, height: 140, borderRadius: 70, bottom: -70, left: -30, backgroundColor: "rgba(255,176,32,0.18)" }} /><Text pointerEvents="none" style={{ position: "absolute", top: 14, right: 70, color: "#FFD36B", fontSize: 14 }}>✦</Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color={C.white} />
           </TouchableOpacity>
@@ -186,9 +188,10 @@ export default function ReceiptScreen({ navigation, route }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <AuthBackground />
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type="success" onHide={() => setToastMsg("")} />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { overflow: "hidden", borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }]}><View pointerEvents="none" style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, top: -90, right: -60, backgroundColor: "rgba(255,255,255,0.08)" }} /><View pointerEvents="none" style={{ position: "absolute", width: 140, height: 140, borderRadius: 70, bottom: -70, left: -30, backgroundColor: "rgba(255,176,32,0.18)" }} /><Text pointerEvents="none" style={{ position: "absolute", top: 14, right: 70, color: "#FFD36B", fontSize: 14 }}>✦</Text>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
         </TouchableOpacity>
@@ -290,22 +293,22 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
   scroll: { padding: S.xl, paddingBottom: 40 },
 
-  receiptCard: { backgroundColor: C.white, borderRadius: R.md, borderWidth: 1.5, borderColor: C.border, padding: S.lg, alignItems: "center" },
+  receiptCard: { backgroundColor: C.white, borderRadius: 28, padding: S.xl, alignItems: "center", shadowColor: "#050A24", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 6 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: S.xl },
   brandLogo: { width: 30, height: 30, borderRadius: 8 },
   brandText: { fontSize: F.lg, fontWeight: "800", color: C.primary },
 
-  statusIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", marginBottom: S.base },
+  statusIcon: { width: 84, height: 84, borderRadius: 42, alignItems: "center", justifyContent: "center", marginBottom: S.base },
   amountLabel: { fontSize: 12, color: C.textMuted, fontWeight: "500" },
-  amountVal: { fontSize: 28, fontWeight: "900", letterSpacing: -1, marginTop: 4 },
+  amountVal: { fontSize: 36, fontWeight: "900", letterSpacing: -1, marginTop: 4 },
   statusBadge: { marginTop: S.sm, paddingHorizontal: 14, paddingVertical: 5, borderRadius: R.full },
   statusText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
 
   tokenBox: {
     width: "100%", alignItems: "center", marginTop: S.base,
-    backgroundColor: C.primaryLight, borderRadius: R.sm, padding: S.md,
+    backgroundColor: "rgba(255,176,32,0.14)", borderRadius: 18, padding: S.base,
   },
-  tokenLabel: { fontSize: 11, color: C.textMuted, fontWeight: "600" },
+  tokenLabel: { fontSize: 11, color: C.textMuted, fontWeight: "800", letterSpacing: 1 },
   tokenValue: {
     fontSize: F.lg, fontWeight: "900", color: C.text,
     letterSpacing: 1.5, marginTop: 2, textAlign: "center",
@@ -320,18 +323,18 @@ const styles = StyleSheet.create({
 
   divider: { height: 1, backgroundColor: C.border, width: "100%", marginVertical: S.base },
 
-  row: { flexDirection: "row", justifyContent: "space-between", width: "100%", paddingVertical: 10, borderTopWidth: 1, borderColor: C.border },
-  rowLabel: { fontSize: 13, color: C.textMuted },
-  rowValue: { fontSize: 13, fontWeight: "700", color: C.text, flexShrink: 1, textAlign: "right" },
+  row: { flexDirection: "row", justifyContent: "space-between", width: "100%", paddingVertical: 12, borderTopWidth: 1, borderColor: "#EEF0F7" },
+  rowLabel: { fontSize: 14, color: C.textMuted },
+  rowValue: { fontSize: 14, fontWeight: "700", color: C.text, flexShrink: 1, textAlign: "right" },
 
-  footer: { marginTop: S.base, fontSize: 11, color: C.textLight, fontWeight: "600" },
+  footer: { marginTop: S.base, fontSize: 12, color: C.textMuted, fontWeight: "600" },
 
   actionsRow: { flexDirection: "row", gap: 10, marginTop: S.xl },
   actionBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border, borderRadius: R.sm, paddingVertical: 14,
+    backgroundColor: C.white, borderRadius: 18, paddingVertical: 17,
   },
-  actionBtnText: { fontSize: 13, fontWeight: "700", color: C.primary },
+  actionBtnText: { fontSize: 15, fontWeight: "800", color: C.primary },
 
   emptyWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
   emptyText: { fontSize: F.md, color: C.textMuted },

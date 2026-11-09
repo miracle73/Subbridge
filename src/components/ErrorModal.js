@@ -1,22 +1,29 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C, F, R, S } from "../utils/theme";
+import { C, F, S } from "../utils/theme";
 
-export default function ErrorModal({ visible, message, onClose, title = "Error" }) {
+/** Bottom-sheet error (Figma "Login Failed"): red alert badge, title, message, Try again. */
+export default function ErrorModal({ visible, message, onClose, title = "Something went wrong" }) {
   if (!visible || !message) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.card}>
-          <View style={styles.iconWrap}>
-            <Ionicons name="alert-circle-outline" size={36} color={C.debit} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.handle} />
+          <View style={styles.halo}>
+            <View style={styles.badge}>
+              <Ionicons name="alert" size={28} color={C.white} />
+            </View>
           </View>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
-          <TouchableOpacity style={styles.btn} onPress={onClose}>
-            <Text style={styles.btnText}>OK</Text>
+          <Text style={styles.title}>{title === "Error" ? "Something went wrong" : title}</Text>
+          <ScrollView style={{ maxHeight: 160 }} contentContainerStyle={{ alignItems: "center" }}>
+            <Text style={styles.message}>{message}</Text>
+          </ScrollView>
+          <TouchableOpacity style={styles.btn} onPress={onClose} activeOpacity={0.85}>
+            <Text style={styles.btnText}>Try again</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -25,54 +32,19 @@ export default function ErrorModal({ visible, message, onClose, title = "Error" 
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: S.xl,
+  overlay: { flex: 1, backgroundColor: "rgba(5,10,36,0.55)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    paddingHorizontal: S.xl, paddingTop: S.md, paddingBottom: S.xxl + S.base, alignItems: "center",
   },
-  card: {
-    backgroundColor: C.white,
-    borderRadius: R.md,
-    padding: S.xl,
-    width: "100%",
-    maxWidth: 420,
-    maxHeight: '80%',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  iconWrap: {
-    alignItems: "center",
-    marginBottom: S.md,
-  },
-  title: {
-    fontSize: F.lg,
-    fontWeight: "800",
-    color: C.text,
-    textAlign: "center",
-    marginBottom: S.sm,
-  },
-  message: {
-    fontSize: F.md,
-    color: C.textMuted,
-    textAlign: "center",
-    marginBottom: S.xl,
-    lineHeight: 22,
-    flexShrink: 1,
-  },
+  handle: { width: 48, height: 5, borderRadius: 3, backgroundColor: "#E1E5F2", marginBottom: S.xl },
+  halo: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.debit + "1F", alignItems: "center", justifyContent: "center", marginBottom: S.base },
+  badge: { width: 50, height: 50, borderRadius: 25, backgroundColor: C.debit, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: F.h3, fontWeight: "900", color: C.text, textAlign: "center" },
+  message: { fontSize: F.md, color: C.textMuted, textAlign: "center", lineHeight: 21, marginTop: S.sm, marginBottom: S.xl, paddingHorizontal: S.base },
   btn: {
-    backgroundColor: C.primary,
-    borderRadius: R.sm,
-    paddingVertical: S.md,
-    alignItems: "center",
+    alignSelf: "stretch", backgroundColor: C.primary, borderRadius: 18, paddingVertical: 17, alignItems: "center",
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4,
   },
-  btnText: {
-    fontSize: F.base,
-    fontWeight: "700",
-    color: C.white,
-  },
+  btnText: { fontSize: F.lg, fontWeight: "800", color: C.white },
 });

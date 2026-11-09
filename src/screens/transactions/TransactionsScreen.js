@@ -56,12 +56,8 @@ export default function TransactionsScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
-        <View style={{ width: 22 }} />
-        <Text style={styles.headerTitle}>Transactions</Text>
-        <View style={{ width: 22 }} />
-      </LinearGradient>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <Text style={styles.pageTitle}>Transactions</Text>
 
       <View style={styles.filters}>
         {FILTERS.map((f) => (
@@ -75,7 +71,7 @@ export default function TransactionsScreen({ navigation }) {
         ))}
       </View>
 
-      <Text style={styles.count}>{filtered.length} transactions</Text>
+      <Text style={styles.count}>ALL · {filtered.length} TRANSACTIONS</Text>
 
       <FlatList
         data={filtered}
@@ -100,8 +96,8 @@ export default function TransactionsScreen({ navigation }) {
                   <Text style={styles.txDesc}>{tx.date} {"\u00B7"} {tx.time}</Text>
                 </View>
                 <View style={styles.txRight}>
-                  <Text style={[styles.txAmount, { color: isCredit ? C.credit : C.debit }]}>
-                    {isCredit ? "+" : "-"} {fmtShort(tx.amount)}
+                  <Text style={[styles.txAmount, { color: isCredit ? C.credit : C.text }]}>
+                    {isCredit ? "+" : "-"}{fmtShort(tx.amount)}
                   </Text>
                   <View style={[styles.txTag, { backgroundColor: statusColor + "15" }]}>
                     <Text style={[styles.txTagText, { color: statusColor }]}>
@@ -118,25 +114,25 @@ export default function TransactionsScreen({ navigation }) {
   );
 }
 
+const shadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 2 };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
-  headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
-  filters: { flexDirection: "row", gap: S.sm, paddingHorizontal: S.xl, paddingVertical: S.md },
-  filterChip: { paddingHorizontal: S.base, paddingVertical: S.sm, borderRadius: R.xs, backgroundColor: C.inputBg },
+  pageTitle: { fontSize: 26, fontWeight: "900", color: C.text, paddingHorizontal: S.xl, paddingTop: S.lg },
+  filters: { flexDirection: "row", marginHorizontal: S.xl, marginVertical: S.lg, padding: 4, backgroundColor: C.white, borderRadius: 16, ...shadow },
+  filterChip: { flex: 1, alignItems: "center", paddingVertical: 11, borderRadius: 13 },
   filterActive: { backgroundColor: C.primary },
-  filterText: { fontSize: F.sm, fontWeight: "600", color: C.text },
-  count: { fontSize: F.sm, color: C.textMuted, paddingHorizontal: S.xl, marginBottom: S.sm },
-  list: { paddingHorizontal: S.xl },
-  txItem: { flexDirection: "row", alignItems: "center", paddingVertical: S.md, borderBottomWidth: 1, borderBottomColor: C.border },
-  txIconWrap: { width: 44, height: 44, borderRadius: R.sm, justifyContent: "center", alignItems: "center" },
+  filterText: { fontSize: F.md, fontWeight: "800", color: C.textMuted },
+  count: { fontSize: 11, fontWeight: "800", letterSpacing: 1, color: C.textMuted, paddingHorizontal: S.xl, marginBottom: S.md },
+  list: { paddingHorizontal: S.xl, paddingBottom: 120 },
+  txItem: { flexDirection: "row", alignItems: "center", padding: S.md, marginBottom: 10, backgroundColor: C.white, borderRadius: 18, ...shadow },
+  txIconWrap: { width: 42, height: 42, borderRadius: 13, justifyContent: "center", alignItems: "center" },
   txInfo: { flex: 1, marginLeft: S.md },
-  txLabel: { fontSize: F.md, fontWeight: "700", color: C.text },
-  txDesc: { fontSize: F.sm, color: C.textMuted, marginTop: 2 },
+  txLabel: { fontSize: F.base, fontWeight: "700", color: C.text },
+  txDesc: { fontSize: F.sm, color: C.textMuted, marginTop: 3 },
   txDate: { fontSize: F.xs, color: C.textLight, marginTop: 2 },
-  txRight: { alignItems: "flex-end", gap: 4 },
-  txAmount: { fontSize: F.md, fontWeight: "700" },
-  txTag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: R.xs },
-  txTagText: { fontSize: F.xs, fontWeight: "600" },
+  txRight: { alignItems: "flex-end", gap: 6 },
+  txAmount: { fontSize: F.base, fontWeight: "800" },
+  txTag: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  txTagText: { fontSize: 11, fontWeight: "800", textTransform: "capitalize" },
   empty: { fontSize: F.md, color: C.textMuted, textAlign: "center", marginTop: S.xxl },
 });

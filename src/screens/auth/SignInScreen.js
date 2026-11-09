@@ -1,3 +1,4 @@
+import AuthBackground, { withAuthStyles } from "../../components/AuthBackground";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -65,7 +66,7 @@ export default function SignInScreen({ navigation }) {
         if (user?.has_pin === false) {
           navigation.replace("SetupPin", { phone: savedPhone || undefined });
         } else {
-          navigation.replace("Home");
+          navigation.replace("Announcement");
         }
       } else {
         const msg = result.message || "Invalid credentials. Please try again.";
@@ -94,13 +95,18 @@ export default function SignInScreen({ navigation }) {
   return (
     <>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
+          <Ionicons name="arrow-back" size={22} color={C.white} />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
+        <View style={styles.logoBadge}>
+          <Text style={styles.logoS}>S</Text>
+          <View style={styles.logoDot} />
+        </View>
+        <Text style={styles.title}>Welcome back 👋</Text>
+        <Text style={styles.subtitle}>Pay bills in seconds with SubBridge</Text>
 
         <View style={styles.form}>
           <Text style={styles.label}>Email or Phone Number</Text>
@@ -122,7 +128,8 @@ export default function SignInScreen({ navigation }) {
             style={styles.input}
             value={identifier}
             onChangeText={(t) => { setIdentifier(inputType === "phone" ? formatPhoneInput(t, identifier) : t); setError(""); }}
-            placeholder={inputType === "email" ? "you@example.com" : "812 345 6789"}
+            placeholder={inputType === "email" ? "Email address" : "Phone number"}
+            placeholderTextColor="#C9D2FF"
             autoCapitalize={inputType === "email" ? "none" : "words"}
             autoCorrect={false}
             keyboardType={inputType === "email" ? "email-address" : "phone-pad"}
@@ -147,7 +154,7 @@ export default function SignInScreen({ navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-          <Text style={styles.link}>Don't have an account? <Text style={styles.linkBold}>Sign Up</Text></Text>
+          <Text style={styles.link}>New here?  <Text style={styles.linkBold}>Create account</Text></Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -161,7 +168,7 @@ export default function SignInScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white },
   scroll: { flexGrow: 1, justifyContent: "center", padding: S.xl, paddingTop: 60 },
   back: { marginBottom: S.base },
@@ -209,4 +216,11 @@ const styles = StyleSheet.create({
   btnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
   link: { fontSize: F.md, color: C.textMuted, textAlign: "center", marginTop: S.lg },
   linkBold: { color: C.primary, fontWeight: "700" },
-});
+  logoBadge: { width: 80, height: 80, borderRadius: 24, backgroundColor: C.white, alignSelf: "center", alignItems: "center", justifyContent: "center", marginBottom: S.lg },
+  logoS: { fontSize: 40, fontWeight: "900", color: C.primary },
+  logoDot: { position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: 9, backgroundColor: C.gold },
+}));
+// Figma: white text on the blue gradient
+[["title", { color: C.white, textAlign: "center" }], ["subtitle", { textAlign: "center" }], ["label", { color: C.onPrimaryMuted }], ["toggleText", { color: C.onPrimaryMuted }], ["forgotText", { color: C.gold, fontWeight: "700" }], ["link", { color: C.white, textAlign: "center" }], ["linkBold", { color: C.white, fontWeight: "900" }], ["container", { backgroundColor: C.primary }]]
+  .forEach(([k, v]) => { styles[k] = [styles[k], v]; });
+

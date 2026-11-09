@@ -1,3 +1,4 @@
+import AuthBackground from "../components/AuthBackground";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -14,6 +15,7 @@ import { C, F, R, S } from "../utils/theme";
 import api from "../services/api";
 import { BiometricCrypto } from "../services/biometric";
 import { CrashLog } from "../services/crashLog";
+import { Biometrics } from "../utils/biometrics";
 
 const withTimeout = (promise, ms) =>
   Promise.race([
@@ -25,6 +27,13 @@ export default function BiometricSetupScreen({ navigation }) {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [signInOn, setSignInOn] = useState(false);
+  useEffect(() => { Biometrics.isEnabled().then(setSignInOn).catch(() => {}); }, []);
+  const toggleSignIn = async () => {
+    const next = !signInOn;
+    setSignInOn(next);
+    try { await Biometrics.setEnabled(next); } catch { setSignInOn(!next); }
+  };
 
   useEffect(() => {
     checkStatus();
@@ -127,122 +136,79 @@ export default function BiometricSetupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={C.primary} />
+      <AuthBackground />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={C.white} />
+          <Ionicons name="arrow-back" size={22} color={C.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Biometric Payments</Text>
-        <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.body}>
-        {loading ? (
-          <ActivityIndicator size="large" color={C.primary} style={{ marginTop: 60 }} />
-        ) : (
-          <>
-            <View style={styles.statusCard}>
-              <View style={[styles.statusDot, { backgroundColor: isRegistered ? "#27ae60" : C.textLight }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.statusLabel}>
-                  {isRegistered ? "Biometric Payments Active" : "Not Configured"}
-                </Text>
-                {status?.createdAt && (
-                  <Text style={styles.statusDate}>Registered: {new Date(status.createdAt).toLocaleDateString()}</Text>
-                )}
-              </View>
+      {loading ? (
+        <ActivityIndicator size="large" color={C.white} style={{ marginTop: 120 }} />
+      ) : (
+        <View style={styles.body}>
+          <View style={styles.ringOuter}>
+            <View style={styles.ringInner}>
+              <Ionicons name="finger-print" size={84} color={C.white} />
             </View>
+          </View>
 
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle" size={20} color={C.primary} />
-              <Text style={styles.infoText}>
-                When enabled, you can authorize purchases with your fingerprint instead of entering a PIN. Your private key never leaves this device.
-              </Text>
+          <Text style={styles.title}>Pay faster with{"\n"}biometrics</Text>
+          <Text style={styles.sub}>
+            Use Face ID or fingerprint to sign in and approve payments — no PIN typing.
+          </Text>
+
+          <TouchableOpacity style={styles.optRow} onPress={toggleSignIn} activeOpacity={0.8}>
+            <Text style={styles.optLabel}>Sign in</Text>
+            <View style={[styles.toggle, signInOn && styles.toggleOn]}>
+              <View style={[styles.knob, signInOn && { alignSelf: "flex-end" }]} />
             </View>
+          </TouchableOpacity>
+          <View style={[styles.optRow, { marginTop: S.md }]}>
+            <Text style={styles.optLabel}>Approve payments</Text>
+            <View style={[styles.toggle, isRegistered && styles.toggleOn]}>
+              <View style={[styles.knob, isRegistered && { alignSelf: "flex-end" }]} />
+            </View>
+          </View>
+          {status?.createdAt ? (
+            <Text style={styles.since}>Active since {new Date(status.createdAt).toLocaleDateString()}</Text>
+          ) : null}
 
-            {!isRegistered ? (
-              <TouchableOpacity
-                style={[styles.actionBtn, generating && styles.actionBtnDisabled]}
-                onPress={handleRegister}
-                disabled={generating}
-                activeOpacity={0.8}
-              >
-                {generating ? (
-                  <ActivityIndicator color={C.white} size="small" />
-                ) : (
-                  <>
-                    <Ionicons name="finger-print" size={22} color={C.white} />
-                    <Text style={styles.actionBtnText}>Enable Biometric Payments</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.dangerBtn]}
-                onPress={handleDeregister}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="close-circle" size={22} color={C.white} />
-                <Text style={styles.actionBtnText}>Disable Biometric Payments</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        )}
-      </View>
+          <View style={{ flex: 1 }} />
+
+          {!isRegistered ? (
+            <TouchableOpacity style={[styles.btn, generating && { opacity: 0.6 }]} onPress={handleRegister} disabled={generating} activeOpacity={0.85}>
+              {generating ? <ActivityIndicator color={C.primary} size="small" /> : <Text style={styles.btnText}>Enable Biometrics</Text>}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.btnGhost} onPress={handleDeregister} activeOpacity={0.85}>
+              <Text style={styles.btnGhostText}>Disable Biometrics</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: Platform.OS === "ios" ? 56 : 40,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    backgroundColor: C.primary,
-  },
-  backBtn: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: F.lg, fontWeight: "700", color: C.white },
-  body: { flex: 1, padding: 16 },
-  statusCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: C.white,
-    borderRadius: R.md,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  statusDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
-  statusLabel: { fontSize: F.base, fontWeight: "600", color: C.text },
-  statusDate: { fontSize: F.sm, color: C.textLight, marginTop: 2 },
-  infoBox: {
-    flexDirection: "row",
-    backgroundColor: C.primaryLight,
-    borderRadius: R.sm,
-    padding: 14,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  infoText: { flex: 1, fontSize: F.sm, color: C.textMuted, marginLeft: 10, lineHeight: 20 },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: C.primary,
-    borderRadius: R.sm,
-    height: 52,
-    gap: 10,
-  },
-  actionBtnDisabled: { opacity: 0.6 },
-  dangerBtn: { backgroundColor: "#e74c3c" },
-  actionBtnText: { color: C.white, fontSize: F.base, fontWeight: "700" },
+  container: { flex: 1, backgroundColor: C.primary },
+  header: { paddingTop: 56, paddingHorizontal: S.xl },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
+  body: { flex: 1, alignItems: "center", paddingHorizontal: S.xl, paddingBottom: 40 },
+  ringOuter: { width: 200, height: 200, borderRadius: 100, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center", marginTop: S.xl },
+  ringInner: { width: 150, height: 150, borderRadius: 75, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 28, fontWeight: "900", color: C.white, textAlign: "center", marginTop: S.xxl },
+  sub: { fontSize: 15, color: C.onPrimaryMuted, textAlign: "center", lineHeight: 22, marginTop: S.md, paddingHorizontal: S.base },
+  optRow: { alignSelf: "stretch", flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 18, padding: S.lg, marginTop: S.xxl },
+  optLabel: { fontSize: 15, fontWeight: "700", color: C.white },
+  toggle: { width: 44, height: 24, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.25)", padding: 2 },
+  toggleOn: { backgroundColor: C.gold },
+  knob: { width: 20, height: 20, borderRadius: 10, backgroundColor: C.white },
+  since: { fontSize: 12, color: C.onPrimaryMuted, marginTop: S.sm, alignSelf: "flex-start" },
+  btn: { alignSelf: "stretch", backgroundColor: C.white, borderRadius: 18, paddingVertical: 17, alignItems: "center" },
+  btnText: { fontSize: 16, fontWeight: "800", color: C.primary },
+  btnGhost: { alignSelf: "stretch", backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", borderRadius: 18, paddingVertical: 17, alignItems: "center" },
+  btnGhostText: { fontSize: 16, fontWeight: "800", color: C.white },
 });

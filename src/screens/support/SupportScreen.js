@@ -1,3 +1,4 @@
+import { withPayStyles } from "../../components/payStyles";
 import React, { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,14 +37,14 @@ export default function SupportScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <View style={[styles.header]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.white} />
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Support</Text>
         <View style={{ width: 22 }} />
-      </LinearGradient>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.sectionTitle}>Contact Us</Text>
@@ -93,7 +94,7 @@ export default function SupportScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
@@ -113,4 +114,4 @@ const styles = StyleSheet.create({
   faqCard: { backgroundColor: C.white, borderRadius: R.sm, padding: S.base, marginBottom: S.sm },
   faqQ: { fontSize: F.md, fontWeight: "700", color: C.text, marginBottom: S.xs },
   faqA: { fontSize: F.sm, color: C.textMuted, lineHeight: 20 },
-});
+}));

@@ -1,3 +1,4 @@
+import { withPayStyles } from "../../components/payStyles";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Share, Modal, StatusBar, Image,
@@ -352,21 +353,31 @@ export default function RewardsScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
 
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
+      <View style={[styles.header]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.white} />
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Rewards</Text>
         <View style={{ width: 22 }} />
-      </LinearGradient>
+      </View>
 
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: 160 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
+        <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={figma.hero}>
+          <View style={figma.blob} />
+          <Text style={[figma.spark, { top: 18, left: 190 }]}>✦</Text>
+          <Text style={[figma.spark, { bottom: 18, right: 22, fontSize: 10 }]}>✦</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={figma.heroTitle}>Invite friends &{"\n"}earn rewards</Text>
+            <Text style={figma.heroSub}>Earn commission every time your friends pay bills on SubBridge.</Text>
+          </View>
+          <View style={figma.trophy}><Text style={{ fontSize: 38 }}>🏆</Text></View>
+        </LinearGradient>
         <View style={styles.grid}>
           <StatCard label="Referral balance" value={fmt(dashboard.referralBalance)} icon="people-outline" color={C.primary} />
           <StatCard label="Total earnings" value={fmt(dashboard.totalEarnings)} icon="cash-outline" color={C.accent} />
@@ -709,7 +720,7 @@ export default function RewardsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   header: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
@@ -873,4 +884,17 @@ const styles = StyleSheet.create({
     paddingVertical: S.md, borderBottomWidth: 1, borderBottomColor: C.border,
   },
   bankRowText: { flex: 1, fontSize: F.md, fontWeight: "600", color: C.text },
+}));
+
+const figma = StyleSheet.create({
+  hero: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 26, padding: 22, marginBottom: 16, overflow: "hidden" },
+  blob: { position: "absolute", width: 190, height: 190, borderRadius: 95, top: -40, right: -50, backgroundColor: "rgba(255,255,255,0.08)" },
+  spark: { position: "absolute", color: "#FFD36B", fontSize: 14, fontWeight: "800" },
+  heroTitle: { fontSize: 24, fontWeight: "900", color: "#FFFFFF" },
+  heroSub: { fontSize: 13, color: C.onPrimaryMuted, marginTop: 8, lineHeight: 19, fontWeight: "600" },
+  trophy: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.gold, alignItems: "center", justifyContent: "center" },
 });
+const _shadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.07, shadowRadius: 18, elevation: 2, borderWidth: 0 };
+[["card", { borderRadius: 24, ..._shadow }], ["shareBtn", { borderRadius: 16, paddingVertical: 15 }], ["withdrawBtn", { borderRadius: 18, paddingVertical: 16 }],
+ ["codeText", { fontSize: 26, fontWeight: "900" }], ["cardValue", { fontSize: 22, fontWeight: "900" }], ["stepNum", { backgroundColor: C.primaryLight }], ["sheet", { borderTopLeftRadius: 32, borderTopRightRadius: 32 }],
+ ["continueBtn", { borderRadius: 18, paddingVertical: 16 }]].forEach(([k, v]) => { if (styles[k]) styles[k] = [styles[k], v]; });

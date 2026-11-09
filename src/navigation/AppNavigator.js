@@ -37,6 +37,9 @@ import SupportScreen from "../screens/support/SupportScreen";
 import CrashLogsScreen from "../screens/CrashLogsScreen";
 import ApiLogsScreen from "../screens/ApiLogsScreen";
 import ReceiptScreen from "../screens/ReceiptScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
+import AnnouncementScreen from "../screens/AnnouncementScreen";
+import AddMoneyScreen from "../screens/wallet/AddMoneyScreen";
 import BiometricSetupScreen from "../screens/BiometricSetupScreen";
 
 const Stack = createNativeStackNavigator();
@@ -139,6 +142,9 @@ export default function AppNavigator({ initialRouteName }) {
         <Stack.Screen name="ApiLogs" component={ApiLogsScreen} />
         <Stack.Screen name="BiometricSetup" component={BiometricSetupScreen} />
         <Stack.Screen name="Receipt" component={ReceiptScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="Announcement" component={AnnouncementScreen} />
+        <Stack.Screen name="AddMoney" component={AddMoneyScreen} />
       </Stack.Navigator>
   );
 }

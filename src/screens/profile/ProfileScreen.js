@@ -1,3 +1,4 @@
+import { useDarkMode, darkVariant, DARK } from "../../utils/darkMode";
 import React, { useState, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar, Switch,
@@ -16,6 +17,8 @@ import Preloader from "../../components/Preloader";
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [dark, toggleDark] = useDarkMode();
+  const st = dark ? darkStyles : styles;
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bioSupported, setBioSupported] = useState(false);
@@ -113,70 +116,87 @@ export default function ProfileScreen({ navigation }) {
   ];
 
   if (loading) return <Preloader />;
+  const nav = (r) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate(r.screen, r.params); };
+  const groups = [
+    ["ACCOUNT", [
+      { icon: "person-outline", label: "Edit profile", screen: "EditProfile" },
+      { icon: "people-outline", label: "Referrals & commission", screen: "Rewards" },
+    ]],
+    ["SECURITY", [
+      { icon: "lock-closed-outline", label: "Change PIN", screen: "ChangePin" },
+      { icon: "key-outline", label: "Forgot PIN", screen: "ForgotPassword", params: { mode: "pin", phone: user?.phone || "", email: user?.email || "" } },
+    ]],
+    ["HELP", [
+      { icon: "chatbubble-ellipses-outline", label: "Support", screen: "Support" },
+    ]],
+  ];
+
+  const Row = ({ r, first }) => (
+    <TouchableOpacity style={[st.row, !first && st.rowDivider]} onPress={() => nav(r)} activeOpacity={0.7}>
+      <View style={st.rowIcon}><Ionicons name={r.icon} size={18} color={C.primary} /></View>
+      <Text style={st.rowLabel}>{r.label}</Text>
+      <Ionicons name="chevron-forward" size={18} color={C.textLight} />
+    </TouchableOpacity>
+  );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={st.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header}>
-        <View style={{ width: 22 }} />
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 22 }} />
-      </LinearGradient>
-
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[st.hero, { paddingTop: insets.top + S.xl }]}>
+          <View style={[st.blob, { width: 240, height: 240, top: -90, right: -70 }]} />
+          <View style={[st.blob, { width: 150, height: 150, bottom: -70, left: -40, backgroundColor: C.gold + "2E" }]} />
+          <Text style={[st.spark, { top: insets.top + 20, left: 30 }]}>✦</Text>
+          <Text style={[st.spark, { top: insets.top + 110, right: 40, fontSize: 12 }]}>✦</Text>
+          <View style={st.avatar}>
+            <Text style={st.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
+            <View style={st.onlineDot} />
           </View>
-          <Text style={styles.name}>{user?.firstName} {user?.lastName}</Text>
-          <Text style={styles.phone}>{user?.phone}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
-        </View>
+          <Text style={st.name}>{user?.firstName} {user?.lastName}</Text>
+          <Text style={st.meta}>{[user?.phone, user?.email].filter(Boolean).join(" · ")}</Text>
+        </LinearGradient>
 
-        {rows.map((r, i) => (
-          <TouchableOpacity
-            key={i}
-            style={styles.row}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate(r.screen, r.params); }}
-          >
-            <Ionicons name={r.icon} size={20} color={C.primary} />
-            <Text style={styles.rowLabel}>{r.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={C.textLight} />
-          </TouchableOpacity>
-        ))}
-
-        {bioSupported ? (
-          <View style={styles.row}>
-            <TouchableOpacity
-              style={styles.rowMain}
-              disabled={!(bioEnabled && !bioKeys)}
-              activeOpacity={bioEnabled && !bioKeys ? 0.6 : 1}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate("BiometricSetup");
-              }}
-            >
-              <Ionicons name="finger-print-outline" size={20} color={C.primary} />
-              <View style={styles.rowTexts}>
-                <Text style={styles.rowLabel}>{bioLabel} (Auth & Payments)</Text>
-                {bioEnabled && !bioKeys ? (
-                  <Text style={styles.setupHint}>Setup needed — tap to finish</Text>
+        <View style={{ paddingHorizontal: S.xl }}>
+          {groups.map(([title, items]) => (
+            <View key={title}>
+              <Text style={st.groupTitle}>{title}</Text>
+              <View style={st.card}>
+                {items.map((r, i) => <Row key={r.label} r={r} first={i === 0} />)}
+                {title === "SECURITY" && bioSupported ? (
+                  <View style={[st.row, st.rowDivider]}>
+                    <TouchableOpacity
+                      style={st.rowMain}
+                      disabled={!(bioEnabled && !bioKeys)}
+                      activeOpacity={bioEnabled && !bioKeys ? 0.6 : 1}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate("BiometricSetup"); }}
+                    >
+                      <View style={st.rowIcon}><Ionicons name="finger-print-outline" size={18} color={C.primary} /></View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={st.rowLabel}>{bioLabel} (auth & payments)</Text>
+                        {bioEnabled && !bioKeys ? <Text style={st.setupHint}>Setup needed — tap to finish</Text> : null}
+                      </View>
+                    </TouchableOpacity>
+                    <Switch value={bioEnabled} onValueChange={toggleBiometric} trackColor={{ false: C.border, true: C.primary }} thumbColor={C.white} />
+                  </View>
                 ) : null}
               </View>
-            </TouchableOpacity>
-            <Switch
-              value={bioEnabled}
-              onValueChange={toggleBiometric}
-              trackColor={{ false: C.border, true: C.primary }}
-              thumbColor={C.white}
-            />
-          </View>
-        ) : null}
+            </View>
+          ))}
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color={C.debit} />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+          <Text style={st.groupTitle}>PREFERENCES</Text>
+          <View style={st.card}>
+            <View style={st.row}>
+              <View style={st.rowIcon}><Ionicons name="moon-outline" size={18} color={C.primary} /></View>
+              <Text style={st.rowLabel}>Dark mode</Text>
+              <Switch value={dark} onValueChange={toggleDark} trackColor={{ false: C.border, true: C.primary }} thumbColor={C.white} />
+            </View>
+          </View>
+
+          <TouchableOpacity style={st.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+            <Ionicons name="log-out-outline" size={20} color={C.debit} />
+            <Text style={st.logoutText}>Log out</Text>
+          </TouchableOpacity>
+        </View>
 
         <BiometricPrompt
           visible={showBioSetup}
@@ -191,34 +211,36 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
+const shadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.07, shadowRadius: 18, elevation: 2 };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
-  headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
-  scroll: { padding: S.xl },
-  avatarSection: { alignItems: "center", paddingVertical: S.xl },
-  avatar: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: C.primaryLight,
-    justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: C.primary,
-  },
-  avatarText: { fontSize: F.h2, fontWeight: "800", color: C.primary },
-  name: { fontSize: F.xl, fontWeight: "800", color: C.text, marginTop: S.md },
-  phone: { fontSize: F.md, color: C.textMuted, marginTop: S.xs },
-  email: { fontSize: F.sm, color: C.textLight, marginTop: 4 },
+  hero: { alignItems: "center", paddingBottom: S.xxl, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, overflow: "hidden" },
+  blob: { position: "absolute", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.07)" },
+  spark: { position: "absolute", color: "#FFD36B", fontSize: 16, fontWeight: "800" },
+  avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: C.white, justifyContent: "center", alignItems: "center" },
+  avatarText: { fontSize: 28, fontWeight: "900", color: C.primary },
+  onlineDot: { position: "absolute", right: 4, bottom: 4, width: 18, height: 18, borderRadius: 9, backgroundColor: C.credit, borderWidth: 3, borderColor: C.white },
+  name: { fontSize: F.xxl, fontWeight: "900", color: C.white, marginTop: S.md },
+  meta: { fontSize: F.sm, color: C.onPrimaryMuted, marginTop: 4, textAlign: "center", paddingHorizontal: S.xl },
 
-  row: {
-    flexDirection: "row", alignItems: "center", gap: S.md,
-    backgroundColor: C.white, borderRadius: R.sm, padding: S.base,
-    marginBottom: S.sm, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
-  },
-  rowLabel: { flex: 1, fontSize: F.md, fontWeight: "600", color: C.text },
+  groupTitle: { fontSize: 11, fontWeight: "800", letterSpacing: 1, color: C.textMuted, marginTop: S.xl, marginBottom: S.sm, marginLeft: 4 },
+  card: { backgroundColor: C.white, borderRadius: 20, paddingHorizontal: S.base, ...shadow },
+  row: { flexDirection: "row", alignItems: "center", gap: S.md, paddingVertical: 14 },
+  rowDivider: { borderTopWidth: 1, borderTopColor: "#EEF0F7" },
   rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: S.md },
-  rowTexts: { flex: 1 },
+  rowIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: C.primaryLight, alignItems: "center", justifyContent: "center" },
+  rowLabel: { flex: 1, fontSize: F.base, fontWeight: "600", color: C.text },
   setupHint: { fontSize: F.xs, fontWeight: "700", color: C.warning, marginTop: 2 },
 
-  logoutBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm,
-    backgroundColor: C.debit + "10", borderRadius: R.sm, padding: S.base, marginTop: S.xl,
-  },
-  logoutText: { fontSize: F.md, fontWeight: "700", color: C.debit },
+  logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm, backgroundColor: C.debit + "14", borderRadius: 18, padding: S.base, marginTop: S.xl },
+  logoutText: { fontSize: F.base, fontWeight: "800", color: C.debit },
+});
+
+const darkStyles = darkVariant(styles, {
+  container: { backgroundColor: DARK.bg },
+  card: { backgroundColor: DARK.card },
+  rowLabel: { color: DARK.text },
+  rowIcon: { backgroundColor: DARK.cardAlt },
+  rowDivider: { borderTopColor: "#252D5C" },
+  groupTitle: { color: DARK.muted },
 });

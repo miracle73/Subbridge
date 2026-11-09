@@ -1,3 +1,4 @@
+import AuthBackground, { withAuthStyles } from "";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -50,7 +51,7 @@ export default function VerifyOtpScreen({ navigation, route }) {
   };
 
   const handleVerify = async () => {
-    if (otp.length !== 6) return setError("Enter the 6-digit code");
+    if (otp.length !== 4) return setError("Enter the 4-digit code");
     setError("");
     setLoading(true);
     try {
@@ -94,6 +95,7 @@ export default function VerifyOtpScreen({ navigation, route }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <AuthBackground />
       <View style={styles.inner}>
         <TouchableOpacity style={styles.back} onPress={goBack}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
@@ -103,7 +105,7 @@ export default function VerifyOtpScreen({ navigation, route }) {
           <Ionicons name="shield-checkmark" size={48} color={C.white} />
         </View>
         <Text style={styles.title}>Verify Code</Text>
-        <Text style={styles.subtitle}>Enter the 6-digit code we sent to your email and WhatsApp.</Text>
+        <Text style={styles.subtitle}>Enter the 4-digit code we sent to your email and WhatsApp.</Text>
 
         {phone ? (
           <View style={styles.destination}>
@@ -118,16 +120,34 @@ export default function VerifyOtpScreen({ navigation, route }) {
           </View>
         ) : null}
 
-        <TextInput
-          style={styles.otpInput}
-          value={otp}
-          onChangeText={(t) => setOtp(t.replace(/\D/g, "").slice(0, 6))}
-          placeholder="000000"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-          keyboardType="number-pad"
-          maxLength={6}
-          textAlign="center"
-        />
+        <View style={styles.otpRow}>
+
+          {[0, 1, 2, 3].map((i) => (
+
+            <View key={i} style={[styles.otpBox, otp.length > i && styles.otpBoxFilled, otp.length === i && styles.otpBoxActive]}>
+
+              <Text style={styles.otpDigit}>{otp[i] || ""}</Text>
+
+            </View>
+
+          ))}
+  
+          <TextInput
+            style={styles.otpHidden}
+  
+            caretHidden
+  
+            autoFocus
+            value={otp}
+            onChangeText={(t) => setOtp(t.replace(/\D/g, "").slice(0, 4))}
+            placeholder="0000"
+            placeholderTextColor="rgba(255,255,255,0.4)"
+            keyboardType="number-pad"
+            maxLength={4}
+            textAlign="center"
+          />
+
+        </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -154,12 +174,12 @@ export default function VerifyOtpScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   inner: { flex: 1, justifyContent: "center", alignItems: "center", padding: S.xl },
   back: { position: "absolute", top: 60, left: S.xl, zIndex: 10 },
   avatarWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)",
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "#FFB020",
     justifyContent: "center", alignItems: "center", marginBottom: S.base,
   },
   title: { fontSize: F.h2, fontWeight: "800", color: C.white },
@@ -192,4 +212,10 @@ const styles = StyleSheet.create({
   resend: { alignItems: "center", marginTop: S.base },
   resendDisabled: { opacity: 0.55 },
   resendText: { fontSize: F.md, color: "rgba(255,255,255,0.7)", fontWeight: "600" },
-});
+  otpRow: { flexDirection: "row", justifyContent: "center", gap: 14, marginVertical: S.lg, alignSelf: "stretch" },
+  otpBox: { width: 64, height: 72, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" },
+  otpBoxFilled: { backgroundColor: "rgba(255,255,255,0.95)" },
+  otpBoxActive: { borderWidth: 2, borderColor: C.gold },
+  otpDigit: { fontSize: 28, fontWeight: "900", color: C.primary },
+  otpHidden: { ...StyleSheet.absoluteFillObject, opacity: 0.02, color: "transparent" },
+}));
