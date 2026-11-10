@@ -98,7 +98,7 @@ export default function WalletScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
+  container: { flex: 1, backgroundColor: C.bg, paddingBottom: 110 },
 
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingBottom: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },

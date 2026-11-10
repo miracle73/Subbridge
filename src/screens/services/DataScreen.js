@@ -620,6 +620,7 @@ export default function DataScreen({ navigation }) {
       <Modal visible={showNetwork} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowNetwork(false)}>
           <View style={styles.modalSheet}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
             <Text style={styles.modalTitle}>Select Network</Text>
             {networks.map((n) => (
               <TouchableOpacity key={n.id} style={styles.modalItem} onPress={() => handleNetwork(n)}>
@@ -636,6 +637,7 @@ export default function DataScreen({ navigation }) {
                 {network?.id === n.id && <Ionicons name="checkmark" size={20} color={C.primary} />}
               </TouchableOpacity>
             ))}
+          </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -674,7 +676,7 @@ export default function DataScreen({ navigation }) {
 }
 
 const styles = withPayStyles(StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.white },
+  container: { flex: 1, backgroundColor: C.bg },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
   scroll: { padding: S.xl, paddingBottom: 40 },

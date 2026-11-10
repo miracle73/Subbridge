@@ -433,6 +433,7 @@ export default function ElectricityScreen({ navigation }) {
       <Modal visible={showProvider} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowProvider(false)}>
           <View style={styles.modalSheet}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
             <Text style={styles.modalTitle}>Select Provider</Text>
             {providers.map((p) => (
               <TouchableOpacity key={p.id} style={styles.modalItem} onPress={() => handleProvider(p)}>
@@ -449,6 +450,7 @@ export default function ElectricityScreen({ navigation }) {
                 {provider?.id === p.id && <Ionicons name="checkmark" size={20} color={C.primary} />}
               </TouchableOpacity>
             ))}
+          </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -480,7 +482,7 @@ export default function ElectricityScreen({ navigation }) {
 }
 
 const styles = withPayStyles(StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.white },
+  container: { flex: 1, backgroundColor: C.bg },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
   scroll: { padding: S.xl },

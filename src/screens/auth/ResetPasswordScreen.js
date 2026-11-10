@@ -205,7 +205,7 @@ const fig = StyleSheet.create({
   match: { marginTop: 24, height: 44, borderRadius: 14, backgroundColor: C.credit + "1A", justifyContent: "center", paddingHorizontal: 16 },
   matchText: { fontSize: 13, fontWeight: "800", color: C.credit },
   error: { fontSize: 13, color: C.debit, marginTop: 16, fontWeight: "600" },
-  bar: { paddingHorizontal: 24, paddingBottom: 36, paddingTop: 12 },
+  bar: { paddingHorizontal: 24, paddingBottom: 56, paddingTop: 12 },
   btn: { backgroundColor: C.primary, borderRadius: 18, height: 56, alignItems: "center", justifyContent: "center", shadowColor: C.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4 },
   btnText: { fontSize: 16, fontWeight: "800", color: C.white },
 });
