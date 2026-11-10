@@ -155,6 +155,7 @@ export default function RewardsScreen({ navigation }) {
           commissionRates: normalizedRates,
           commission: d.commission || { perReferral: 0, note: "" },
           howItWorks: Array.isArray(d.howItWorks) && d.howItWorks.length ? d.howItWorks : [],
+          referredPeople: [],
         });
       } else {
         setDemo(true);
@@ -168,6 +169,7 @@ export default function RewardsScreen({ navigation }) {
           commissionRates: {},
           commission: { perReferral: 0, note: "" },
           howItWorks: [],
+          referredPeople: [],
         });
       }
 
@@ -497,10 +499,10 @@ export default function RewardsScreen({ navigation }) {
 
         </View>
 
-        {!demo && dashboard.referredPeople.length > 0 && (
+        {!demo && (dashboard.referredPeople || []).length > 0 && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>People you referred</Text>
-            {dashboard.referredPeople.map((p) => (
+            {(dashboard.referredPeople || []).map((p) => (
               <View key={p.id} style={styles.earnRow}>
                 <View style={styles.earnAvatar}>
                   <Text style={styles.earnAvatarText}>{(p.name || p.email || p.phone || "?").charAt(0)}</Text>
