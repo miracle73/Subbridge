@@ -178,9 +178,9 @@ export default function ReceiptScreen({ navigation, route }) {
     if (busy) return;
     setBusy("image");
     try {
-      const uri = await captureRef(receiptRef, { format: "png", quality: 1 });
+      const uri = await captureRef(receiptRef, { format: "jpg", quality: 0.95, result: "tmpfile" });
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share Receipt (Image)" });
+        await Sharing.shareAsync(uri.startsWith("file://") ? uri : `file://${uri}`, { mimeType: "image/jpeg", dialogTitle: "Share Receipt (Image)" });
       }
     } catch (e) {}
     setBusy(false);
@@ -200,7 +200,8 @@ export default function ReceiptScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View ref={receiptRef} collapsable={false} style={styles.receiptCard}>
+        <View style={styles.receiptCard}>
+          <View ref={receiptRef} collapsable={false} style={{ alignSelf: "stretch", alignItems: "center", backgroundColor: "#FFFFFF", paddingVertical: 4 }}>
           <View style={[styles.statusIcon, { backgroundColor: statusColor + "1A" }]}>
             <Ionicons name={statusIcon} size={40} color={statusColor} />
           </View>
@@ -262,6 +263,7 @@ export default function ReceiptScreen({ navigation, route }) {
           </View>
 
           <Text style={styles.footer}>Thank you for using SubBridge</Text>
+        </View>
         </View>
 
         <View style={styles.actionsRow}>
