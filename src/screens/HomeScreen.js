@@ -225,7 +225,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           <Text style={st.balanceAmount}>{fmt(balance, !showBalance)}</Text>
           <View style={st.actionRow}>
-            <TouchableOpacity style={st.actionBtn} activeOpacity={0.85} onPress={() => navigation.navigate("AddMoney", { balance, accountName: acctName, accounts: acctNo ? [{ bankName, accountNumber: acctNo }] : [] })}>
+            <TouchableOpacity style={st.actionBtn} activeOpacity={0.85} onPress={() => navigation.navigate("AddMoney", { balance, accountName: acctName, accounts: wallet?.accounts?.length ? wallet.accounts : acctNo ? [{ bankName, accountNumber: acctNo }] : [] })}>
               <Text style={st.actionBtnText}>+ Add Funds</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[st.actionBtn, st.actionGhost]} activeOpacity={0.85} onPress={() => go("Rewards")}>
@@ -326,7 +326,7 @@ export default function HomeScreen({ navigation }) {
           <View style={[st.blob, { width: 280, height: 280, bottom: 80, left: -80, backgroundColor: C.primary + "55" }]} />
           <View style={[st.rowBetween, { paddingTop: insets.top + S.lg }]}>
             <View style={st.row}>
-              <View style={st.nLogo}><Image source={require("../assets/logo.jpg")} style={{ width: 30, height: 30 }} resizeMode="contain" /></View>
+              <View style={st.nLogo}><Text style={{ fontSize: 22, fontWeight: "900", color: C.primary }}>S</Text></View>
               <View>
                 <Text style={st.nBrand}>SUBBRIDGE</Text>
                 <Text style={st.nSub}>Announcement</Text>
@@ -337,9 +337,10 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           <Text style={[st.nSub, { marginTop: 40 }]}>Hi {first},</Text>
-          <Text style={st.nTitle}>You have a new update 🔔</Text>
+          <Text style={st.nTitle}>Check out what's new 🔥</Text>
           <View style={st.nGlass}>
             <Text style={st.nMsg}>{notificationMessage}</Text>
+            <Text style={st.nTime}>Today · {new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</Text>
           </View>
           <View style={[st.row, { marginTop: S.xl, gap: S.md }]}>
             <TouchableOpacity style={st.nGhost} onPress={() => Linking.openURL("https://wa.me/+2348012345678")}>
@@ -349,6 +350,10 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity style={st.nBtn} onPress={() => setShowNotificationModal(false)}>
               <Text style={st.nBtnText}>Dismiss</Text>
             </TouchableOpacity>
+          </View>
+          <View style={st.nFooter}>
+            <Ionicons name="shield-checkmark-outline" size={13} color={C.onPrimaryMuted} />
+            <Text style={st.nFooterText}>NCC licensed · CL/S&I/0194/2025</Text>
           </View>
         </View>
       )}
@@ -421,7 +426,7 @@ const styles = StyleSheet.create({
   txStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginTop: 4 },
   txStatusText: { fontSize: 10, fontWeight: "800", textTransform: "capitalize" },
 
-  nOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,16,48,0.88)", paddingHorizontal: S.xl, zIndex: 100, overflow: "hidden" },
+  nOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,16,48,0.6)", paddingHorizontal: S.xl, zIndex: 100, overflow: "hidden" },
   nLogo: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
   nBrand: { fontSize: F.base, fontWeight: "900", color: C.white, letterSpacing: 0.5 },
   nSub: { fontSize: F.sm, color: C.onPrimaryMuted, fontWeight: "500" },
@@ -429,6 +434,9 @@ const styles = StyleSheet.create({
   nTitle: { fontSize: 26, fontWeight: "900", color: C.white, marginTop: 4 },
   nGlass: { marginTop: S.lg, padding: S.lg, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" },
   nMsg: { fontSize: F.md, color: C.white, lineHeight: 22, fontWeight: "500" },
+  nTime: { fontSize: 12, color: C.onPrimaryMuted, marginTop: 14, fontWeight: "500" },
+  nFooter: { position: "absolute", bottom: 40, left: 0, right: 0, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6 },
+  nFooterText: { fontSize: 12, color: C.onPrimaryMuted, fontWeight: "500" },
   nGhost: { flex: 1, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", paddingVertical: 16, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)" },
   nGhostText: { fontSize: F.base, fontWeight: "800", color: C.white },
   nBtn: { flex: 1, alignItems: "center", paddingVertical: 16, borderRadius: 18, backgroundColor: C.white },

@@ -61,11 +61,11 @@ export default function AddMoneyScreen({ navigation, route }) {
         <Text style={styles.section}>Or pay with card</Text>
         <View style={styles.cardRow}>
           <Text style={styles.cardText}>💳  Debit card / USSD</Text>
-          <Text style={styles.soon}>Coming soon</Text>
+          <Ionicons name="chevron-forward" size={20} color={C.textMuted} />
         </View>
       </ScrollView>
 
-      <View style={[styles.bar, { paddingBottom: insets.bottom + S.base }]}>
+      <View style={[styles.bar, { paddingBottom: insets.bottom + 36 }]}>
         <TouchableOpacity style={styles.btn} onPress={share} activeOpacity={0.85}>
           <Text style={styles.btnText}>Share account details</Text>
         </TouchableOpacity>
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: S.xl },
   back: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.white, alignItems: "center", justifyContent: "center", ...shadow },
   headerTitle: { fontSize: F.xl, fontWeight: "800", color: C.text },
-  hero: { borderRadius: 24, padding: S.xl, overflow: "hidden", ...shadow },
+  hero: { borderRadius: 24, padding: S.xl, minHeight: 120, overflow: "hidden", ...shadow },
   blob: { position: "absolute", width: 170, height: 170, borderRadius: 85, top: -50, right: -40, backgroundColor: "rgba(255,255,255,0.08)" },
   heroLabel: { fontSize: F.sm, color: C.onPrimaryMuted, fontWeight: "600" },
   heroAmount: { fontSize: 30, fontWeight: "900", color: C.white, marginTop: 4 },
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.white, borderRadius: 18, padding: S.lg, ...shadow },
   cardText: { fontSize: F.base, fontWeight: "700", color: C.text },
   soon: { fontSize: F.xs, fontWeight: "800", color: C.gold },
-  bar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: S.xl, paddingTop: S.base, backgroundColor: C.white, borderTopLeftRadius: 28, borderTopRightRadius: 28, ...shadow },
+  bar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: S.xl, paddingTop: S.base, backgroundColor: C.bg },
   btn: { backgroundColor: C.primary, borderRadius: 18, paddingVertical: 17, alignItems: "center" },
   btnText: { fontSize: F.lg, fontWeight: "800", color: C.white },
 });

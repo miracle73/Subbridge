@@ -67,7 +67,7 @@ export function demoResponse(endpoint) {
   if (/sign-in-user|sign-in-with-pin/.test(e)) return ok({ token: "demo-token", id: DEMO_USER.id, user: DEMO_USER });
   if (/sign-up\/$|verify-sign-up|resend-verification-code/.test(e)) return ok({ id: DEMO_USER.id, user: DEMO_USER, token: "demo-token" });
   if (/^\/api\/users\/\d+\/$/.test(e)) return ok({ user: DEMO_USER });
-  if (/^\/api\/wallet\/\d+\/$/.test(e)) return ok({ balance: 59160, accountNumber: "6698922282", bankName: "PalmPay" });
+  if (/^\/api\/wallet\/\d+\/$/.test(e)) return ok({ balance: 59160, accountNumber: "6698922282", bankName: "PalmPay", accounts: [{ bankName: "PalmPay", accountNumber: "6698922282", fee: "1% fee · cap ₦50" }, { bankName: "9PSB", accountNumber: "5224238006", fee: "₦35 flat" }] });
   if (/^\/api\/transactions\//.test(e)) return ok({ transactions: TX });
   if (/mobile\/history/.test(e)) return ok(TX);
   if (/mobile\/alerts/.test(e)) return ok(ALERTS);
