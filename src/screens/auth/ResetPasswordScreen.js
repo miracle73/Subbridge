@@ -136,77 +136,79 @@ export default function ResetPasswordScreen({ navigation, route }) {
     );
   }
 
-  return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <AuthBackground />
-      <TouchableOpacity style={styles.back} onPress={goBack}>
-        <Ionicons name="arrow-back" size={22} color={C.white} />
-      </TouchableOpacity>
-      <ScrollView
-        contentContainerStyle={styles.inner}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.avatarWrap}>
-          <Ionicons name="lock-closed" size={48} color={C.white} />
-        </View>
-        <Text style={styles.title}>{stageTitle}</Text>
-        <Text style={styles.subtitle}>{stageLabel}</Text>
-
-        <View style={styles.form}>
-          <View style={styles.inputWrap}>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={onChangeNew}
-              placeholder={isPin ? "New PIN" : "New password"}
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              keyboardType="number-pad"
-              secureTextEntry={!showValue}
-              maxLength={maxLen}
-            />
-            <TouchableOpacity style={styles.eye} onPress={() => setShowValue((s) => !s)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name={showValue ? "eye" : "eye-off"} size={20} color="rgba(255,255,255,0.6)" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputWrap}>
-            <TextInput
-              style={styles.input}
-              value={confirm}
-              onChangeText={onChangeConfirm}
-              placeholder={isPin ? "Confirm PIN" : "Confirm password"}
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              keyboardType="number-pad"
-              secureTextEntry={!showValue}
-              maxLength={maxLen}
-            />
-            <TouchableOpacity style={styles.eye} onPress={() => setShowValue((s) => !s)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name={showValue ? "eye" : "eye-off"} size={20} color="rgba(255,255,255,0.6)" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <TouchableOpacity
-          style={[styles.btn, loading && { opacity: 0.6 }]}
-          onPress={handleContinue}
-          disabled={loading}
-        >
-          <Text style={styles.btnText}>
-            {loading ? "Resetting..." : stage === "new" ? "Continue" : isPin ? "Reset PIN" : "Reset Password"}
-          </Text>
+  // Figma "Reset Password": light page, two fields, match indicator, button at the bottom.
+  const unit = isPin ? "PIN" : "password";
+  const matches = confirm.length >= minLen && confirm === password;
+  const Field = ({ label, value, onChange }) => (
+    <View style={{ marginTop: 20 }}>
+      <Text style={fig.label}>{label}</Text>
+      <View style={fig.field}>
+        <TextInput
+          style={fig.input}
+          value={value}
+          onChangeText={onChange}
+          placeholder="• • • • •"
+          placeholderTextColor={C.textLight}
+          keyboardType="number-pad"
+          secureTextEntry={!showValue}
+          maxLength={maxLen}
+        />
+        <TouchableOpacity onPress={() => setShowValue((v) => !v)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name={showValue ? "eye-off-outline" : "eye-outline"} size={20} color={C.textMuted} />
         </TouchableOpacity>
+      </View>
+    </View>
+  );
 
-        {isPin ? (
-          <Text style={styles.hint}>Your PIN saves automatically once all 4 digits are confirmed.</Text>
-        ) : (
-          <Text style={styles.hint}>Auto-saves at 7 digits — or tap the button for a 5-6 digit password.</Text>
-        )}
+  return (
+    <KeyboardAvoidingView style={fig.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View style={fig.header}>
+        <TouchableOpacity style={fig.back} onPress={goBack}>
+          <Ionicons name="arrow-back" size={20} color={C.text} />
+        </TouchableOpacity>
+        <Text style={fig.headerTitle}>{isPin ? "Reset PIN" : "Reset Password"}</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <Text style={fig.title}>Create a new {unit}</Text>
+        <Text style={fig.sub}>{isPin ? "4 digits, numbers only" : "5 digits, numbers only"}</Text>
+
+        <Field label={`New ${unit}`} value={password} onChange={(t) => { setPassword(t.replace(/\D/g, "").slice(0, maxLen)); setError(""); }} />
+        <Field label={`Confirm ${unit}`} value={confirm} onChange={(t) => { setConfirm(t.replace(/\D/g, "").slice(0, maxLen)); setError(""); }} />
+
+        {matches ? (
+          <View style={fig.match}><Text style={fig.matchText}>✓ {isPin ? "PINs" : "Passwords"} match</Text></View>
+        ) : null}
+        {error ? <Text style={fig.error}>{error}</Text> : null}
       </ScrollView>
+
+      <View style={fig.bar}>
+        <TouchableOpacity style={[fig.btn, loading && { opacity: 0.6 }]} onPress={() => submit(password, confirm)} disabled={loading} activeOpacity={0.85}>
+          <Text style={fig.btnText}>{loading ? "Saving..." : isPin ? "Reset PIN" : "Reset Password"}</Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 }
+
+const fig = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16 },
+  back: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.white, alignItems: "center", justifyContent: "center", shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: C.text },
+  title: { fontSize: 24, fontWeight: "900", color: C.text, marginTop: 16 },
+  sub: { fontSize: 14, color: C.textMuted, marginTop: 6 },
+  label: { fontSize: 13, fontWeight: "600", color: C.textMuted, marginBottom: 8 },
+  field: { flexDirection: "row", alignItems: "center", backgroundColor: C.white, borderRadius: 16, paddingHorizontal: 20, height: 56, shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 },
+  input: { flex: 1, fontSize: 16, fontWeight: "600", color: C.text, letterSpacing: 4 },
+  match: { marginTop: 24, height: 44, borderRadius: 14, backgroundColor: C.credit + "1A", justifyContent: "center", paddingHorizontal: 16 },
+  matchText: { fontSize: 13, fontWeight: "800", color: C.credit },
+  error: { fontSize: 13, color: C.debit, marginTop: 16, fontWeight: "600" },
+  bar: { paddingHorizontal: 24, paddingBottom: 36, paddingTop: 12 },
+  btn: { backgroundColor: C.primary, borderRadius: 18, height: 56, alignItems: "center", justifyContent: "center", shadowColor: C.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4 },
+  btnText: { fontSize: 16, fontWeight: "800", color: C.white },
+});
 
 const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
