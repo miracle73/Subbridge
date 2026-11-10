@@ -16,7 +16,7 @@ import ErrorModal from "../components/ErrorModal";
 const LOGO = require("../assets/logo.jpg");
 
 export default function AuthScreen({ navigation }) {
-  const [mode, setMode] = useState("pin");
+  const [mode, setMode] = useState("password");
   const [phone, setPhone] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -202,11 +202,12 @@ export default function AuthScreen({ navigation }) {
         contentContainerStyle={styles.innerScroll}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.avatarWrap}>
-          <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+        <View style={fig.logoBadge}>
+          <Text style={fig.logoS}>S</Text>
+          <View style={fig.logoDot} />
         </View>
-        <Text style={styles.welcome}>Welcome to SubBridge</Text>
-        <Text style={styles.subtitle}>Sign in with your email or phone number</Text>
+        <Text style={fig.title}>Welcome back 👋</Text>
+        <Text style={fig.sub}>Pay bills in seconds with SubBridge</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -214,7 +215,7 @@ export default function AuthScreen({ navigation }) {
             value={identifier}
             onChangeText={(t) => { setIdentifier(/^\+?\d*$/.test(t) ? formatPhoneInput(t, identifier) : t); }}
             placeholder="Email or phone number"
-            placeholderTextColor="rgba(255,255,255,0.4)"
+            placeholderTextColor="#C9D2FF"
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
@@ -226,7 +227,7 @@ export default function AuthScreen({ navigation }) {
               value={password}
               onChangeText={(t) => { setPassword(t.replace(/\D/g, "").slice(0, 12)); }}
               placeholder="Password (numbers only)"
-              placeholderTextColor="rgba(255,255,255,0.4)"
+              placeholderTextColor="#C9D2FF"
               keyboardType="number-pad"
               secureTextEntry={!showPass}
               maxLength={12}
@@ -244,21 +245,24 @@ export default function AuthScreen({ navigation }) {
           </View>
         ) : null}
 
+        <TouchableOpacity style={fig.forgot} onPress={() => navigation.navigate("ForgotPassword")}>
+          <Text style={fig.forgotText}>Forgot password?</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={[styles.btn, loading && { opacity: 0.6 }]} onPress={loginWithPassword} disabled={loading}>
           <Text style={styles.btnText}>{loading ? "Signing In..." : "Sign In"}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.forgot} onPress={() => navigation.navigate("ForgotPassword")}>
-          <Text style={styles.forgotText}>Forgot Password?</Text>
+        <TouchableOpacity style={{ marginTop: 24 }} onPress={() => navigation.navigate("SignUp")}>
+          <Text style={fig.newHere}>New here?  <Text style={{ fontWeight: "900" }}>Create account</Text></Text>
         </TouchableOpacity>
 
-        {hasSavedPin && (
-          <TouchableOpacity style={styles.switchBtn} onPress={() => { setMode("pin"); setPassword(""); }}>
-            <Text style={styles.switchText}>Sign in with PIN</Text>
+        {bioReady && (
+          <TouchableOpacity style={fig.bio} onPress={() => { setMode("pin"); setPassword(""); }}>
+            <Ionicons name="finger-print" size={18} color={C.white} />
+            <Text style={fig.bioText}>Use PIN or fingerprint</Text>
           </TouchableOpacity>
         )}
-
-        {signupLink}
       </ScrollView>
     </KeyboardAvoidingView>
     <ErrorModal title="Login failed" visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
@@ -309,3 +313,16 @@ const styles = withAuthStyles(StyleSheet.create({
   signupText: { fontSize: F.md, color: "rgba(255,255,255,0.6)" },
   signupBold: { color: C.white, fontWeight: "700" },
 }));
+
+const fig = StyleSheet.create({
+  logoBadge: { width: 80, height: 80, borderRadius: 24, backgroundColor: C.white, alignItems: "center", justifyContent: "center", marginBottom: 30 },
+  logoS: { fontSize: 40, fontWeight: "900", color: C.primary },
+  logoDot: { position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: 9, backgroundColor: C.gold },
+  title: { fontSize: 30, fontWeight: "900", color: C.white, textAlign: "center" },
+  sub: { fontSize: 15, color: C.onPrimaryMuted, textAlign: "center", marginTop: 8, marginBottom: 32 },
+  forgot: { alignSelf: "flex-end", marginTop: 4, marginBottom: 24 },
+  forgotText: { fontSize: 14, fontWeight: "700", color: C.gold },
+  newHere: { fontSize: 14, fontWeight: "500", color: C.white, textAlign: "center" },
+  bio: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 28 },
+  bioText: { fontSize: 13, fontWeight: "700", color: C.onPrimaryMuted },
+});
