@@ -36,7 +36,7 @@ export default function AddMoneyScreen({ navigation, route }) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: S.xl, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: S.xl, paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
         <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
           <View style={styles.blob} />
           <Text style={styles.heroLabel}>Wallet balance</Text>
@@ -65,7 +65,7 @@ export default function AddMoneyScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      <View style={[styles.bar, { paddingBottom: insets.bottom + 36 }]}>
+      <View style={[styles.bar, { paddingBottom: 16 }]}>
         <TouchableOpacity style={styles.btn} onPress={share} activeOpacity={0.85}>
           <Text style={styles.btnText}>Share account details</Text>
         </TouchableOpacity>

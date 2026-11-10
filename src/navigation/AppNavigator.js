@@ -103,6 +103,8 @@ function MainTabs() {
       />
       <Tab.Screen name="WalletTab" component={WalletScreen} options={{ tabBarLabel: "Wallet", tabBarIcon: WalletTabIcon }} />
       <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ tabBarLabel: "Profile", tabBarIcon: ProfileTabIcon }} />
+      {/* Hidden tab so Add Money keeps the bottom navigation */}
+      <Tab.Screen name="AddMoney" component={AddMoneyScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
     </Tab.Navigator>
   );
 }
@@ -144,7 +146,6 @@ export default function AppNavigator({ initialRouteName }) {
         <Stack.Screen name="Receipt" component={ReceiptScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Announcement" component={AnnouncementScreen} />
-        <Stack.Screen name="AddMoney" component={AddMoneyScreen} />
       </Stack.Navigator>
   );
 }
