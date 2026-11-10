@@ -1,4 +1,5 @@
 import { withPayStyles } from "../../components/payStyles";
+import { FadeIn, PressScale, Float, Sparkle } from "../../components/Motion";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Share, Modal, StatusBar, Image,
@@ -353,199 +354,125 @@ export default function RewardsScreen({ navigation }) {
 
   if (loading) return <Preloader />;
 
+  const rateVals = Object.values(dashboard.commissionRates || {}).map(Number).filter((n) => n > 0);
+  const commissionPct = rateVals.length ? Math.max(...rateVals) : 2;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
 
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
+      <View style={rf.header}>
+        <TouchableOpacity style={rf.back} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color={C.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rewards</Text>
-        <View style={{ width: 22 }} />
+        <Text style={rf.headerTitle}>Invite Friends</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: 160 + insets.bottom }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={figma.hero}>
-          <View style={figma.blob} />
-          <Text style={[figma.spark, { top: 18, left: 190 }]}>✦</Text>
-          <Text style={[figma.spark, { bottom: 18, right: 22, fontSize: 10 }]}>✦</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={figma.heroTitle}>Invite friends &{"\n"}earn rewards</Text>
-            <Text style={figma.heroSub}>Earn commission every time your friends pay bills on SubBridge.</Text>
-          </View>
-          <View style={figma.trophy}><Text style={{ fontSize: 38 }}>🏆</Text></View>
-        </LinearGradient>
-        <View style={styles.grid}>
-          <StatCard label="Referral balance" value={fmt(dashboard.referralBalance)} icon="people-outline" color={C.primary} />
-          <StatCard label="Total earnings" value={fmt(dashboard.totalEarnings)} icon="cash-outline" color={C.accent} />
-          <StatCard label="Total users" value={String(dashboard.totalUsers)} icon="person-add-outline" color={C.warning} />
-          <StatCard label="This month earnings" value={fmt(dashboard.monthEarnings)} icon="trending-up-outline" color={C.credit} />
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Referral link</Text>
-          <View style={styles.linkRow}>
-            <Text style={styles.linkText} numberOfLines={1}>{dashboard.referralLink}</Text>
-            <TouchableOpacity style={styles.copyBtn} activeOpacity={0.7} onPress={() => copy(dashboard.referralLink, "Referral link")}>
-              <Ionicons name="copy-outline" size={15} color={C.primary} />
-              <Text style={styles.copyBtnText}>Copy</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={[styles.cardTitle, { marginTop: S.base }]}>Referral code</Text>
-          <View style={styles.linkRow}>
-            <View style={styles.codeChip}>
-              <Text style={styles.codeText}>{dashboard.referralCode}</Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 60 + insets.bottom }} showsVerticalScrollIndicator={false}>
+        <FadeIn>
+          <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={rf.hero}>
+            <Float style={rf.heroBlob} range={10} />
+            <Sparkle style={{ top: 22, left: 178 }} size={14} />
+            <Sparkle style={{ bottom: 16, right: 20 }} size={10} delay={500} />
+            <View style={{ flex: 1 }}>
+              <Text style={rf.heroTitle}>Invite friends &{"\n"}earn rewards</Text>
+              <Text style={rf.heroSub}>Earn {commissionPct}% commission on every{"\n"}friend's first 10 transactions.</Text>
             </View>
-            <TouchableOpacity style={styles.copyBtn} activeOpacity={0.7} onPress={() => copy(dashboard.referralCode, "Referral code")}>
-              <Ionicons name="copy-outline" size={15} color={C.primary} />
-              <Text style={styles.copyBtnText}>Copy</Text>
-            </TouchableOpacity>
+            <View style={rf.trophy}><Text style={{ fontSize: 38 }}>🏆</Text></View>
+          </LinearGradient>
+        </FadeIn>
+
+        <FadeIn delay={80}>
+          <View style={rf.card}>
+            <Text style={rf.muted}>Your referral code</Text>
+            <View style={rf.codeRow}>
+              <Text style={rf.code} selectable>{dashboard.referralCode || "—"}</Text>
+              <TouchableOpacity style={rf.copyBtn} onPress={() => dashboard.referralCode && copy(dashboard.referralCode, "Referral code")}>
+                <Ionicons name="copy-outline" size={18} color={C.primary} />
+              </TouchableOpacity>
+            </View>
+            <PressScale style={rf.shareBtn} onPress={share}>
+              <Text style={rf.shareText}>Share invite link</Text>
+            </PressScale>
           </View>
-        </View>
+        </FadeIn>
 
-        <TouchableOpacity style={styles.shareBtn} activeOpacity={0.85} onPress={share}>
-          <Ionicons name="share-social-outline" size={18} color={C.white} />
-          <Text style={styles.shareBtnText}>Share on social media</Text>
-        </TouchableOpacity>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>How it works</Text>
-          {dashboard.howItWorks.map((step, i) => (
-            <View key={i} style={styles.stepRow}>
-              <View style={styles.stepNum}>
-                <Text style={styles.stepNumText}>{i + 1}</Text>
+        <Text style={rf.section}>Your referral stats</Text>
+        <View style={rf.grid}>
+          {[
+            ["👥", "Friends invited", String(dashboard.totalUsers || 0), C.text],
+            ["💰", "Total earned", fmt(dashboard.totalEarnings), C.credit],
+            ["⏳", "Pending", fmt(dashboard.pending ?? dashboard.monthEarnings ?? 0), C.text],
+            ["📈", "Commission", `${commissionPct}%`, C.text],
+          ].map(([icon, label, value, color], i) => (
+            <FadeIn key={label} delay={120 + i * 60} style={rf.statWrap}>
+              <View style={rf.stat}>
+                <View style={rf.statTop}>
+                  <View style={rf.statIcon}><Text style={{ fontSize: 15 }}>{icon}</Text></View>
+                  <Text style={rf.statLabel}>{label}</Text>
+                </View>
+                <Text style={[rf.statValue, { color }]}>{value}</Text>
               </View>
-              <Text style={styles.stepText}>{step}</Text>
-            </View>
+            </FadeIn>
           ))}
         </View>
 
-        {!demo && Number(dashboard.commission?.perReferral || 0) > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Referral commission</Text>
-            <View style={styles.commissionRow}>
-              <View style={styles.commissionIcon}>
-                <Ionicons name="gift-outline" size={20} color={C.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.commissionValue}>{fmt(dashboard.commission.perReferral)} per referral</Text>
-                {!!dashboard.commission?.note && (
-                  <Text style={styles.commissionNote}>{dashboard.commission.note}</Text>
-                )}
-              </View>
-            </View>
-          </View>
-        )}
-
-        {!demo && Object.keys(dashboard.commissionRates || {}).length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Referral commission rates</Text>
-            {Object.entries(dashboard.commissionRates || {}).map(([key, raw], i) => {
-              const rate = Number(raw ?? 0);
-              if (rate === 0) return null;
-              // Try to find matching RATE_ORDER for icon/color/label
-              const match = RATE_ORDER.find(r => r.id === key || r.label.toLowerCase().replace(/\s+/g,'') === key);
-              const label = match ? match.label : key.charAt(0).toUpperCase() + key.slice(1);
-              const icon = match ? match.icon : "pricetag-outline";
-              const color = match ? match.color : C.primary;
-              return (
-                <View key={key} style={[styles.rateRow, i < Object.keys(dashboard.commissionRates || {}).length - 1 && styles.rateRowDivider]}>
-                  <View style={[styles.rateIcon, { backgroundColor: color + "15" }]}>
-                    <Ionicons name={icon} size={16} color={color} />
-                  </View>
-                  <Text style={styles.rateLabel}>{label}</Text>
-                  <View style={styles.rateBadge}>
-                    <Text style={styles.rateBadgeText}>{rate}%</Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Recent earnings</Text>
-          {earnings.length === 0 ? (
-            <Text style={styles.emptyText}>No earnings yet</Text>
-          ) : (
-            earnings.map((e) => (
-              <View key={e.id} style={styles.earnRow}>
-                <View style={styles.earnAvatar}>
-                  <Text style={styles.earnAvatarText}>{(e.name || "?").charAt(0)}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.earnName}>{e.name}</Text>
-                  <View style={styles.productRow}>
-                    <Ionicons name={productIcon(e.product)} size={11} color={C.textMuted} />
-                    <Text style={styles.earnProduct}>{e.product} · {fmt(e.productAmount || 0)}</Text>
-                  </View>
-                  <Text style={styles.earnDate}>{formatDateTime(e.date)}</Text>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.earnAmount}>+{fmt(e.amount || 0)}</Text>
-                  <View style={styles.paidChip}>
-                    <Text style={styles.paidText}>{e.status}</Text>
-                  </View>
-                </View>
-              </View>
-            ))
-          )}
-
+        <View style={rf.available}>
+          <Text style={rf.availableText}>{fmt(dashboard.referralBalance)} available</Text>
+          <TouchableOpacity
+            style={rf.withdraw}
+            onPress={() => {
+              if (dashboard.referralBalance < MIN_WITHDRAWAL) { showToast(`Minimum withdrawal is ${fmt(MIN_WITHDRAWAL)}`); return; }
+              setShowWithdraw(true);
+            }}
+          >
+            <Text style={rf.withdrawText}>Withdraw</Text>
+          </TouchableOpacity>
         </View>
 
-        {!demo && (dashboard.referredPeople || []).length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>People you referred</Text>
-            {(dashboard.referredPeople || []).map((p) => (
-              <View key={p.id} style={styles.earnRow}>
-                <View style={styles.earnAvatar}>
-                  <Text style={styles.earnAvatarText}>{(p.name || p.email || p.phone || "?").charAt(0)}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.earnName}>{p.name || "Unknown"}</Text>
-                  <View style={styles.productRow}>
-                    <Text style={styles.earnProduct}>{p.email || p.phone || "-"}</Text>
-                  </View>
-                  <Text style={styles.earnDate}>
-                    {p.dateJoined ? "Joined " + formatDateTime(p.dateJoined) : ""}
-                    {p.referralCode ? " · Referral " + p.referralCode : ""}
-                  </Text>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.earnAmount}>+{fmt(p.bonusEarned || 0)}</Text>
-                  <View style={styles.paidChip}>
-                    <Text style={styles.paidText}>{p.status || "pending"}</Text>
-                  </View>
-                </View>
-              </View>
-            ))}
+        <Text style={rf.section}>Commission history</Text>
+        {earnings.length === 0 ? (
+          <Text style={rf.muted}>No commission yet — share your code to start earning.</Text>
+        ) : earnings.slice(0, 10).map((e, i) => (
+          <View key={e.id || i} style={rf.historyRow}>
+            <View style={rf.initial}><Text style={rf.initialText}>{String(e.name || "?").charAt(0).toUpperCase()}</Text></View>
+            <Text style={rf.historyText} numberOfLines={1}>{e.name}{e.product ? ` · ${e.product}` : ""}</Text>
+            <Text style={rf.historyAmount}>+{fmt(e.amount)}</Text>
           </View>
-        )}
+        ))}
+
+        <Text style={rf.section}>How it works</Text>
+        {[
+          ["Share your code", "Send your code or link to friends"],
+          ["Friend signs up", "They register with your code"],
+          ["You earn", "Get commission on their purchases"],
+        ].map(([title, sub], i) => (
+          <View key={title} style={rf.step}>
+            <View style={rf.stepNum}><Text style={rf.stepNumText}>{i + 1}</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={rf.stepTitle}>{title}</Text>
+              <Text style={rf.stepSub}>{sub}</Text>
+            </View>
+          </View>
+        ))}
+
+        {Object.keys(dashboard.commissionRates || {}).length > 0 ? (
+          <>
+            <Text style={rf.section}>Referral commission rates</Text>
+            <View style={rf.card}>
+              {Object.entries(dashboard.commissionRates).map(([k, v], i) => (
+                <View key={k} style={[rf.rateRow, i > 0 && rf.rateDivider]}>
+                  <Text style={rf.rateLabel}>{({ airtime: "Airtime", data: "Data", cable: "Cable TV", electricity: "Electricity" })[k] || k}</Text>
+                  <Text style={rf.rateValue}>{v}%</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + S.md }]}>
-        <TouchableOpacity
-          style={[styles.withdrawBtn, dashboard.referralBalance < MIN_WITHDRAWAL && { opacity: 0.5 }]}
-          activeOpacity={0.85}
-          onPress={() => {
-            if (dashboard.referralBalance < MIN_WITHDRAWAL) {
-              showToast(`Minimum withdrawal is ${fmt(MIN_WITHDRAWAL)}`);
-              return;
-            }
-            setShowWithdraw(true);
-          }}
-        >
-          <Ionicons name="wallet-outline" size={18} color={C.white} />
-          <Text style={styles.withdrawBtnText}>Withdraw Bonus</Text>
-        </TouchableOpacity>
-        <Text style={styles.minWithdrawNote}>Minimum withdrawal: {fmt(MIN_WITHDRAWAL)}</Text>
-      </View>
 
       <Modal visible={showWithdraw} transparent animationType="slide" onRequestClose={closeWithdraw}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={closeWithdraw} />
@@ -900,3 +827,48 @@ const _shadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 8 },
 [["card", { borderRadius: 24, ..._shadow }], ["shareBtn", { borderRadius: 16, paddingVertical: 15 }], ["withdrawBtn", { borderRadius: 18, paddingVertical: 16 }],
  ["codeText", { fontSize: 26, fontWeight: "900" }], ["cardValue", { fontSize: 22, fontWeight: "900" }], ["stepNum", { backgroundColor: C.primaryLight }], ["sheet", { borderTopLeftRadius: 32, borderTopRightRadius: 32 }],
  ["continueBtn", { borderRadius: 18, paddingVertical: 16 }]].forEach(([k, v]) => { if (styles[k]) styles[k] = [styles[k], v]; });
+
+const rfShadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.07, shadowRadius: 18, elevation: 2 };
+const rf = StyleSheet.create({
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingVertical: 12 },
+  back: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.white, alignItems: "center", justifyContent: "center", ...rfShadow },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: C.text },
+  hero: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 26, padding: 22, marginTop: 8, overflow: "hidden" },
+  heroBlob: { position: "absolute", width: 190, height: 190, borderRadius: 95, top: -40, right: -50, backgroundColor: "rgba(255,255,255,0.08)" },
+  heroTitle: { fontSize: 24, fontWeight: "900", color: C.white },
+  heroSub: { fontSize: 13, color: C.onPrimaryMuted, marginTop: 8, lineHeight: 19, fontWeight: "600" },
+  trophy: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.gold, alignItems: "center", justifyContent: "center" },
+  card: { backgroundColor: C.white, borderRadius: 24, padding: 20, marginTop: 16, ...rfShadow },
+  muted: { fontSize: 13, color: C.textMuted, fontWeight: "500" },
+  codeRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 },
+  code: { fontSize: 26, fontWeight: "900", color: C.text },
+  copyBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: C.primaryLight, alignItems: "center", justifyContent: "center" },
+  shareBtn: { backgroundColor: C.primary, borderRadius: 16, height: 50, alignItems: "center", justifyContent: "center", marginTop: 16 },
+  shareText: { fontSize: 15, fontWeight: "800", color: C.white },
+  section: { fontSize: 16, fontWeight: "800", color: C.text, marginTop: 24, marginBottom: 12 },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
+  statWrap: { width: "48.5%" },
+  stat: { backgroundColor: C.white, borderRadius: 20, padding: 14, height: 86, justifyContent: "space-between", ...rfShadow },
+  statTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  statIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: C.primaryLight, alignItems: "center", justifyContent: "center" },
+  statLabel: { fontSize: 12, color: C.textMuted, fontWeight: "500", flex: 1 },
+  statValue: { fontSize: 20, fontWeight: "900" },
+  available: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.gold + "24", borderRadius: 18, paddingHorizontal: 20, height: 56, marginTop: 16 },
+  availableText: { fontSize: 15, fontWeight: "800", color: C.text },
+  withdraw: { backgroundColor: C.primary, borderRadius: 12, paddingHorizontal: 18, height: 34, justifyContent: "center" },
+  withdrawText: { fontSize: 13, fontWeight: "800", color: C.white },
+  historyRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.white, borderRadius: 16, paddingHorizontal: 12, height: 52, marginBottom: 8 },
+  initial: { width: 30, height: 30, borderRadius: 15, backgroundColor: C.primary + "1F", alignItems: "center", justifyContent: "center" },
+  initialText: { fontSize: 13, fontWeight: "800", color: C.primary },
+  historyText: { flex: 1, fontSize: 14, fontWeight: "600", color: C.text },
+  historyAmount: { fontSize: 14, fontWeight: "800", color: C.credit },
+  step: { flexDirection: "row", gap: 14, marginBottom: 18 },
+  stepNum: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.primary + "1F", alignItems: "center", justifyContent: "center" },
+  stepNumText: { fontSize: 14, fontWeight: "800", color: C.primary },
+  stepTitle: { fontSize: 14, fontWeight: "800", color: C.text },
+  stepSub: { fontSize: 12, color: C.textMuted, marginTop: 2 },
+  rateRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12 },
+  rateDivider: { borderTopWidth: 1, borderTopColor: "#EEF0F7" },
+  rateLabel: { fontSize: 14, fontWeight: "600", color: C.text },
+  rateValue: { fontSize: 14, fontWeight: "800", color: C.primary },
+});

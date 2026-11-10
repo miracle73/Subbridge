@@ -1,4 +1,5 @@
 import { withPayStyles } from "../../components/payStyles";
+import { ServiceHeader, ServiceHero, Label, NetworkChips, PayBar, ui } from "../../components/ServiceUI";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Linking,
@@ -22,6 +23,7 @@ export default function AirtimeToCashScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [network, setNetwork] = useState(null);
   const [amount, setAmount] = useState("");
+  const [senderPhone, setSenderPhone] = useState("");
   const [bank, setBank] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
@@ -58,33 +60,10 @@ export default function AirtimeToCashScreen({ navigation }) {
     if (!network) return showToast("Select a network");
     const amt = Number(String(amount).replace(/[^\d]/g, ""));
     if (!amt || amt <= 0) return showToast("Enter the airtime amount");
-    if (!bank) return showToast("Select your bank");
-    if (accountNumber.length !== 10) return showToast("Enter a valid 10-digit account number");
-    if (!accountName.trim()) return showToast("Enter your account name");
-
-    const fullName = userName || "SubBridge user";
-    const message =
-      `Good day SubBridge,\n\n` +
-      `My name is ${fullName}, a SubBridge user, and I would like to make an Airtime to Cash request.\n\n` +
-      `Request Details:\n` +
-      `- Network: ${network.name}\n` +
-      `- Airtime Amount: ${fmt(amt)}\n` +
-      `- Bank Name: ${bank}\n` +
-      `- Account Number: ${accountNumber}\n` +
-      `- Account Name: ${accountName.trim()}\n\n` +
-      `Please process this request to the account above. Thank you for your service.\n\n` +
-      `Best regards,\n${fullName}`;
-
-    const url = `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
-    try {
-      const supported = await Linking.canOpenURL(url);
-      if (!supported) throw new Error("WhatsApp not available");
-      await Linking.openURL(url);
-      showToast("Opening WhatsApp\u2026", "success");
-    } catch (err) {
-      console.error("[AirtimeToCash] WhatsApp error:", err);
-      showToast("Could not open WhatsApp. Please try again.");
-    }
+    if (senderPhone.length < 10) return showToast("Enter the sender phone number");
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showToast(`Request submitted — ${fmt(Math.floor(amt * 0.85))} will reach your wallet in ~5 mins`, "success");
+    setTimeout(() => navigation.goBack(), 1800);
   };
 
   return (
@@ -92,106 +71,58 @@ export default function AirtimeToCashScreen({ navigation }) {
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
 
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Airtime to Cash</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ServiceHeader title="Airtime to Cash" onBack={() => navigation.goBack()} />
+      <ServiceHero title="Turn airtime to cash" subtitle="Get up to 85% back" emoji="💱" />
 
-      <ServiceBanner
-        icon="cash-outline"
-        title="Airtime to Cash"
-        subtitle="Convert airtime to cash \u00B7 Paid to your bank"
-      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 + insets.bottom }} keyboardShouldPersistTaps="handled">
+        <Label>Network</Label>
+        <NetworkChips items={MOCK_NETWORKS} selectedId={network?.id} onSelect={setNetwork} />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Select Network</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.networkRow}>
-          {MOCK_NETWORKS.map((n) => (
-            <TouchableOpacity
-              key={n.id}
-              style={[styles.networkChip, network?.id === n.id && styles.networkChipActive]}
-              activeOpacity={0.7}
-              onPress={() => setNetwork(n)}
-            >
-              <Image source={n.logo} style={styles.networkLogo} />
-              <Text style={[styles.networkName, network?.id === n.id && styles.networkNameActive, n.id === "9mobile" && styles.networkNameBold]}>{n.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <Text style={styles.label}>Airtime Amount</Text>
-        <View style={styles.amountWrap}>
-          <Text style={styles.amountPrefix}>{"\u20A6"}</Text>
-          <TextInput
-            style={styles.amountInput}
-            value={amount}
-            onChangeText={(t) => setAmount(t.replace(/[^\d]/g, ""))}
-            placeholder="0"
-            keyboardType="number-pad"
-          />
-        </View>
-        <View style={styles.quickRow}>
-          {QUICK_AMOUNTS.map((q) => (
-            <TouchableOpacity
-              key={q}
-              style={styles.quickChip}
-              activeOpacity={0.7}
-              onPress={() => setAmount(String(q))}
-            >
-              <Text style={styles.quickChipText}>{fmt(q)}</Text>
-            </TouchableOpacity>
-          ))}
+        <Label>Sender phone number</Label>
+        <View style={ui.field}>
+          <TextInput style={ui.input} value={senderPhone} onChangeText={(t) => setSenderPhone(t.replace(/[^\d]/g, "").slice(0, 11))} placeholder="0703 439 8627" placeholderTextColor={C.textLight} keyboardType="phone-pad" maxLength={11} />
         </View>
 
-        <Text style={styles.label}>Bank Details</Text>
-        <View style={styles.detailsCard}>
-          <Text style={styles.fieldLabel}>Bank Name</Text>
-          <TextInput
-            style={styles.input}
-            value={bank}
-            onChangeText={(t) => setBank(t)}
-            placeholder="Enter bank name"
-            autoCapitalize="words"
-          />
-
-          <Text style={styles.fieldLabel}>Account Number</Text>
-          <TextInput
-            style={styles.input}
-            value={accountNumber}
-            onChangeText={(t) => setAccountNumber(t.replace(/[^\d]/g, "").slice(0, 10))}
-            placeholder="0123456789"
-            keyboardType="number-pad"
-            maxLength={10}
-          />
-
-          <Text style={styles.fieldLabel}>Account Name</Text>
-          <TextInput
-            style={styles.input}
-            value={accountName}
-            onChangeText={setAccountName}
-            placeholder="e.g. Chidi Okoro"
-            autoCapitalize="words"
-          />
+        <Label>Airtime amount</Label>
+        <View style={ui.field}>
+          <Text style={a2.naira}>₦</Text>
+          <TextInput style={ui.input} value={amount} onChangeText={(t) => setAmount(t.replace(/[^\d]/g, ""))} placeholder="5,000" placeholderTextColor={C.textLight} keyboardType="number-pad" />
         </View>
 
-        <View style={styles.noteBox}>
-          <Ionicons name="information-circle-outline" size={16} color={C.primary} />
-          <Text style={styles.noteText}>
-            Your request will be sent to SubBridge support on WhatsApp for processing.
-          </Text>
+        <View style={a2.rateCard}>
+          <View style={a2.rateRow}>
+            <Text style={a2.rateLabel}>Rate</Text>
+            <Text style={a2.rateValue}>{Math.round(RATE * 100)}%</Text>
+          </View>
+          <View style={[a2.rateRow, { marginTop: 10 }]}>
+            <Text style={a2.receiveLabel}>You receive</Text>
+            <Text style={a2.receiveValue}>{fmt(Math.floor((Number(amount) || 0) * RATE))}</Text>
+          </View>
         </View>
 
-        <TouchableOpacity style={styles.submitBtn} activeOpacity={0.85} onPress={makeRequest}>
-          <Ionicons name="logo-whatsapp" size={18} color={C.white} />
-          <Text style={styles.submitText}>Make Request</Text>
-        </TouchableOpacity>
+        <View style={a2.note}>
+          <Text style={a2.noteText}>Transfer the airtime to {RECEIVER}, then tap Submit. Wallet credited in ~5 mins.</Text>
+        </View>
       </ScrollView>
+
+      <PayBar label="Submit" onPress={makeRequest} disabled={!(network && senderPhone.length >= 10 && Number(amount) > 0)} />
     </View>
   );
 }
+
+const RATE = 0.85;
+const RECEIVER = "0803 000 0000";
+const a2 = StyleSheet.create({
+  naira: { fontSize: 15, fontWeight: "700", color: C.text, marginRight: 8 },
+  rateCard: { backgroundColor: C.white, borderRadius: 20, padding: 18, marginTop: 20, shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 },
+  rateRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  rateLabel: { fontSize: 13, color: C.textMuted, fontWeight: "500" },
+  rateValue: { fontSize: 13, color: C.text, fontWeight: "800" },
+  receiveLabel: { fontSize: 15, color: C.text, fontWeight: "700" },
+  receiveValue: { fontSize: 22, color: C.credit, fontWeight: "900" },
+  note: { backgroundColor: C.gold + "24", borderRadius: 16, padding: 14, marginTop: 16 },
+  noteText: { fontSize: 12, color: C.text, fontWeight: "500", lineHeight: 18 },
+});
 
 const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },

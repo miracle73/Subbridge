@@ -1,5 +1,6 @@
 import { withPayStyles } from "../../components/payStyles";
 import PaymentSummary from "../../components/PaymentSummary";
+import { ServiceHeader, ServiceHero, Label, SegTabs, PayBar, ui } from "../../components/ServiceUI";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator, Alert,
@@ -308,136 +309,48 @@ export default function ElectricityScreen({ navigation }) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
+      <ServiceHeader title="Electricity" onBack={() => navigation.goBack()} />
+      <ServiceHero title="Pay power bills" subtitle="Token delivered instantly" emoji="⚡" />
+
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 + insets.bottom }} keyboardShouldPersistTaps="handled">
+        <Label>Disco</Label>
+        <TouchableOpacity style={ui.field} onPress={() => setShowProvider(true)} activeOpacity={0.8}>
+          <Text style={[ui.input, !provider && { color: C.textLight }]} numberOfLines={1}>{provider?.name || "Select your disco"}</Text>
+          <Ionicons name="chevron-down" size={18} color={C.textMuted} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Electricity</Text>
-        <View style={{ width: 22 }} />
-      </View>
 
-      <ServiceBanner
-        icon="flash-outline"
-        title="Pay Electricity Bills"
-        subtitle={`Prepaid & Postpaid \u00B7 Instant token delivery`}
-      />
-
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Provider & Meter Number</Text>
-        <View style={styles.comboRow}>
-          <TouchableOpacity style={styles.providerLogoBtn} onPress={() => setShowProvider(true)}>
-            {provider?.logo ? (
-              <Image source={provider.logo} style={styles.providerLogo} />
-            ) : (
-              <View style={styles.providerLogoPlaceholder}>
-                <Ionicons name="flash-outline" size={22} color={C.textMuted} />
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.meterInputWrap}>
-            <TextInput
-              style={styles.meterInput}
-              value={meterNumber}
-              onChangeText={setMeterNumber}
-              placeholder="Meter number"
-              keyboardType="number-pad"
-              maxLength={15}
-            />
-          </View>
+        <View style={{ marginTop: 18 }}>
+          <SegTabs items={["Prepaid", "Postpaid"]} value={meterType === "postpaid" ? "Postpaid" : "Prepaid"} onChange={(t) => setMeterType(t.toLowerCase())} />
         </View>
 
-        <Text style={styles.label}>Meter Type</Text>
-        <View style={styles.typeRow}>
-          {["prepaid", "postpaid"].map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.typeChip, meterType === t && styles.typeChipActive]}
-              onPress={() => setMeterType(t)}
-            >
-              <Text style={[styles.typeChipText, meterType === t && { color: C.white }]}>{t.charAt(0).toUpperCase() + t.slice(1)}</Text>
+        <Label>Meter number</Label>
+        <View style={ui.field}>
+          <TextInput style={ui.input} value={meterNumber} onChangeText={setMeterNumber} placeholder="Meter number" placeholderTextColor={C.textLight} keyboardType="number-pad" maxLength={15} />
+          {meterNumber.length >= 5 && !verified ? (
+            <TouchableOpacity onPress={handleVerify} disabled={verifying} style={el.verify}>
+              {verifying ? <ActivityIndicator size="small" color={C.white} /> : <Text style={el.verifyText}>Verify</Text>}
             </TouchableOpacity>
-          ))}
+          ) : null}
         </View>
-
-        {meterNumber.length >= 5 && (
-        <TouchableOpacity
-          style={[styles.verifyBtnSolid, verifying && { opacity: 0.7 }]}
-          onPress={handleVerify}
-          disabled={verifying}
-          activeOpacity={0.8}
-        >
-          {verifying ? (
-            <ActivityIndicator size="small" color={C.white} />
-          ) : (
-            <Ionicons name="checkmark-circle-outline" size={18} color={C.white} />
-          )}
-          <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Click to Verify Meter"}</Text>
-        </TouchableOpacity>
-        )}
-
-        {verified && (
-          <View style={styles.verifiedCard}>
-            <Ionicons name="checkmark-circle" size={20} color={C.accent} />
-            <View style={{ marginLeft: S.sm }}>
-              <Text style={styles.verifiedName}>{verified.name}</Text>
-              <Text style={styles.verifiedAddress}>{verified.address}</Text>
-            </View>
+        {verified ? (
+          <View style={el.verified}>
+            <Text style={el.verifiedTop}>✓ Verified</Text>
+            <Text style={el.verifiedName} numberOfLines={2}>{verified.name}{verified.address ? ` · ${verified.address}` : ""}</Text>
           </View>
-        )}
+        ) : null}
 
-        <BeneficiaryBox type="electricity" onSelect={(b) => {
-          setMeterNumber(b.meter);
-          if (b.provider) {
-            const p = providers.find((x) => x.id === b.provider);
-            if (p) handleProvider(p);
-          }
-        }} />
-
-        <Text style={styles.label}>Amount</Text>
-        <View style={styles.amountBox}>
-          <Text style={styles.naira}>₦</Text>
-          <TextInput
-            style={styles.amountInput}
-            value={amount}
-            onChangeText={setAmount}
-            placeholder={`Enter amount (min ${MIN_AMOUNT_LABEL})`}
-            keyboardType="number-pad"
-          />
+        <Label>Amount</Label>
+        <View style={ui.field}>
+          <Text style={el.naira}>₦</Text>
+          <TextInput style={ui.input} value={amount} onChangeText={setAmount} placeholder="1,000" placeholderTextColor={C.textLight} keyboardType="number-pad" />
         </View>
-
-        <Text style={styles.balance}>Wallet Balance: {fmt(walletBalance)}</Text>
-        {!canAffordMinimum && (
-          <Text style={styles.minHint}>
-            Minimum electricity purchase is {MIN_AMOUNT_LABEL}. Fund your wallet to continue.
-          </Text>
-        )}
+        <Text style={[ui.note, { textAlign: "left", marginTop: 10 }]}>Min {MIN_AMOUNT_LABEL} · Wallet {fmt(walletBalance)}</Text>
+        {!canAffordMinimum ? <Text style={styles.minHint}>Fund your wallet to buy at least {MIN_AMOUNT_LABEL}.</Text> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <View style={{ height: 90 + insets.bottom }} />
       </ScrollView>
 
-      {/* Buy button - fixed above bottom nav */}
-      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
-        {(() => {
-          const ready = verified && finalAmount >= MIN_AMOUNT && canAffordMinimum;
-          const label = !canAffordMinimum
-            ? `Minimum wallet balance is ${MIN_AMOUNT_LABEL}`
-            : !verified
-            ? "Verify meter & enter amount"
-            : finalAmount < MIN_AMOUNT
-            ? `Enter amount (min ${MIN_AMOUNT_LABEL})`
-            : `Pay Electricity - ${fmt(finalAmount)}`;
-          return (
-            <TouchableOpacity
-              style={[styles.btn, !ready && styles.btnInactive]}
-              onPress={handleBuy}
-              disabled={!ready}
-              activeOpacity={ready ? 0.6 : 1}
-            >
-              <Text style={[styles.btnText, !ready && styles.btnTextInactive]}>{label}</Text>
-            </TouchableOpacity>
-          );
-        })()}
-      </View>
+      <PayBar label="Continue" onPress={handleBuy} disabled={!(verified && finalAmount >= MIN_AMOUNT && canAffordMinimum)} />
+
 
       <Modal visible={showProvider} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowProvider(false)}>
@@ -603,3 +516,12 @@ const styles = withPayStyles(StyleSheet.create({
   },
   doneBtnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
 }));
+
+const el = StyleSheet.create({
+  verify: { backgroundColor: C.primary, borderRadius: 12, paddingHorizontal: 14, height: 34, justifyContent: "center" },
+  verifyText: { fontSize: 13, fontWeight: "800", color: C.white },
+  verified: { marginTop: 12, borderRadius: 16, backgroundColor: C.credit + "1A", padding: 14 },
+  verifiedTop: { fontSize: 12, fontWeight: "800", color: C.credit },
+  verifiedName: { fontSize: 13, fontWeight: "700", color: C.text, marginTop: 4 },
+  naira: { fontSize: 15, fontWeight: "700", color: C.text, marginRight: 8 },
+});

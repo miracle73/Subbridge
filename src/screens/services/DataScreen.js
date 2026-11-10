@@ -1,5 +1,6 @@
 import { withPayStyles } from "../../components/payStyles";
 import PaymentSummary from "../../components/PaymentSummary";
+import { ServiceHeader, ServiceHero, Label, NetworkChips, SegTabs, PayBar, ui } from "../../components/ServiceUI";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Alert,
@@ -485,145 +486,49 @@ export default function DataScreen({ navigation }) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Buy Data</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ServiceHeader title="Buy Data" onBack={() => navigation.goBack()} />
+      <ServiceHero title="Data bundles" subtitle="All networks · instant" emoji="📶" />
 
-      <ServiceBanner
-        icon="wifi-outline"
-        title="Affordable Data Plans"
-        subtitle="Best bundles for all networks \u00B7 Fast activation"
-      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 + insets.bottom }} keyboardShouldPersistTaps="handled">
+        <Label>Network</Label>
+        <NetworkChips items={networks} selectedId={network?.id} onSelect={handleNetwork} />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Network & Phone Number</Text>
-        <View style={styles.comboRow}>
-          <TouchableOpacity style={styles.networkLogoBtn} onPress={() => setShowNetwork(true)}>
-            {network ? (
-              <Image source={network.logo} style={styles.networkLogo} />
-            ) : (
-              <View style={styles.networkLogoPlaceholder}>
-                <Ionicons name="cellular-outline" size={22} color={C.textMuted} />
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.phoneInputWrap}>
-            <TextInput
-              style={styles.phoneInput}
-              value={phone}
-              onChangeText={handlePhoneChange}
-              placeholder="0812 345 6789"
-              keyboardType="phone-pad"
-              maxLength={11}
-            />
-          </View>
-          <TouchableOpacity style={styles.contactIconBtn} onPress={() => setShowContacts(true)}>
+        <Label>Phone number</Label>
+        <View style={ui.field}>
+          <TextInput style={ui.input} value={phone} onChangeText={handlePhoneChange} placeholder="0811 451 6826" placeholderTextColor={C.textLight} keyboardType="phone-pad" maxLength={11} />
+          <TouchableOpacity onPress={() => setShowContacts(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="person-circle-outline" size={24} color={C.primary} />
           </TouchableOpacity>
         </View>
+        <ContactPicker visible={showContacts} onClose={() => setShowContacts(false)} onSelect={(num) => handlePhoneChange(num)} />
 
-        <ContactPicker
-          visible={showContacts}
-          onClose={() => setShowContacts(false)}
-          onSelect={(num) => handlePhoneChange(num)}
-        />
-
-        {/* Validity Grid - 3 columns */}
-        <Text style={[styles.label, { marginTop: S.lg }]}>Validity</Text>
-        <View style={styles.validityGrid}>
-          {allValidityGroups.map((group) => (
-            <TouchableOpacity
-              key={group}
-              style={[styles.validityGridTab, activeValidity === group && styles.typeTabActive]}
-              onPress={() => handleValidityFilter(group)}
-            >
-              <Text style={[styles.typeTabText, activeValidity === group && { color: C.white }]}>
-                {group}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={{ marginTop: 20 }}>
+          <SegTabs items={["Daily", "Weekly", "Monthly"]} value={activeValidity} onChange={handleValidityFilter} />
         </View>
 
-        {/* Plan Type Tabs */}
-        {types.length > 0 && (
-          <>
-            <Text style={[styles.label, { marginTop: S.md }]}>Plan Type</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeTabs}>
-              {types.map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.typeTab, activeType === t && styles.typeTabActive]}
-                  onPress={() => handleTypeFilter(t)}
-                >
-                  <Text style={[styles.typeTabText, activeType === t && { color: C.white }]}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </>
-        )}
+        <View style={[ui.grid, { marginTop: 16 }]}>
+          {sortedDisplayGroups.flatMap(([, list]) => list).map((p) => {
+            const on = plan?.id === p.id;
+            const Card = on ? LinearGradient : View;
+            return (
+              <TouchableOpacity key={p.id} style={{ width: "31.5%" }} activeOpacity={0.85} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPlan(p); }}>
+                <Card {...(on ? { colors: [C.primary, C.primaryDark], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } : {})} style={dp.card}>
+                  <Text style={[dp.size, on && { color: C.white }]}>{p.dataValue || p.name}</Text>
+                  <Text style={[dp.price, on && { color: C.gold }]}>{fmtShort(p.amount)}</Text>
+                  <Text style={[dp.days, on && { color: C.onPrimaryMuted }]}>{p.validity}</Text>
+                </Card>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        {!hasPlans && !loading ? <Text style={styles.emptyText}>No plans available{activeValidity ? ` under ${activeValidity}` : ""}</Text> : null}
 
-        {/* Plans grouped by validity */}
-        {sortedDisplayGroups.map(([validity, planList]) => (
-          <View key={validity} style={{ marginTop: S.md }}>
-            <Text style={[styles.groupLabel]}>{validity} ({planList.length})</Text>
-            <View style={styles.planGrid}>
-              {planList.map((p) => (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[styles.planCard, plan?.id === p.id && styles.planCardActive]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPlan(p); }}
-                >
-                  <Text style={[styles.planDataValue, plan?.id === p.id && { color: C.white }]}>{p.dataValue || p.name}</Text>
-                  {p.type ? (
-                    <View style={[styles.planTypePill, plan?.id === p.id && styles.planTypePillActive]}>
-                      <Text style={[styles.planTypeText, plan?.id === p.id && { color: C.white }]}>{p.type.toUpperCase()}</Text>
-                    </View>
-                  ) : null}
-                  <Text style={[styles.planAmount, plan?.id === p.id && { color: C.white }]}>{fmtShort(p.amount)}</Text>
-                  <Text style={[styles.planValidity, plan?.id === p.id && { color: "rgba(255,255,255,0.7)" }]}>{p.validity}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        ))}
-
-        {/* Empty states */}
-        {activeType && !hasPlans && (
-          <Text style={styles.emptyText}>No plans available in the selected category</Text>
-        )}
-
-        {activeValidity && !hasPlans && (
-          <Text style={styles.emptyText}>No plans available under {activeValidity}</Text>
-        )}
-
-        {!activeType && !activeValidity && !hasPlans && !loading && (
-          <Text style={styles.emptyText}>No plans available</Text>
-        )}
-
-        <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
+        <Text style={ui.note}>Wallet balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <View style={{ height: 90 + insets.bottom }} />
       </ScrollView>
 
-      {/* Buy button - fixed above bottom nav */}
-      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
-        <TouchableOpacity
-          style={[styles.btn, !plan && styles.btnInactive]}
-          onPress={handleBuy}
-          disabled={!plan}
-          activeOpacity={plan ? 0.6 : 1}
-        >
-          <Text style={[styles.btnText, !plan && styles.btnTextInactive]}>
-            {plan ? `Buy Data - ${fmt(plan.amount)}` : "Select a plan to continue"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <PayBar label={plan ? `Continue · ${fmtShort(plan.amount)}` : "Select a plan to continue"} onPress={handleBuy} disabled={!plan} />
+
 
       {/* Network Picker Modal */}
       <Modal visible={showNetwork} transparent animationType="slide">
@@ -843,3 +748,10 @@ const styles = withPayStyles(StyleSheet.create({
   failCloseBtn: { marginTop: S.md, paddingVertical: S.sm },
   failCloseText: { color: C.textMuted, fontSize: F.md, fontWeight: "700" },
 }));
+
+const dp = StyleSheet.create({
+  card: { height: 86, borderRadius: 18, backgroundColor: C.white, alignItems: "center", justifyContent: "center", shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 },
+  size: { fontSize: 18, fontWeight: "900", color: C.text },
+  price: { fontSize: 14, fontWeight: "800", color: C.primary, marginTop: 4 },
+  days: { fontSize: 10, fontWeight: "500", color: C.textMuted, marginTop: 4 },
+});

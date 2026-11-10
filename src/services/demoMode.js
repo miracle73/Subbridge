@@ -43,7 +43,7 @@ const REFERRAL = {
   referralBalance: 1840, cashbackBalance: 0, totalEarnings: 1840, totalUsers: 12, monthEarnings: 260,
   referralCode: "08114516826", referralLink: "https://subbridge.connectbridge.com.ng/ref/08114516826",
   commission: { perReferral: 50, note: "Earn 2% commission on every friend's first 10 transactions." },
-  commissionRates: { airtime: 0.3, data: 0.5, cable: 0.2, electricity: 0.7 },
+  commissionRates: { airtime: 2, data: 2, cable: 1, electricity: 1 },
   howItWorks: [
     "Share your referral link or code with friends and family.",
     "They sign up on SubBridge and verify their account.",

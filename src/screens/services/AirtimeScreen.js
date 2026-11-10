@@ -1,5 +1,6 @@
 import { withPayStyles } from "../../components/payStyles";
 import PaymentSummary from "../../components/PaymentSummary";
+import { ServiceHeader, ServiceHero, Label, NetworkChips, PayBar, ui } from "../../components/ServiceUI";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Platform, Alert,
@@ -266,101 +267,43 @@ export default function AirtimeScreen({ navigation }) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Buy Airtime</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ServiceHeader title="Buy Airtime" onBack={() => navigation.goBack()} />
+      <ServiceHero title="Instant top-up" subtitle="All networks · 2% cashback" emoji="📱" />
 
-      <ServiceBanner
-        icon="call-outline"
-        title="Buy Airtime"
-        subtitle="Instant airtime for all networks"
-      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 + insets.bottom }} keyboardShouldPersistTaps="handled">
+        <Label>Network</Label>
+        <NetworkChips items={networks} selectedId={network?.id} onSelect={handleNetwork} />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Network & Phone Number</Text>
-        <View style={styles.comboRow}>
-          <TouchableOpacity style={styles.networkLogoBtn} onPress={() => setShowNetwork(true)}>
-            {network ? (
-              <Image source={network.logo} style={styles.networkLogo} />
-            ) : (
-              <View style={styles.networkLogoPlaceholder}>
-                <Ionicons name="cellular-outline" size={22} color={C.textMuted} />
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.phoneInputWrap}>
-            <TextInput
-              style={styles.phoneInput}
-              value={phone}
-              onChangeText={handlePhoneChange}
-              placeholder="0812 345 6789"
-              keyboardType="phone-pad"
-              maxLength={11}
-            />
-          </View>
-          <TouchableOpacity style={styles.contactIconBtn} onPress={() => setShowContacts(true)}>
+        <Label>Phone number</Label>
+        <View style={ui.field}>
+          <TextInput style={ui.input} value={phone} onChangeText={handlePhoneChange} placeholder="0811 451 6826" placeholderTextColor={C.textLight} keyboardType="phone-pad" maxLength={11} />
+          <TouchableOpacity onPress={() => setShowContacts(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="person-circle-outline" size={24} color={C.primary} />
           </TouchableOpacity>
         </View>
+        <ContactPicker visible={showContacts} onClose={() => setShowContacts(false)} onSelect={(num) => handlePhoneChange(num)} />
 
-        <ContactPicker
-          visible={showContacts}
-          onClose={() => setShowContacts(false)}
-          onSelect={(num) => handlePhoneChange(num)}
-        />
-
-        <Text style={[styles.label, { marginTop: S.lg }]}>Amount</Text>
-        <View style={styles.amountGrid}>
+        <Label>Amount</Label>
+        <View style={ui.grid}>
           {QUICK_AMOUNTS.map((a) => (
-            <TouchableOpacity
-              key={a}
-              style={[styles.amountChip, amount === a && styles.amountChipActive]}
-              onPress={() => handleAmount(a)}
-            >
-              <Text style={[styles.amountChipText, amount === a && { color: C.white }]}>{fmtShort(a)}</Text>
+            <TouchableOpacity key={a} style={[ui.amount, amount === a && ui.amountOn]} onPress={() => handleAmount(a)} activeOpacity={0.8}>
+              <Text style={[ui.amountText, amount === a && { color: C.white }]}>{fmtShort(a)}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        <TextInput
-          style={styles.customAmountInput}
-          value={customAmount}
-          onChangeText={(t) => { setCustomAmount(t); setAmount(""); }}
-          placeholder="Custom amount"
-          keyboardType="number-pad"
-        />
+        <View style={[ui.field, { marginTop: 12 }]}>
+          <TextInput style={ui.input} value={customAmount} onChangeText={(t) => { setCustomAmount(t); setAmount(""); }} placeholder="Custom amount" placeholderTextColor={C.textLight} keyboardType="number-pad" />
+        </View>
 
-        <TouchableOpacity style={styles.beneficiaryRow} onPress={() => setSaveBeneficiary(!saveBeneficiary)}>
-          <Ionicons name={saveBeneficiary ? "checkbox" : "square-outline"} size={20} color={saveBeneficiary ? C.primary : C.textMuted} />
-          <Text style={styles.beneficiaryText}>Save as beneficiary</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
+        <Text style={ui.note}>Wallet balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <View style={{ height: 90 + insets.bottom }} />
       </ScrollView>
 
-      {/* Buy button - fixed above bottom nav */}
-      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
-        {(() => {
-          const ready = network && phone.length >= 10 && finalAmount > 0;
-          return (
-            <TouchableOpacity
-              style={[styles.btn, !ready && styles.btnInactive]}
-              onPress={handleBuy}
-              disabled={!ready}
-              activeOpacity={ready ? 0.6 : 1}
-            >
-              <Text style={[styles.btnText, !ready && styles.btnTextInactive]}>
-                {ready ? `Buy Airtime - ${fmt(finalAmount)}` : "Enter details to continue"}
-              </Text>
-            </TouchableOpacity>
-          );
-        })()}
-      </View>
+      <PayBar
+        label={network && phone.length >= 10 && finalAmount > 0 ? `Pay ${fmtShort(finalAmount)}` : "Enter details to continue"}
+        onPress={handleBuy}
+        disabled={!(network && phone.length >= 10 && finalAmount > 0)}
+      />
 
       {/* Network Picker Modal */}
       <Modal visible={showNetwork} transparent animationType="slide">

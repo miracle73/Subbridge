@@ -1,3 +1,4 @@
+import { txTitle, txWhen, txEmoji, txStatusLabel } from "../../utils/txDisplay";
 import React, { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -71,7 +72,7 @@ export default function TransactionsScreen({ navigation }) {
         ))}
       </View>
 
-      <Text style={styles.count}>ALL · {filtered.length} TRANSACTIONS</Text>
+      <Text style={styles.count}>TODAY · {filtered.length} transactions</Text>
 
       <FlatList
         data={filtered}
@@ -79,20 +80,14 @@ export default function TransactionsScreen({ navigation }) {
         contentContainerStyle={styles.list}
           renderItem={({ item: tx }) => {
             const isCredit = tx.type === "credit";
-            const statusColor = tx.status === "success" ? C.credit : tx.status === "failed" ? C.debit : tx.status === "pending" ? "#F59E0B" : C.primary;
-            let displayDesc = tx.description || "";
-            if (tx.category && displayDesc && !displayDesc.toLowerCase().startsWith(tx.category.toLowerCase())) {
-              displayDesc = tx.category + " - " + displayDesc.replace(/^[\s-]+/, "");
-            } else if (tx.category && !displayDesc) {
-              displayDesc = tx.category;
-            }
+            const statusColor = tx.status === "success" ? C.credit : tx.status === "failed" ? C.debit : tx.status === "pending" ? C.gold : C.primary;
             return (
               <TouchableOpacity style={styles.txItem} activeOpacity={0.6} onPress={() => navigation.navigate("Receipt", { tx })}>
                 <View style={[styles.txIconWrap, { backgroundColor: statusColor + "15" }]}>
-                  <Ionicons name={TX_ICONS[tx.category] || "receipt-outline"} size={20} color={statusColor} />
+                  <Text style={{ fontSize: 18 }}>{txEmoji(tx)}</Text>
                 </View>
                 <View style={styles.txInfo}>
-                  <Text style={styles.txLabel}>{displayDesc || tx.category}</Text>
+                  <Text style={styles.txLabel} numberOfLines={1}>{txTitle(tx)}</Text>
                   <Text style={styles.txDesc}>{tx.date} {"\u00B7"} {tx.time}</Text>
                 </View>
                 <View style={styles.txRight}>
@@ -101,7 +96,7 @@ export default function TransactionsScreen({ navigation }) {
                   </Text>
                   <View style={[styles.txTag, { backgroundColor: statusColor + "15" }]}>
                     <Text style={[styles.txTagText, { color: statusColor }]}>
-                      {tx.status || (isCredit ? "Credit" : "Debit")}
+                      {txStatusLabel(tx.status) || (isCredit ? "Credit" : "Debit")}
                     </Text>
                   </View>
                 </View>
@@ -122,7 +117,7 @@ const styles = StyleSheet.create({
   filterChip: { flex: 1, alignItems: "center", paddingVertical: 11, borderRadius: 13 },
   filterActive: { backgroundColor: C.primary },
   filterText: { fontSize: F.md, fontWeight: "800", color: C.textMuted },
-  count: { fontSize: 11, fontWeight: "800", letterSpacing: 1, color: C.textMuted, paddingHorizontal: S.xl, marginBottom: S.md },
+  count: { fontSize: 12, fontWeight: "700", letterSpacing: 0.3, color: C.textMuted, paddingHorizontal: S.xl, marginBottom: S.md },
   list: { paddingHorizontal: S.xl, paddingBottom: 120 },
   txItem: { flexDirection: "row", alignItems: "center", padding: S.md, marginBottom: 10, backgroundColor: C.white, borderRadius: 18, ...shadow },
   txIconWrap: { width: 42, height: 42, borderRadius: 13, justifyContent: "center", alignItems: "center" },

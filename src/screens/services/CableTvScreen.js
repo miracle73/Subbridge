@@ -1,5 +1,6 @@
 import { withPayStyles } from "../../components/payStyles";
 import PaymentSummary from "../../components/PaymentSummary";
+import { ServiceHeader, Label, SegTabs, PayBar, ui } from "../../components/ServiceUI";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator, Alert,
@@ -313,115 +314,55 @@ export default function CableTvScreen({ navigation }) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cable TV</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ServiceHeader title="Cable TV" onBack={() => navigation.goBack()} />
 
-      <ServiceBanner
-        icon="tv-outline"
-        title="Cable TV Subscriptions"
-        subtitle="DStv, GOtv & StarTimes \u00B7 Instant activation"
-      />
-
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Provider & Smartcard</Text>
-        <View style={styles.comboRow}>
-          <TouchableOpacity style={styles.providerLogoBtn} onPress={() => setShowProvider(true)}>
-            {provider?.logo ? (
-              <Image source={provider.logo} style={styles.providerLogo} />
-            ) : (
-              <View style={styles.providerLogoPlaceholder}>
-                <Ionicons name="tv-outline" size={22} color={C.textMuted} />
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.smartcardInputWrap}>
-            <TextInput
-              style={styles.smartcardInput}
-              value={smartcard}
-              onChangeText={setSmartcard}
-              placeholder="Smartcard / IUC number"
-              keyboardType="number-pad"
-              maxLength={15}
-            />
-          </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 + insets.bottom }} keyboardShouldPersistTaps="handled">
+        <View style={{ marginTop: 8 }}>
+          <SegTabs items={providers.map((p) => p.name)} value={provider?.name} onChange={(name) => { const p = providers.find((x) => x.name === name); if (p) handleProvider(p); }} />
         </View>
 
-        {smartcard.length >= 5 && (
-          <TouchableOpacity
-            style={[styles.verifyBtnSolid, verifying && { opacity: 0.7 }]}
-            onPress={handleVerify}
-            disabled={verifying}
-            activeOpacity={0.8}
-          >
-            {verifying ? (
-              <ActivityIndicator size="small" color={C.white} />
-            ) : (
-              <Ionicons name="checkmark-circle-outline" size={18} color={C.white} />
-            )}
-            <Text style={styles.verifyBtnSolidText}>{verifying ? "Verifying..." : "Click to Verify Smartcard"}</Text>
-          </TouchableOpacity>
-        )}
-
-        {verified && (
-          <View style={styles.verifiedCard}>
-            <Ionicons name="checkmark-circle" size={20} color={C.accent} />
-            <View style={{ marginLeft: S.sm }}>
-              <Text style={styles.verifiedName}>{verified.customerName || verified.name}</Text>
-              <Text style={styles.verifiedPlan}>Current: {verified.currentPlan || verified.plan || "N/A"}</Text>
-            </View>
+        <View style={[ui.field, { marginTop: 18 }]}>
+          <TextInput style={ui.input} value={smartcard} onChangeText={setSmartcard} placeholder="Smartcard / IUC number" placeholderTextColor={C.textLight} keyboardType="number-pad" maxLength={15} />
+          {smartcard.length >= 5 && !verified ? (
+            <TouchableOpacity onPress={handleVerify} disabled={verifying} style={cb.verify}>
+              {verifying ? <ActivityIndicator size="small" color={C.white} /> : <Text style={cb.verifyText}>Verify</Text>}
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        {verified ? (
+          <View style={cb.verified}>
+            <Text style={cb.verifiedTop}>✓ Verified</Text>
+            <Text style={cb.verifiedName}>{verified.customerName || verified.name}{verified.currentPlan ? ` · ${verified.currentPlan}` : ""}</Text>
           </View>
-        )}
+        ) : null}
 
-        <BeneficiaryBox type="cable" onSelect={(b) => {
-          setSmartcard(b.smartcard);
-          if (b.provider) {
-            const p = providers.find((x) => x.id === b.provider);
-            if (p) handleProvider(p);
-          }
-        }} />
+        <Text style={ui.label}>Choose a plan</Text>
+        <View style={ui.grid}>
+          {plans.map((p) => {
+            const on = plan?.id === p.id;
+            const Card = on ? LinearGradient : View;
+            return (
+              <TouchableOpacity key={p.id} style={{ width: "48.5%" }} activeOpacity={0.85} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPlan(p); }}>
+                <Card {...(on ? { colors: [C.primary, C.primaryDark], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } : {})} style={cb.card}>
+                  <Text style={[cb.name, on && { color: C.white }]} numberOfLines={1}>{String(p.name).replace(/^(DStv|GOtv|Dstv|Gotv)\s+/i, "")}</Text>
+                  <Text style={[cb.price, on && { color: C.gold }]}>{fmtShort(p.amount)}</Text>
+                  <Text style={[cb.days, on && { color: C.onPrimaryMuted }]}>{p.validity || "30 days"}</Text>
+                </Card>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        {plans.length > 0 && (
-          <>
-            <Text style={styles.label}>Select Plan</Text>
-            <View style={styles.planGrid}>
-              {plans.map((p) => (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[styles.planCard, plan?.id === p.id && styles.planCardActive]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPlan(p); }}
-                >
-                  <Text style={[styles.planName, plan?.id === p.id && { color: C.white }]}>{p.name}</Text>
-                  <Text style={[styles.planAmount, plan?.id === p.id && { color: C.white }]}>{fmtShort(p.amount)}</Text>
-                  <Text style={[styles.planValidity, plan?.id === p.id && { color: "rgba(255,255,255,0.7)" }]}>{p.validity}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-
-        <Text style={styles.balance}>Wallet Balance: {fmt(balance)}</Text>
+        <Text style={ui.note}>Wallet balance: {fmt(balance)}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <View style={{ height: 90 + insets.bottom }} />
       </ScrollView>
 
-      {/* Buy button - fixed above bottom nav */}
-      <View style={[styles.buyBar, { paddingBottom: S.md + insets.bottom }]}>
-        <TouchableOpacity
-          style={[styles.btn, !(verified && plan) && styles.btnInactive]}
-          onPress={handleBuy}
-          disabled={!(verified && plan)}
-          activeOpacity={verified && plan ? 0.6 : 1}
-        >
-          <Text style={[styles.btnText, !(verified && plan) && styles.btnTextInactive]}>
-            {verified && plan ? `Subscribe - ${fmt(plan.amount)}` : "Verify smartcard & select plan"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <PayBar
+        label={plan ? `${verified ? "Pay" : "Verify & Pay"} ${fmtShort(plan.amount)}` : "Select a plan to continue"}
+        onPress={verified ? handleBuy : handleVerify}
+        disabled={!plan || smartcard.length < 5 || verifying}
+      />
+
 
       <Modal visible={showProvider} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowProvider(false)}>
@@ -588,3 +529,15 @@ const styles = withPayStyles(StyleSheet.create({
   },
   doneBtnText: { color: C.white, fontSize: F.lg, fontWeight: "700" },
 }));
+
+const cb = StyleSheet.create({
+  verify: { backgroundColor: C.primary, borderRadius: 12, paddingHorizontal: 14, height: 34, justifyContent: "center" },
+  verifyText: { fontSize: 13, fontWeight: "800", color: C.white },
+  verified: { marginTop: 12, borderRadius: 16, backgroundColor: C.credit + "1A", padding: 14 },
+  verifiedTop: { fontSize: 12, fontWeight: "800", color: C.credit },
+  verifiedName: { fontSize: 13, fontWeight: "700", color: C.text, marginTop: 4 },
+  card: { height: 100, borderRadius: 22, backgroundColor: C.white, padding: 16, justifyContent: "space-between", shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 },
+  name: { fontSize: 15, fontWeight: "800", color: C.text },
+  price: { fontSize: 22, fontWeight: "900", color: C.primary },
+  days: { fontSize: 12, fontWeight: "500", color: C.textMuted },
+});

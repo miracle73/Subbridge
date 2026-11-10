@@ -1,5 +1,6 @@
 import { useDarkMode, darkVariant, DARK } from "../utils/darkMode";
 import { FadeIn, PressScale, Float, Sparkle } from "../components/Motion";
+import { txTitle, txWhen, txEmoji, txStatusLabel } from "../utils/txDisplay";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
@@ -306,22 +307,19 @@ export default function HomeScreen({ navigation }) {
         ) : recentTx.map((tx) => {
           const isCredit = tx.type === "credit";
           const sc = tx.status === "success" ? C.credit : tx.status === "failed" ? C.debit : tx.status === "pending" ? C.gold : C.primary;
-          let desc = tx.description || "";
-          if (tx.category && desc && !desc.toLowerCase().startsWith(tx.category.toLowerCase())) desc = tx.category + " - " + desc.replace(/^[\s-]+/, "");
-          else if (tx.category && !desc) desc = tx.category;
           return (
             <TouchableOpacity key={tx.id || tx.reference} style={st.txItem} activeOpacity={0.7} onPress={() => openReceipt(tx)}>
               <View style={[st.txIconWrap, { backgroundColor: sc + "1F" }]}>
-                <Ionicons name={TX_ICONS[tx.category] || "receipt-outline"} size={18} color={sc} />
+                <Text style={{ fontSize: 18 }}>{txEmoji(tx)}</Text>
               </View>
               <View style={st.txInfo}>
-                <Text style={st.txLabel} numberOfLines={1}>{desc || tx.service || "Transaction"}</Text>
-                <Text style={st.txDesc}>{tx.date} · {tx.time || formatTime(tx.date || tx.createdAt)}</Text>
+                <Text style={st.txLabel} numberOfLines={1}>{txTitle(tx)}</Text>
+                <Text style={st.txDesc}>{txWhen(tx)}</Text>
               </View>
               <View style={st.txRight}>
                 <Text style={[st.txAmount, { color: isCredit ? C.credit : dark ? DARK.text : C.text }]}>{isCredit ? "+" : "-"}{fmtShort(tx.amount)}</Text>
                 <View style={[st.txStatus, { backgroundColor: sc + "1F" }]}>
-                  <Text style={[st.txStatusText, { color: sc }]}>{tx.status || (isCredit ? "Credit" : "Debit")}</Text>
+                  <Text style={[st.txStatusText, { color: sc }]}>{txStatusLabel(tx.status) || (isCredit ? "Credit" : "Debit")}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -436,13 +434,13 @@ const styles = StyleSheet.create({
   txStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginTop: 4 },
   txStatusText: { fontSize: 10, fontWeight: "800", textTransform: "capitalize" },
 
-  nOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,16,48,0.6)", paddingHorizontal: S.xl, zIndex: 100, overflow: "hidden" },
+  nOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,16,48,0.42)", paddingHorizontal: S.xl, zIndex: 100, overflow: "hidden" },
   nLogo: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
   nBrand: { fontSize: F.base, fontWeight: "900", color: C.white, letterSpacing: 0.5 },
   nSub: { fontSize: F.sm, color: C.onPrimaryMuted, fontWeight: "500" },
   nClose: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
-  nTitle: { fontSize: 26, fontWeight: "900", color: C.white, marginTop: 4 },
-  nGlass: { marginTop: S.lg, padding: S.lg, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" },
+  nTitle: { fontSize: 26, fontWeight: "900", color: C.white, marginTop: 4, textShadowColor: "rgba(0,0,0,0.35)", textShadowRadius: 8 },
+  nGlass: { marginTop: S.lg, padding: S.lg, borderRadius: 20, backgroundColor: "rgba(10,16,48,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" },
   nMsg: { fontSize: F.md, color: C.white, lineHeight: 22, fontWeight: "500" },
   nTime: { fontSize: 12, color: C.onPrimaryMuted, marginTop: 14, fontWeight: "500" },
   nFooter: { position: "absolute", bottom: 40, left: 0, right: 0, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6 },

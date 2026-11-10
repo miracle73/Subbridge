@@ -120,22 +120,20 @@ export default function ProfileScreen({ navigation }) {
   const nav = (r) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate(r.screen, r.params); };
   const groups = [
     ["ACCOUNT", [
-      { icon: "person-outline", label: "Edit profile", screen: "EditProfile" },
-      { icon: "people-outline", label: "Referrals & commission", screen: "Rewards" },
+      { icon: "👤", label: "Edit profile", screen: "EditProfile" },
+      { icon: "🤝", label: "Referrals & commission", screen: "Rewards" },
+      { icon: "🧾", label: "Transactions", screen: "TransactionsTab" },
     ]],
     ["SECURITY", [
-      { icon: "lock-closed-outline", label: "Change PIN", screen: "ChangePin" },
-      { icon: "key-outline", label: "Forgot PIN", screen: "ForgotPassword", params: { mode: "pin", phone: user?.phone || "", email: user?.email || "" } },
-      { icon: "shield-outline", label: "Change password", screen: "ForgotPassword", params: { mode: "password", phone: user?.phone || "", email: user?.email || "" } },
-    ]],
-    ["HELP", [
-      { icon: "chatbubble-ellipses-outline", label: "Support", screen: "Support" },
+      { icon: "🔒", label: "Change PIN", screen: "ChangePin" },
+      { icon: "🔑", label: "Forgot PIN", screen: "ForgotPassword", params: { mode: "pin", phone: user?.phone || "", email: user?.email || "" } },
+      { icon: "🔐", label: "Change password", screen: "ForgotPassword", params: { mode: "password", phone: user?.phone || "", email: user?.email || "" } },
     ]],
   ];
 
   const Row = ({ r, first }) => (
     <TouchableOpacity style={[st.row, !first && st.rowDivider]} onPress={() => nav(r)} activeOpacity={0.7}>
-      <View style={st.rowIcon}><Ionicons name={r.icon} size={18} color={C.primary} /></View>
+      <View style={st.rowIcon}><Text style={{ fontSize: 16 }}>{r.icon}</Text></View>
       <Text style={st.rowLabel}>{r.label}</Text>
       <Ionicons name="chevron-forward" size={18} color={C.textLight} />
     </TouchableOpacity>
@@ -171,9 +169,9 @@ export default function ProfileScreen({ navigation }) {
                       activeOpacity={0.7}
                       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate("BiometricSetup"); }}
                     >
-                      <View style={st.rowIcon}><Ionicons name="finger-print-outline" size={18} color={C.primary} /></View>
+                      <View style={st.rowIcon}><Text style={{ fontSize: 16 }}>🫆</Text></View>
                       <View style={{ flex: 1 }}>
-                        <Text style={st.rowLabel}>{bioLabel} (auth & payments)</Text>
+                        <Text style={st.rowLabel}>Biometrics ({bioLabel})</Text>
                         {bioEnabled && !bioKeys ? <Text style={st.setupHint}>Setup needed — tap to finish</Text> : null}
                       </View>
                     </TouchableOpacity>
@@ -187,14 +185,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={st.groupTitle}>PREFERENCES</Text>
           <View style={st.card}>
             <View style={st.row}>
-              <View style={st.rowIcon}><Ionicons name="moon-outline" size={18} color={C.primary} /></View>
+              <View style={st.rowIcon}><Text style={{ fontSize: 16 }}>🌙</Text></View>
               <Text style={st.rowLabel}>Dark mode</Text>
               <Switch value={dark} onValueChange={toggleDark} trackColor={{ false: C.border, true: C.primary }} thumbColor={C.white} />
             </View>
+            <Row r={{ icon: "💬", label: "Support", screen: "Support" }} first={false} />
           </View>
 
           <TouchableOpacity style={st.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
-            <Ionicons name="log-out-outline" size={20} color={C.debit} />
             <Text style={st.logoutText}>Log out</Text>
           </TouchableOpacity>
         </View>
