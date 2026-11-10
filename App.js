@@ -8,7 +8,6 @@ import { StatusBar } from "expo-status-bar";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import AppNavigator from "./src/navigation/AppNavigator";
 import AuthLock from "./src/components/AuthLock";
-import WhatsAppFab from "./src/components/WhatsAppFab";
 import { SecurePin, AuthToken, NavState, PendingSignup } from "./src/utils/storage";
 import { CrashLog } from "./src/services/crashLog";
 import { resetBiometricState } from "./src/services/biometric";
@@ -220,7 +219,6 @@ export default function App() {
             />
           </View>
         ) : null}
-        {routeName && !AUTH_ROUTES.includes(routeName) ? <WhatsAppFab /> : null}
         <PushPromptHost />
       </SafeAreaProvider>
     </ErrorBoundary>

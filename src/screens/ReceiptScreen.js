@@ -164,7 +164,7 @@ export default function ReceiptScreen({ navigation, route }) {
 
   const shareAsPdf = async () => {
     if (busy) return;
-    setBusy(true);
+    setBusy("pdf");
     try {
       const { uri } = await Print.printToFileAsync({ html: buildHtml() });
       if (await Sharing.isAvailableAsync()) {
@@ -176,7 +176,7 @@ export default function ReceiptScreen({ navigation, route }) {
 
   const shareAsImage = async () => {
     if (busy) return;
-    setBusy(true);
+    setBusy("image");
     try {
       const uri = await captureRef(receiptRef, { format: "png", quality: 1 });
       if (await Sharing.isAvailableAsync()) {
@@ -266,11 +266,11 @@ export default function ReceiptScreen({ navigation, route }) {
 
         <View style={styles.actionsRow}>
           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "rgba(255,255,255,0.15)" }]} onPress={shareAsPdf} disabled={busy}>
-            {busy ? <ActivityIndicator size="small" color={C.white} /> : <Ionicons name="document-text-outline" size={18} color={C.white} />}
+            {busy === "pdf" ? <ActivityIndicator size="small" color={C.white} /> : <Ionicons name="document-text-outline" size={18} color={C.white} />}
             <Text style={[styles.actionBtnText, { color: C.white }]}>Share PDF</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={shareAsImage} disabled={busy}>
-            {busy ? <ActivityIndicator size="small" color={C.primary} /> : <Ionicons name="image-outline" size={18} color={C.primary} />}
+            {busy === "image" ? <ActivityIndicator size="small" color={C.primary} /> : <Ionicons name="image-outline" size={18} color={C.primary} />}
             <Text style={styles.actionBtnText}>Share Image</Text>
           </TouchableOpacity>
         </View>
