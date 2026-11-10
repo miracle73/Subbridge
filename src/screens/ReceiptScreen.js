@@ -164,7 +164,7 @@ export default function ReceiptScreen({ navigation, route }) {
 
   const shareAsPdf = async () => {
     if (busy) return;
-    setBusy("pdf");
+    setBusy(true);
     try {
       const { uri } = await Print.printToFileAsync({ html: buildHtml() });
       if (await Sharing.isAvailableAsync()) {
@@ -176,11 +176,11 @@ export default function ReceiptScreen({ navigation, route }) {
 
   const shareAsImage = async () => {
     if (busy) return;
-    setBusy("image");
+    setBusy(true);
     try {
-      const uri = await captureRef(receiptRef, { format: "jpg", quality: 0.95, result: "tmpfile" });
+      const uri = await captureRef(receiptRef, { format: "png", quality: 1 });
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri.startsWith("file://") ? uri : `file://${uri}`, { mimeType: "image/jpeg", dialogTitle: "Share Receipt (Image)" });
+        await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share Receipt (Image)" });
       }
     } catch (e) {}
     setBusy(false);
@@ -200,8 +200,7 @@ export default function ReceiptScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.receiptCard}>
-          <View ref={receiptRef} collapsable={false} style={{ alignSelf: "stretch", alignItems: "center", backgroundColor: "#FFFFFF", paddingVertical: 4 }}>
+        <View ref={receiptRef} collapsable={false} style={styles.receiptCard}>
           <View style={[styles.statusIcon, { backgroundColor: statusColor + "1A" }]}>
             <Ionicons name={statusIcon} size={40} color={statusColor} />
           </View>
@@ -264,15 +263,14 @@ export default function ReceiptScreen({ navigation, route }) {
 
           <Text style={styles.footer}>Thank you for using SubBridge</Text>
         </View>
-        </View>
 
         <View style={styles.actionsRow}>
           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "rgba(255,255,255,0.15)" }]} onPress={shareAsPdf} disabled={busy}>
-            {busy === "pdf" ? <ActivityIndicator size="small" color={C.white} /> : <Ionicons name="document-text-outline" size={18} color={C.white} />}
+            {busy ? <ActivityIndicator size="small" color={C.white} /> : <Ionicons name="document-text-outline" size={18} color={C.white} />}
             <Text style={[styles.actionBtnText, { color: C.white }]}>Share PDF</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={shareAsImage} disabled={busy}>
-            {busy === "image" ? <ActivityIndicator size="small" color={C.primary} /> : <Ionicons name="image-outline" size={18} color={C.primary} />}
+            {busy ? <ActivityIndicator size="small" color={C.primary} /> : <Ionicons name="image-outline" size={18} color={C.primary} />}
             <Text style={styles.actionBtnText}>Share Image</Text>
           </TouchableOpacity>
         </View>
