@@ -174,8 +174,8 @@ export default function ResetPasswordScreen({ navigation, route }) {
         <Text style={fig.title}>Create a new {unit}</Text>
         <Text style={fig.sub}>{isPin ? "4 digits, numbers only" : "5 digits, numbers only"}</Text>
 
-        <Field label={`New ${unit}`} value={password} onChange={(t) => { setPassword(t.replace(/\D/g, "").slice(0, maxLen)); setError(""); }} />
-        <Field label={`Confirm ${unit}`} value={confirm} onChange={(t) => { setConfirm(t.replace(/\D/g, "").slice(0, maxLen)); setError(""); }} />
+        {Field({ label: `New ${unit}`, value: password, onChange: (t) => { setPassword(t.replace(/\D/g, "").slice(0, maxLen)); setError(""); } })}
+        {Field({ label: `Confirm ${unit}`, value: confirm, onChange: (t) => { setConfirm(t.replace(/\D/g, "").slice(0, maxLen)); setError(""); } })}
 
         {matches ? (
           <View style={fig.match}><Text style={fig.matchText}>✓ {isPin ? "PINs" : "Passwords"} match</Text></View>
