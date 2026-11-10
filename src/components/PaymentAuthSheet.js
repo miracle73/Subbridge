@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import AuthBackground from "./AuthBackground";
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -90,21 +91,28 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
 
   if (!visible) return null;
 
+  // Figma "Enter PIN": blue top with what is being paid, white sheet with dots + keypad.
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={() => onClose()}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => onClose()}>
-        <TouchableOpacity activeOpacity={1} style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.top}>
-            <View style={styles.blob} />
-            <Text style={styles.spark}>✦</Text>
-            <View style={styles.topIcon}><Ionicons name="shield-checkmark" size={26} color={C.primary} /></View>
+    <Modal visible={visible} animationType="slide" onRequestClose={() => onClose()}>
+      <View style={fig.container}>
+        <AuthBackground />
+        <View style={fig.top}>
+          <View style={fig.topBar}>
+            <TouchableOpacity style={fig.close} onPress={() => onClose()}>
+              <Ionicons name="close" size={20} color={C.white} />
+            </TouchableOpacity>
+          </View>
+          <View style={fig.topRow}>
+            <View style={fig.avatar}><Ionicons name="shield-checkmark" size={28} color={C.primary} /></View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.topSub}>Confirm payment</Text>
-              <Text style={styles.topTitle} numberOfLines={2}>{subtitle || title}</Text>
+              <Text style={fig.topSub}>Confirm payment</Text>
+              <Text style={fig.topTitle} numberOfLines={2}>{subtitle || title}</Text>
             </View>
-          </LinearGradient>
-          <Text style={styles.title}>Enter your 4‑digit PIN</Text>
+          </View>
+        </View>
 
+        <View style={fig.sheet}>
+          <Text style={fig.prompt}>Enter your 4‑digit PIN</Text>
           {checking ? (
             <ActivityIndicator color={C.primary} style={{ marginVertical: 30 }} />
           ) : (
@@ -112,41 +120,49 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
               <Animated.View style={{ transform: [{ translateX: shake }], alignItems: "center" }}>
                 <PinDots length={4} filled={pin.length} />
               </Animated.View>
-
               {error ? <Text style={styles.error}>{error}</Text> : null}
-
               {loading ? (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
                   <ActivityIndicator size="small" color={C.primary} />
                   <Text style={{ fontSize: F.sm, color: C.textMuted, fontWeight: "600" }}>Verifying...</Text>
                 </View>
               ) : null}
+              <View style={{ marginTop: 24 }}>
+                <PinPad onPress={handleKey} onBiometric={bioAvailable ? handleBiometric : undefined} />
+              </View>
             </>
           )}
-
           {onForgotPin ? (
-            <TouchableOpacity style={styles.forgotPin} onPress={onForgotPin}>
-              <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+            <TouchableOpacity style={{ paddingVertical: 12 }} onPress={onForgotPin}>
+              <Text style={fig.forgot}>Forgot PIN?</Text>
             </TouchableOpacity>
           ) : null}
-
-                    <TouchableOpacity style={styles.cancelBtn} onPress={() => onClose()}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </TouchableOpacity>
-
-      {!checking && (
-        <View style={styles.padWrap}>
-          <PinPad
-            onPress={handleKey}
-            onBiometric={bioAvailable ? handleBiometric : undefined}
-          />
+          <View style={{ flex: 1 }} />
+          <View style={fig.secured}>
+            <Ionicons name="shield-checkmark-outline" size={14} color={C.textMuted} />
+            <Text style={fig.securedText}>Secured by SubBridge</Text>
+          </View>
         </View>
-      )}
+      </View>
     </Modal>
   );
 }
+
+const fig = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.primary },
+  top: { paddingTop: 52, paddingHorizontal: 24, paddingBottom: 60 },
+  topBar: { flexDirection: "row", justifyContent: "flex-end" },
+  close: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12 },
+  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  topSub: { fontSize: 14, color: C.onPrimaryMuted, fontWeight: "500" },
+  topTitle: { fontSize: 22, color: C.white, fontWeight: "900", marginTop: 2 },
+  sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -32, alignItems: "center", paddingTop: 32, paddingBottom: 40 },
+  prompt: { fontSize: 15, fontWeight: "600", color: C.textMuted, marginBottom: 24 },
+  forgot: { fontSize: 15, fontWeight: "800", color: C.primary },
+  secured: { flexDirection: "row", alignItems: "center", gap: 6 },
+  securedText: { fontSize: 12, fontWeight: "600", color: C.textMuted },
+});
 
 const styles = StyleSheet.create({
   overlay: {

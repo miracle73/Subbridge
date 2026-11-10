@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { applyTheme } from "./themeEngine";
 
 // App-wide dark-mode flag, persisted on device and shared by every screen that reads it.
 const KEY = "sb_dark_mode";
 let dark = false;
 const listeners = new Set();
-SecureStore.getItemAsync(KEY).then((v) => { dark = v === "1"; listeners.forEach((l) => l(dark)); }).catch(() => {});
+SecureStore.getItemAsync(KEY).then((v) => { dark = v === "1"; if (dark) applyTheme(true); listeners.forEach((l) => l(dark)); }).catch(() => {});
 
 export function setDarkMode(on) {
   dark = !!on;
+  applyTheme(dark);
   listeners.forEach((l) => l(dark));
   SecureStore.setItemAsync(KEY, dark ? "1" : "0").catch(() => {});
 }

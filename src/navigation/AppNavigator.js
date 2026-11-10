@@ -84,7 +84,7 @@ function MainTabs() {
         tabBarActiveTintColor: C.primary,
         tabBarInactiveTintColor: C.textLight,
         tabBarStyle: {
-          backgroundColor: C.white,
+          backgroundColor: C.card,
           borderTopColor: C.border,
           paddingBottom: insets.bottom + 8,
           paddingTop: 6,

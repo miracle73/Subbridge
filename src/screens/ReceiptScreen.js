@@ -61,13 +61,13 @@ export default function ReceiptScreen({ navigation, route }) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
       <AuthBackground />
-        <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { overflow: "hidden", borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }]}><View pointerEvents="none" style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, top: -90, right: -60, backgroundColor: "rgba(255,255,255,0.08)" }} /><View pointerEvents="none" style={{ position: "absolute", width: 140, height: 140, borderRadius: 70, bottom: -70, left: -30, backgroundColor: "rgba(255,176,32,0.18)" }} /><Text pointerEvents="none" style={{ position: "absolute", top: 14, right: 70, color: "#FFD36B", fontSize: 14 }}>✦</Text>
+        <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color={C.white} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Receipt</Text>
           <View style={{ width: 22 }} />
-        </LinearGradient>
+        </View>
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>No transaction data</Text>
         </View>
@@ -191,32 +191,24 @@ export default function ReceiptScreen({ navigation, route }) {
       <AuthBackground />
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <Toast message={toastMsg} type="success" onHide={() => setToastMsg("")} />
-      <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { overflow: "hidden", borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }]}><View pointerEvents="none" style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, top: -90, right: -60, backgroundColor: "rgba(255,255,255,0.08)" }} /><View pointerEvents="none" style={{ position: "absolute", width: 140, height: 140, borderRadius: 70, bottom: -70, left: -30, backgroundColor: "rgba(255,176,32,0.18)" }} /><Text pointerEvents="none" style={{ position: "absolute", top: 14, right: 70, color: "#FFD36B", fontSize: 14 }}>✦</Text>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={C.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Receipt</Text>
         <View style={{ width: 22 }} />
-      </LinearGradient>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View ref={receiptRef} collapsable={false} style={styles.receiptCard}>
-          <View style={styles.brandRow}>
-            <Image source={require("../assets/logo.jpg")} style={styles.brandLogo} resizeMode="contain" />
-            <Text style={styles.brandText}>SubBridge</Text>
-          </View>
-
           <View style={[styles.statusIcon, { backgroundColor: statusColor + "1A" }]}>
-            <Ionicons name={statusIcon} size={28} color={statusColor} />
+            <Ionicons name={statusIcon} size={40} color={statusColor} />
           </View>
 
-          <Text style={styles.amountLabel}>{isDebit ? "Amount Sent" : "Amount Received"}</Text>
-          <Text style={[styles.amountVal, { color: isDebit ? C.debit : C.accent }]}>
-            {isDebit ? "-" : "+"} {fmt(mergedTx.amount)}
+          <Text style={[styles.amountLabel, { color: statusColor, fontSize: 14, fontWeight: "700" }]}>
+            {isFailed ? "Payment failed" : /pend/i.test(statusText) ? "Payment pending" : "Payment successful"}
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + "1A" }]}>
-            <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
-          </View>
+          <Text style={[styles.amountVal, { color: C.text }]}>{fmt(mergedTx.amount)}</Text>
 
           {/* No token box on failed payments — there is no token to show. */}
           {isElectricity && !isFailed ? (
@@ -273,9 +265,9 @@ export default function ReceiptScreen({ navigation, route }) {
         </View>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionBtn} onPress={shareAsPdf} disabled={busy}>
-            {busy ? <ActivityIndicator size="small" color={C.primary} /> : <Ionicons name="document-text-outline" size={18} color={C.primary} />}
-            <Text style={styles.actionBtnText}>Share PDF</Text>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "rgba(255,255,255,0.15)" }]} onPress={shareAsPdf} disabled={busy}>
+            {busy ? <ActivityIndicator size="small" color={C.white} /> : <Ionicons name="document-text-outline" size={18} color={C.white} />}
+            <Text style={[styles.actionBtnText, { color: C.white }]}>Share PDF</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={shareAsImage} disabled={busy}>
             {busy ? <ActivityIndicator size="small" color={C.primary} /> : <Ionicons name="image-outline" size={18} color={C.primary} />}
@@ -291,7 +283,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
-  scroll: { padding: S.xl, paddingBottom: 40 },
+  scroll: { padding: S.xl, paddingBottom: 60 },
 
   receiptCard: { backgroundColor: C.white, borderRadius: 28, padding: S.xl, alignItems: "center", shadowColor: "#050A24", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 6 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: S.xl },

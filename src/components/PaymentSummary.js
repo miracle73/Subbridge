@@ -36,7 +36,7 @@ export default function PaymentSummary({ visible, product, subtitle, amount, row
           </LinearGradient>
 
           <View style={styles.card}>
-            {rows.map(([label, value], i) => (
+            {[["Product", product], ...rows, ["Amount", fmt(amount)]].map(([label, value], i) => (
               <View key={label} style={[styles.row, i > 0 && styles.rowDivider]}>
                 <Text style={styles.rowLabel}>{label}</Text>
                 <Text style={styles.rowValue} numberOfLines={2}>{value}</Text>
@@ -57,7 +57,7 @@ export default function PaymentSummary({ visible, product, subtitle, amount, row
           </View>
         </ScrollView>
 
-        <View style={[styles.bar, { paddingBottom: insets.bottom + S.base }]}>
+        <View style={[styles.bar, { paddingBottom: insets.bottom + 36 }]}>
           <TouchableOpacity style={styles.payBtn} onPress={onPay} activeOpacity={0.85}>
             <Text style={styles.payText}>Pay {fmt(amount)}</Text>
           </TouchableOpacity>
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   walletLabel: { fontSize: F.sm, color: C.textMuted },
   walletValue: { fontSize: F.base, fontWeight: "800", color: C.primary, marginTop: 2 },
 
-  bar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: S.xl, paddingTop: S.base, backgroundColor: C.white, borderTopLeftRadius: 28, borderTopRightRadius: 28, ...shadow },
+  bar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: S.xl, paddingTop: S.base, backgroundColor: C.bg },
   payBtn: { backgroundColor: C.primary, borderRadius: 18, paddingVertical: 17, alignItems: "center", shadowColor: C.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4 },
   payText: { fontSize: F.lg, fontWeight: "800", color: C.white },
 });

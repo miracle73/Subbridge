@@ -1,3 +1,4 @@
+import { Biometrics } from "../utils/biometrics";
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +16,9 @@ const KEYS = [
 ];
 
 export default function PinPad({ onPress, onBiometric }) {
+  // Show the face icon on Face ID / face-unlock phones, fingerprint otherwise.
+  const [face, setFace] = React.useState(false);
+  React.useEffect(() => { Biometrics.label().then((l) => setFace(l === "Face ID")).catch(() => {}); }, []);
   const handle = (k) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (k === "bio") { onBiometric && onBiometric(); return; }
@@ -30,7 +34,7 @@ export default function PinPad({ onPress, onBiometric }) {
             if (k === "bio") {
               return onBiometric ? (
                 <TouchableOpacity key={k} style={styles.cell} onPress={() => handle(k)}>
-                  <Ionicons name="finger-print-outline" size={26} color={C.primary} />
+                  <Ionicons name={face ? "scan-outline" : "finger-print-outline"} size={26} color={C.primary} />
                 </TouchableOpacity>
               ) : <View key={k} style={styles.cellEmpty} />;
             }

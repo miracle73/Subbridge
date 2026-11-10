@@ -80,33 +80,52 @@ export default function SetupPinScreen({ navigation, route }) {
 
   const pinValue = step === 1 ? newPin : confirmPin;
 
+  // Figma "Create PIN — Step 2": blue top with step + title, white sheet with 4 boxes and keypad.
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <AuthBackground />
+    <View style={fig.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <Ionicons name="shield-checkmark" size={48} color={C.white} />
-        <Text style={styles.title}>Set Up Your PIN</Text>
-        <Text style={styles.subtitle}>
-          {step === 1 ? "Create a 4-digit PIN to secure your account" : "Confirm your 4-digit PIN"}
-        </Text>
-        <Text style={styles.stepLabel}>Step {step} of 2</Text>
+      <View style={[fig.top, { paddingTop: insets.top + 24 }]}>
+        <AuthBackground />
+        <Text style={fig.step}>Step 2 of 2</Text>
+        <Text style={fig.title}>Set your transaction PIN</Text>
+        <Text style={fig.sub}>4 digits to approve every payment</Text>
       </View>
 
-      <View style={styles.body}>
-        <Animated.View style={[{ transform: [{ translateX: shake }] }, styles.dotsCard]}>
-          <PinDots length={4} filled={pinValue.length} />
+      <View style={fig.sheet}>
+        <Text style={fig.prompt}>{step === 1 ? "Enter PIN" : "Confirm PIN"}</Text>
+        <Animated.View style={[fig.boxes, { transform: [{ translateX: shake }] }]}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={[fig.box, i < pinValue.length && fig.boxOn]}>
+              {i < pinValue.length ? <View style={fig.dot} /> : null}
+            </View>
+          ))}
         </Animated.View>
+        <Text style={fig.hint}>{step === 1 ? "Confirm PIN next →" : "Re-enter the same 4 digits"}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {submitting ? <Text style={styles.busy}>Setting up PIN...</Text> : null}
-      </View>
-
-      <View style={{ paddingBottom: insets.bottom + S.md }}>
-        <PinPad onPress={handleKey} />
+        <View style={{ flex: 1 }} />
+        <View style={{ paddingBottom: insets.bottom + 24 }}>
+          <PinPad onPress={handleKey} />
+        </View>
       </View>
     </View>
   );
 }
+
+const fig = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.white },
+  top: { paddingHorizontal: 24, paddingBottom: 72, overflow: "hidden" },
+  step: { fontSize: 13, fontWeight: "800", color: C.gold },
+  title: { fontSize: 26, fontWeight: "900", color: C.white, marginTop: 8 },
+  sub: { fontSize: 15, color: C.onPrimaryMuted, marginTop: 8 },
+  sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -40, alignItems: "center", paddingTop: 30 },
+  prompt: { fontSize: 15, fontWeight: "600", color: C.textMuted },
+  boxes: { flexDirection: "row", gap: 14, marginTop: 24 },
+  box: { width: 48, height: 56, borderRadius: 16, backgroundColor: "#F1F3FA", alignItems: "center", justifyContent: "center" },
+  boxOn: { backgroundColor: C.primary + "1A" },
+  dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.primary },
+  hint: { fontSize: 13, fontWeight: "500", color: C.textMuted, marginTop: 16 },
+});
 
 const styles = withAuthStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },

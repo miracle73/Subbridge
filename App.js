@@ -1,3 +1,5 @@
+import "./src/utils/themeEngine";
+import { useDarkMode } from "./src/utils/darkMode";
 import React, { useState, useEffect, useRef } from "react";
 import { AppState, BackHandler, Platform, Alert, View, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -46,6 +48,8 @@ export default function App() {
   const [locked, setLocked] = useState(false);
   const [ready, setReady] = useState(false);
   const [authKey, setAuthKey] = useState(0);
+  const [dark] = useDarkMode();
+  const navStateRef = useRef(undefined);
   const [initialRoute, setInitialRoute] = useState("Splash");
   const [routeName, setRouteName] = useState(null);
   const lastBg = useRef(0);
@@ -167,6 +171,7 @@ export default function App() {
 
   const handleNavStateChange = (state) => {
     if (!state) return;
+    navStateRef.current = state;
     const route = state.routes?.[state.index];
     if (!route?.name) return;
     setRouteName(route.name);
@@ -182,8 +187,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <StatusBar style="dark" hidden={false} />
-        <NavigationContainer key={authKey} ref={navRef} onStateChange={handleNavStateChange}>
+        <StatusBar style={dark ? "light" : undefined} style="dark" hidden={false} />
+        <NavigationContainer key={`${authKey}-${dark}`} ref={navRef} initialState={navStateRef.current} onStateChange={handleNavStateChange}>
           <AppNavigator initialRouteName={initialRoute} />
         </NavigationContainer>
         {/* Lock is an overlay — the navigator stays mounted underneath so

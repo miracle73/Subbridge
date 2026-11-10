@@ -28,6 +28,8 @@ export default function AuthScreen({ navigation }) {
   const [hasSavedPin, setHasSavedPin] = useState(false);
   const [userName, setUserName] = useState("");
   const [bioReady, setBioReady] = useState(false);
+  const [bioName, setBioName] = useState("Fingerprint");
+  useEffect(() => { Biometrics.label().then(setBioName).catch(() => {}); }, []);
 
   useEffect(() => {
     SecurePin.getPhone().then((p) => { if (p) { setPhone(p); setIdentifier(p); } });
@@ -259,8 +261,8 @@ export default function AuthScreen({ navigation }) {
 
         {bioReady && (
           <TouchableOpacity style={fig.bio} onPress={() => { setMode("pin"); setPassword(""); }}>
-            <Ionicons name="finger-print" size={18} color={C.white} />
-            <Text style={fig.bioText}>Use PIN or fingerprint</Text>
+            <Ionicons name={bioName === "Face ID" ? "scan" : "finger-print"} size={18} color={C.white} />
+            <Text style={fig.bioText}>Use PIN or {bioName === "Face ID" ? "Face ID" : "fingerprint"}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

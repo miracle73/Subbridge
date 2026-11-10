@@ -28,6 +28,9 @@ export default function BiometricSetupScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [signInOn, setSignInOn] = useState(false);
+  const [bioLabel, setBioLabel] = useState("Fingerprint");
+  useEffect(() => { Biometrics.label().then(setBioLabel).catch(() => {}); }, []);
+  const isFace = bioLabel === "Face ID";
   useEffect(() => { Biometrics.isEnabled().then(setSignInOn).catch(() => {}); }, []);
   const toggleSignIn = async () => {
     const next = !signInOn;
@@ -150,13 +153,13 @@ export default function BiometricSetupScreen({ navigation }) {
         <View style={styles.body}>
           <View style={styles.ringOuter}>
             <View style={styles.ringInner}>
-              <Ionicons name="finger-print" size={84} color={C.white} />
+              <Ionicons name={isFace ? "scan" : "finger-print"} size={84} color={C.white} />
             </View>
           </View>
 
           <Text style={styles.title}>Pay faster with{"\n"}biometrics</Text>
           <Text style={styles.sub}>
-            Use Face ID or fingerprint to sign in and approve payments — no PIN typing.
+            Use {isFace ? "Face ID" : "your fingerprint"} to sign in and approve payments — no PIN typing.
           </Text>
 
           <TouchableOpacity style={styles.optRow} onPress={toggleSignIn} activeOpacity={0.8}>
@@ -179,11 +182,11 @@ export default function BiometricSetupScreen({ navigation }) {
 
           {!isRegistered ? (
             <TouchableOpacity style={[styles.btn, generating && { opacity: 0.6 }]} onPress={handleRegister} disabled={generating} activeOpacity={0.85}>
-              {generating ? <ActivityIndicator color={C.primary} size="small" /> : <Text style={styles.btnText}>Enable Biometrics</Text>}
+              {generating ? <ActivityIndicator color={C.primary} size="small" /> : <Text style={styles.btnText}>Enable {isFace ? "Face ID" : "Fingerprint"}</Text>}
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.btnGhost} onPress={handleDeregister} activeOpacity={0.85}>
-              <Text style={styles.btnGhostText}>Disable Biometrics</Text>
+              <Text style={styles.btnGhostText}>Disable {isFace ? "Face ID" : "Fingerprint"}</Text>
             </TouchableOpacity>
           )}
         </View>

@@ -200,7 +200,7 @@ const styles = withPayStyles(StyleSheet.create({
     paddingHorizontal: S.xl, paddingVertical: S.base,
   },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
-  scroll: { paddingBottom: 40 },
+  scroll: { paddingBottom: 140 },
 
   label: { fontSize: F.sm, fontWeight: "800", color: C.text, marginTop: S.md, marginBottom: S.sm, paddingHorizontal: S.xl },
 
