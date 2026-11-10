@@ -1,4 +1,5 @@
 import { useDarkMode, darkVariant, DARK } from "../../utils/darkMode";
+import { FadeIn, Float } from "../../components/Motion";
 import React, { useState, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar, Switch,
@@ -145,8 +146,8 @@ export default function ProfileScreen({ navigation }) {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[st.hero, { paddingTop: insets.top + S.xl }]}>
-          <View style={[st.blob, { width: 240, height: 240, top: -90, right: -70 }]} />
-          <View style={[st.blob, { width: 150, height: 150, bottom: -70, left: -40, backgroundColor: C.gold + "2E" }]} />
+          <Float style={[st.blob, { width: 240, height: 240, top: -90, right: -70 }]} range={12} />
+          <Float style={[st.blob, { width: 150, height: 150, bottom: -70, left: -40, backgroundColor: C.gold + "2E" }]} range={10} duration={5200} />
           <Text style={[st.spark, { top: insets.top + 20, left: 30 }]}>✦</Text>
           <Text style={[st.spark, { top: insets.top + 110, right: 40, fontSize: 12 }]}>✦</Text>
           <View style={st.avatar}>
@@ -158,8 +159,8 @@ export default function ProfileScreen({ navigation }) {
         </LinearGradient>
 
         <View style={{ paddingHorizontal: S.xl }}>
-          {groups.map(([title, items]) => (
-            <View key={title}>
+          {groups.map(([title, items], gi) => (
+            <FadeIn key={title} delay={80 * gi}>
               <Text style={st.groupTitle}>{title}</Text>
               <View style={st.card}>
                 {items.map((r, i) => <Row key={r.label} r={r} first={i === 0} />)}
@@ -180,7 +181,7 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                 ) : null}
               </View>
-            </View>
+            </FadeIn>
           ))}
 
           <Text style={st.groupTitle}>PREFERENCES</Text>

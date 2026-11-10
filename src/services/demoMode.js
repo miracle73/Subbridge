@@ -43,7 +43,13 @@ const REFERRAL = {
   referralBalance: 1840, cashbackBalance: 0, totalEarnings: 1840, totalUsers: 12, monthEarnings: 260,
   referralCode: "08114516826", referralLink: "https://subbridge.connectbridge.com.ng/ref/08114516826",
   commission: { perReferral: 50, note: "Earn 2% commission on every friend's first 10 transactions." },
-  commissionRates: [{ id: "airtime", label: "Airtime", rate: 2 }, { id: "data", label: "Data", rate: 2 }, { id: "cable", label: "Cable TV", rate: 1 }, { id: "electricity", label: "Electricity", rate: 1 }],
+  commissionRates: { airtime: 0.3, data: 0.5, cable: 0.2, electricity: 0.7 },
+  howItWorks: [
+    "Share your referral link or code with friends and family.",
+    "They sign up on SubBridge and verify their account.",
+    "You earn a bonus once they complete their first bill payment.",
+    "Withdraw your bonus to your wallet or bank anytime.",
+  ],
   recentEarnings: [
     { id: 1, name: "Ada O.", product: "Data", productAmount: 1050, amount: 50, date: day(10).createdAt, status: "paid" },
     { id: 2, name: "Tunde A.", product: "Airtime", productAmount: 1000, amount: 20, date: day(30).createdAt, status: "paid" },

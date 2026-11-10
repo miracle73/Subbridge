@@ -1,4 +1,5 @@
 import AuthBackground from "../components/AuthBackground";
+import { FadeIn } from "../components/Motion";
 import React, { useRef, useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, StatusBar, Image,
@@ -200,7 +201,7 @@ export default function ReceiptScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View ref={receiptRef} collapsable={false} style={styles.receiptCard}>
+        <FadeIn distance={30}><View ref={receiptRef} collapsable={false} style={styles.receiptCard}>
           <View style={[styles.statusIcon, { backgroundColor: statusColor + "1A" }]}>
             <Ionicons name={statusIcon} size={40} color={statusColor} />
           </View>
@@ -262,7 +263,7 @@ export default function ReceiptScreen({ navigation, route }) {
           </View>
 
           <Text style={styles.footer}>Thank you for using SubBridge</Text>
-        </View>
+        </View></FadeIn>
 
         <View style={styles.actionsRow}>
           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "rgba(255,255,255,0.15)" }]} onPress={shareAsPdf} disabled={busy}>

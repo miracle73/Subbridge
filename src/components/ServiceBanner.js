@@ -1,4 +1,5 @@
 import React from "react";
+import { FadeIn, Float, Sparkle } from "./Motion";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,10 +8,10 @@ import { C, F, S } from "../utils/theme";
 /** Figma hero card at the top of each payment screen. */
 export default function ServiceBanner({ icon, title, subtitle }) {
   return (
-    <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.banner}>
-      <View style={[styles.blob, { width: 150, height: 150, top: -50, right: -30, backgroundColor: "rgba(255,176,32,0.28)" }]} />
+    <FadeIn><LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.banner}>
+      <Float style={[styles.blob, { width: 150, height: 150, top: -50, right: -30, backgroundColor: "rgba(255,176,32,0.28)" }]} range={10} />
       <View style={[styles.blob, { width: 90, height: 90, bottom: -40, left: 120 }]} />
-      <Text style={styles.spark}>✦</Text>
+      <Sparkle style={{ top: 14, right: 86 }} size={14} />
       <View style={styles.textWrap}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
@@ -18,7 +19,7 @@ export default function ServiceBanner({ icon, title, subtitle }) {
       <View style={styles.iconWrap}>
         <Ionicons name={icon} size={26} color={C.white} />
       </View>
-    </LinearGradient>
+    </LinearGradient></FadeIn>
   );
 }
 

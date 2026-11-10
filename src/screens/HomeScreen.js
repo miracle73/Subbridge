@@ -1,4 +1,5 @@
 import { useDarkMode, darkVariant, DARK } from "../utils/darkMode";
+import { FadeIn, PressScale, Float, Sparkle } from "../components/Motion";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
@@ -211,9 +212,11 @@ export default function HomeScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
         showsVerticalScrollIndicator={false}
       >
+        <FadeIn delay={0}>
         <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.balanceCard}>
-          <View style={[st.blob, { width: 180, height: 180, top: -50, right: -40 }]} />
-          <View style={[st.blob, { width: 110, height: 110, bottom: -40, right: 30, backgroundColor: C.gold + "40" }]} />
+          <Float style={[st.blob, { width: 180, height: 180, top: -50, right: -40 }]} range={10} />
+          <Float style={[st.blob, { width: 110, height: 110, bottom: -40, right: 30, backgroundColor: C.gold + "40" }]} range={12} duration={5000} delay={400} />
+          <Sparkle style={{ top: 18, right: 120 }} size={13} />
           <View style={st.balanceTop}>
             <TouchableOpacity style={st.row} onPress={() => setShowBalance(!showBalance)}>
               <Text style={st.balanceLabel}>Wallet balance</Text>
@@ -233,7 +236,9 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </LinearGradient>
+        </FadeIn>
 
+        <FadeIn delay={90}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={312} decelerationRate="fast" contentContainerStyle={{ paddingHorizontal: S.xl, gap: S.md }} style={{ marginTop: S.lg }}>
           <LinearGradient colors={[C.primaryMid, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.acctCard}>
             <View style={[st.blob, { width: 140, height: 140, top: -40, right: -30 }]} />
@@ -257,21 +262,25 @@ export default function HomeScreen({ navigation }) {
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
+        </FadeIn>
 
+        <FadeIn delay={180}>
         <View style={st.servicesCard}>
           <Text style={st.sectionTitle}>Services</Text>
           <View style={st.servicesGrid}>
             {SERVICES.map((s) => (
-              <TouchableOpacity key={s.id} style={st.serviceItem} onPress={() => go(s.screen)} activeOpacity={0.7}>
+              <PressScale key={s.id} style={st.serviceItem} onPress={() => go(s.screen)}>
                 <View style={[st.serviceIcon, { backgroundColor: s.tint }]}>
                   <Ionicons name={s.icon} size={22} color={s.color} />
                 </View>
                 <Text style={st.serviceLabel} numberOfLines={2}>{s.label}</Text>
-              </TouchableOpacity>
+              </PressScale>
             ))}
           </View>
         </View>
+        </FadeIn>
 
+        <FadeIn delay={270}>
         <TouchableOpacity activeOpacity={0.9} onPress={() => go("Rewards")} style={{ marginHorizontal: S.xl, marginTop: S.lg }}>
           <LinearGradient colors={[C.gold, "#FF6B2C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.referBanner}>
             <View style={[st.blob, { width: 120, height: 120, top: -30, right: -20 }]} />
@@ -282,6 +291,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={{ fontSize: 34 }}>🎉</Text>
           </LinearGradient>
         </TouchableOpacity>
+        </FadeIn>
 
         <View style={st.sectionHeader}>
           <Text style={st.sectionTitle}>Recent transactions</Text>

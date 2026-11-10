@@ -108,7 +108,7 @@ export default function AirtimeToCashScreen({ navigation }) {
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Select Network</Text>
-        <View style={styles.networkRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.networkRow}>
           {MOCK_NETWORKS.map((n) => (
             <TouchableOpacity
               key={n.id}
@@ -120,7 +120,7 @@ export default function AirtimeToCashScreen({ navigation }) {
               <Text style={[styles.networkName, network?.id === n.id && styles.networkNameActive, n.id === "9mobile" && styles.networkNameBold]}>{n.name}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         <Text style={styles.label}>Airtime Amount</Text>
         <View style={styles.amountWrap}>
@@ -204,7 +204,7 @@ const styles = withPayStyles(StyleSheet.create({
 
   label: { fontSize: F.sm, fontWeight: "800", color: C.text, marginTop: S.md, marginBottom: S.sm, paddingHorizontal: S.xl },
 
-  networkRow: { flexDirection: "row", gap: S.sm, paddingHorizontal: S.xl, flexWrap: "nowrap" },
+  networkRow: { flexDirection: "row", gap: S.sm, paddingHorizontal: S.xl, paddingVertical: 4 },
   networkChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: C.white, borderRadius: R.sm, paddingHorizontal: S.md, paddingVertical: S.sm,

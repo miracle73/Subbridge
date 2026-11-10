@@ -1,25 +1,26 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { C } from "../utils/theme";
+import { Float, Sparkle } from "./Motion";
 
-/** Brand gradient with soft glow circles and gold sparkles, used behind the auth screens. */
+/** Brand gradient with slowly drifting glow blobs and twinkling gold sparkles, used behind the auth screens. */
 export default function AuthBackground() {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <View style={[styles.blob, { width: 300, height: 300, top: -90, right: -110 }]} />
-      <View style={[styles.blob, { width: 240, height: 240, bottom: -60, left: -100, backgroundColor: "rgba(255,176,32,0.14)" }]} />
-      <Text style={[styles.spark, { top: "12%", left: "12%" }]}>✦</Text>
-      <Text style={[styles.spark, { top: "18%", right: "16%", fontSize: 12 }]}>✦</Text>
-      <Text style={[styles.spark, { top: "30%", right: "8%", fontSize: 22 }]}>✦</Text>
+      <Float style={[styles.blob, { width: 300, height: 300, top: -90, right: -110 }]} range={18} />
+      <Float style={[styles.blob, { width: 240, height: 240, bottom: -60, left: -100, backgroundColor: "rgba(255,176,32,0.14)" }]} range={14} duration={5200} delay={600} />
+      <Float style={[styles.blob, { width: 140, height: 140, top: "45%", right: -50, backgroundColor: "rgba(95,225,255,0.10)" }]} range={10} duration={3600} delay={300} />
+      <Sparkle style={{ top: "12%", left: "12%" }} />
+      <Sparkle style={{ top: "18%", right: "16%" }} size={12} delay={500} />
+      <Sparkle style={{ top: "30%", right: "8%" }} size={22} delay={900} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   blob: { position: "absolute", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.07)" },
-  spark: { position: "absolute", color: "#FFD36B", fontSize: 16, fontWeight: "800" },
 });
 
 /** Figma auth styling: glass inputs, white pill buttons, bold titles.
