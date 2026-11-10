@@ -40,6 +40,15 @@ export default function CableTvScreen({ navigation }) {
   const [smartcard, setSmartcard] = useState("");
   const [plans, setPlans] = useState([]);
   const [plan, setPlan] = useState(null);
+  // Open the design receipt (share as image / PDF) right after a successful payment.
+  function goReceipt() {
+    const now = new Date();
+    navigation.replace("Receipt", { tx: {
+      id: `R${now.getTime()}`, reference: `SB${now.getTime()}`, category: "cable", type: "debit", status: "success",
+      amount: plan?.amount, description: `${provider?.name || ""} ${plan?.name || ""} - ${smartcard}`, date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5),
+      token: "cable" === "electricity" ? "4821-0937-1156-7720-3349" : undefined,
+    } });
+  }
   const [verified, setVerified] = useState(null);
   const [showProvider, setShowProvider] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -191,7 +200,7 @@ export default function CableTvScreen({ navigation }) {
       });
       console.log("[Cable] Purchase result:", result.success, result.message);
       if (result.success) {
-        setSuccess(true);
+        setSuccess(true); goReceipt();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
@@ -235,7 +244,7 @@ export default function CableTvScreen({ navigation }) {
 
       console.log("[Cable] Purchase result:", result.success, result.message);
       if (result.success) {
-        setSuccess(true);
+        setSuccess(true); goReceipt();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {

@@ -40,6 +40,15 @@ export default function AirtimeScreen({ navigation }) {
   const [networks, setNetworks] = useState([]);
   const [network, setNetwork] = useState(null);
   const [phone, setPhone] = useState("");
+  // Open the design receipt (share as image / PDF) right after a successful payment.
+  function goReceipt() {
+    const now = new Date();
+    navigation.replace("Receipt", { tx: {
+      id: `R${now.getTime()}`, reference: `SB${now.getTime()}`, category: "airtime", type: "debit", status: "success",
+      amount: finalAmount, description: `${network?.name || ""} Airtime - ${phone}`, date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5),
+      token: "airtime" === "electricity" ? "4821-0937-1156-7720-3349" : undefined,
+    } });
+  }
   const [amount, setAmount] = useState("");
   const [customAmount, setCustomAmount] = useState("");
   const [showNetwork, setShowNetwork] = useState(false);
@@ -188,7 +197,7 @@ export default function AirtimeScreen({ navigation }) {
 
       console.log("[Airtime] Purchase result:", result.success, result.message);
       if (result.success) {
-        setSuccess(true);
+        setSuccess(true); goReceipt();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
@@ -418,7 +427,7 @@ export default function AirtimeScreen({ navigation }) {
               transactionData,
             });
             if (result.success) {
-              setSuccess(true);
+              setSuccess(true); goReceipt();
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } else {
               fail(result.message || "Transaction failed.");

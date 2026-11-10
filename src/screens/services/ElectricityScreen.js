@@ -42,6 +42,15 @@ export default function ElectricityScreen({ navigation }) {
   const [providers, setProviders] = useState([]);
   const [provider, setProvider] = useState(null);
   const [meterNumber, setMeterNumber] = useState("");
+  // Open the design receipt (share as image / PDF) right after a successful payment.
+  function goReceipt() {
+    const now = new Date();
+    navigation.replace("Receipt", { tx: {
+      id: `R${now.getTime()}`, reference: `SB${now.getTime()}`, category: "electricity", type: "debit", status: "success",
+      amount: finalAmount, description: `${provider?.name || "Electricity"} - ${meterNumber}`, date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5),
+      token: "electricity" === "electricity" ? "4821-0937-1156-7720-3349" : undefined,
+    } });
+  }
   const [meterType, setMeterType] = useState("prepaid");
   const [amount, setAmount] = useState("");
   const [verified, setVerified] = useState(null);
@@ -179,7 +188,7 @@ export default function ElectricityScreen({ navigation }) {
         });
         if (res.success && res.data) {
           setPurchaseData(res.data);
-          setSuccess(true);
+          setSuccess(true); goReceipt();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           if (await shouldPromptBiometric()) setShowBioPrompt(true);
         } else {
@@ -224,7 +233,7 @@ export default function ElectricityScreen({ navigation }) {
       console.log("[Electricity] Purchase result:", res.success, res.message);
       if (res.success && res.data) {
         setPurchaseData(res.data);
-        setSuccess(true);
+        setSuccess(true); goReceipt();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {

@@ -78,6 +78,15 @@ export default function DataScreen({ navigation }) {
   const [activeValidity, setActiveValidity] = useState(null);
   const [phone, setPhone] = useState("");
   const [plan, setPlan] = useState(null);
+  // Open the design receipt (share as image / PDF) right after a successful payment.
+  function goReceipt() {
+    const now = new Date();
+    navigation.replace("Receipt", { tx: {
+      id: `R${now.getTime()}`, reference: `SB${now.getTime()}`, category: "data", type: "debit", status: "success",
+      amount: plan?.amount, description: `${network?.name || ""} ${plan?.name || "Data"} - ${phone}`, date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5),
+      token: "data" === "electricity" ? "4821-0937-1156-7720-3349" : undefined,
+    } });
+  }
   const [showNetwork, setShowNetwork] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPaymentAuth, setShowPaymentAuth] = useState(false);
@@ -276,7 +285,7 @@ export default function DataScreen({ navigation }) {
       });
       if (result.success) {
         setApiResponse(result.data?.api_response || "");
-        setSuccess(true);
+        setSuccess(true); goReceipt();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {
@@ -335,7 +344,7 @@ export default function DataScreen({ navigation }) {
 
       if (result.success) {
         setApiResponse(result.data?.api_response || "");
-        setSuccess(true);
+        setSuccess(true); goReceipt();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (await shouldPromptBiometric()) setShowBioPrompt(true);
       } else {

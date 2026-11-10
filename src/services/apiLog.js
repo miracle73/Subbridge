@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 // TEMPORARY debug facility: records every API request/response so the
 // exact traffic can be inspected in-app (Profile → API Logs).
