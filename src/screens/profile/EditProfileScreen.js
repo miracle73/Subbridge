@@ -20,6 +20,7 @@ export default function EditProfileScreen({ navigation }) {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const photo = useAvatar(); // hooks must run before the loading early-return
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -75,7 +76,6 @@ export default function EditProfileScreen({ navigation }) {
   if (loading) return <Preloader />;
 
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  const photo = useAvatar();
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { brandAlert("Photos access needed", "Allow SubBridge to access your photos to set a profile picture."); return; }
