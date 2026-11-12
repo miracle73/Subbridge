@@ -236,7 +236,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           <Text style={st.balanceAmount}>{fmt(balance, !showBalance)}</Text>
           <View style={st.actionRow}>
-            <TouchableOpacity style={st.actionBtn} activeOpacity={0.85} onPress={() => navigation.navigate("AddMoney", { balance, accountName: acctName, accounts: wallet?.accounts?.length ? wallet.accounts : acctNo ? [{ bankName, accountNumber: acctNo }] : [] })}>
+            <TouchableOpacity style={[st.actionBtn, { backgroundColor: "#FFFFFF" }]} activeOpacity={0.85} onPress={() => navigation.navigate("AddMoney", { balance, accountName: acctName, accounts: wallet?.accounts?.length ? wallet.accounts : acctNo ? [{ bankName, accountNumber: acctNo }] : [] })}>
               <Text style={st.actionBtnText}>+ Add Funds</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[st.actionBtn, st.actionGhost]} activeOpacity={0.85} onPress={() => go("Rewards")}>

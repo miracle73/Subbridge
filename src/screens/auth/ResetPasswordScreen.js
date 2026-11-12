@@ -7,6 +7,7 @@ import { C, F, R, S } from "../../utils/theme";
 import { SecurePin } from "../../utils/storage";
 import { normalizePhone } from "../../utils/format";
 import api from "../../services/api";
+import PinPad from "../../components/PinPad";
 
 export default function ResetPasswordScreen({ navigation, route }) {
   const { phone, resetToken, inputType } = route.params || {};
@@ -136,6 +137,42 @@ export default function ResetPasswordScreen({ navigation, route }) {
     );
   }
 
+  // Figma "Set new PIN": light page, 4 boxes, keypad; enter then confirm.
+  if (isPin) {
+    const value = password.length < 4 ? password : confirm;
+    const onKey = (k) => {
+      if (loading) return;
+      if (k === "del") { password.length < 4 || !confirm ? setPassword(password.slice(0, -1)) : setConfirm(confirm.slice(0, -1)); return; }
+      if (!/^\d$/.test(k)) return;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setError("");
+      if (password.length < 4) { setPassword(password + k); return; }
+      const next = (confirm + k).slice(0, 4);
+      setConfirm(next);
+      if (next.length === 4) setTimeout(() => submit(password, next), 120);
+    };
+    return (
+      <View style={fig.container}>
+        <View style={fig.header}>
+          <TouchableOpacity style={fig.back} onPress={goBack}><Ionicons name="arrow-back" size={20} color={C.text} /></TouchableOpacity>
+          <Text style={fig.headerTitle}>Set new PIN</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <Text style={[fig.title, { textAlign: "center", marginTop: 28 }]}>Create new PIN</Text>
+        <Text style={[fig.sub, { textAlign: "center" }]}>{password.length < 4 ? "Enter, then confirm your 4‑digit PIN" : "Confirm your new PIN"}</Text>
+        <View style={np.boxes}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={[np.box, i < value.length && np.boxOn]}>{i < value.length ? <View style={np.dot} /> : null}</View>
+          ))}
+        </View>
+        {error ? <Text style={[fig.error, { textAlign: "center" }]}>{error}</Text> : null}
+        {loading ? <Text style={[fig.sub, { textAlign: "center" }]}>Saving...</Text> : null}
+        <View style={{ flex: 1 }} />
+        <View style={{ paddingBottom: 40, alignItems: "center" }}><PinPad onPress={onKey} /></View>
+      </View>
+    );
+  }
+
   // Figma "Reset Password": light page, two fields, match indicator, button at the bottom.
   const unit = isPin ? "PIN" : "password";
   const matches = confirm.length >= minLen && confirm === password;
@@ -237,3 +274,10 @@ const styles = withAuthStyles(StyleSheet.create({
   },
   btnText: { color: C.primary, fontSize: F.lg, fontWeight: "700" },
 }));
+
+const np = StyleSheet.create({
+  boxes: { flexDirection: "row", gap: 14, alignSelf: "center", marginTop: 32 },
+  box: { width: 48, height: 56, borderRadius: 16, backgroundColor: C.white, alignItems: "center", justifyContent: "center", shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 },
+  boxOn: { backgroundColor: C.primary + "1A" },
+  dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.primary },
+});

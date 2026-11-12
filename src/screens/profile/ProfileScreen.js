@@ -127,7 +127,7 @@ export default function ProfileScreen({ navigation }) {
     ["SECURITY", [
       { icon: "🔒", label: "Change PIN", screen: "ChangePin" },
       { icon: "🔑", label: "Forgot PIN", screen: "ForgotPassword", params: { mode: "pin", phone: user?.phone || "", email: user?.email || "" } },
-      { icon: "🔐", label: "Change password", screen: "ForgotPassword", params: { mode: "password", phone: user?.phone || "", email: user?.email || "" } },
+      { icon: "🔐", label: "Change password", screen: "ChangePassword" },
     ]],
   ];
 

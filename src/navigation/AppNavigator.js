@@ -40,6 +40,7 @@ import ReceiptScreen from "../screens/ReceiptScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import AnnouncementScreen from "../screens/AnnouncementScreen";
 import AddMoneyScreen from "../screens/wallet/AddMoneyScreen";
+import ChangePasswordScreen from "../screens/profile/ChangePasswordScreen";
 import BiometricSetupScreen from "../screens/BiometricSetupScreen";
 
 const Stack = createNativeStackNavigator();
@@ -146,6 +147,7 @@ export default function AppNavigator({ initialRouteName }) {
         <Stack.Screen name="Receipt" component={ReceiptScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Announcement" component={AnnouncementScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       </Stack.Navigator>
   );
 }

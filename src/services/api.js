@@ -686,6 +686,10 @@ class ApiService {
     return result;
   }
 
+  async changePassword(currentPassword, newPassword) {
+    return this.post("/api/change-password/", { currentPassword, newPassword });
+  }
+
   async changePin(currentPin, newPin) {
     console.log("[API] changePin");
     const result = await this.post("/api/change-pin/", { currentPin, newPin });
