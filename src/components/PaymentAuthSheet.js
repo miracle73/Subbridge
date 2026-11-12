@@ -103,7 +103,11 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
         <AuthBackground />
         <View style={fig.top}>
           <View style={fig.topBar}>
-            <TouchableOpacity style={fig.close} onPress={toggleDark} onLongPress={() => onClose()}>
+            <TouchableOpacity style={fig.cancel} onPress={() => onClose()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="chevron-back" size={16} color={C.white} />
+              <Text style={fig.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={fig.close} onPress={toggleDark}>
               <Ionicons name={dark ? "sunny-outline" : "moon-outline"} size={18} color={C.white} />
             </TouchableOpacity>
           </View>
@@ -162,7 +166,9 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
 const fig = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   top: { paddingTop: 52, paddingHorizontal: 24, paddingBottom: 64 },
-  topBar: { flexDirection: "row", justifyContent: "flex-end" },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  cancel: { flexDirection: "row", alignItems: "center", gap: 4, height: 36, paddingLeft: 10, paddingRight: 14, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" },
+  cancelText: { fontSize: 14, fontWeight: "700", color: C.white },
   close: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
   topRow: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12 },
   avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
