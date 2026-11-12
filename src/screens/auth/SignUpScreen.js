@@ -9,6 +9,7 @@ import { normalizePhone, isEmail, formatPhoneInput } from "../../utils/format";
 import api from "../../services/api";
 import OneSignalService from "../../services/OneSignalService";
 import ErrorModal from "../../components/ErrorModal";
+import PinPad from "../../components/PinPad";
 
 export default function SignUpScreen({ navigation }) {
   const [step, setStep] = useState(1);
@@ -160,13 +161,19 @@ export default function SignUpScreen({ navigation }) {
     if (checkingRef.current) return;
     resetCheck();
     if (!validateStep1()) return;
+    if (!/^\d{5,7}$/.test(password)) { setErrorModalMessage("Password must be 5 digits, numbers only"); setShowErrorModal(true); return; }
+    if (password !== confirmPass) { setErrorModalMessage("Passwords do not match"); setShowErrorModal(true); return; }
 
     const outcome = await runUniquenessCheck();
     if (outcome.blocked || outcome.taken) return;
     if (outcome.error) {
       console.log("[SignUp] Uniqueness check failed, continuing");
     }
-    goToStep2();
+    setError("");
+    resetCheck();
+    setPin("");
+    setConfirmPin("");
+    setStep(3);
   };
 
   const handleSignUp = async () => {
@@ -256,6 +263,47 @@ export default function SignUpScreen({ navigation }) {
   const emailError = emailTouched && evEmailTaken ? "#FF6B6B" : "";
   const phoneError = phoneTouched && evPhoneTaken ? "#FF6B6B" : "";
 
+  if (step === 3) {
+    const value = pin.length < 4 ? pin : confirmPin;
+    const onKey = (k) => {
+      if (loading) return;
+      if (k === "del") { pin.length < 4 || !confirmPin ? setPin(pin.slice(0, -1)) : setConfirmPin(confirmPin.slice(0, -1)); return; }
+      if (!/^\d$/.test(k)) return;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (pin.length < 4) { setPin(pin + k); return; }
+      const next = (confirmPin + k).slice(0, 4);
+      setConfirmPin(next);
+      if (next.length === 4) setTimeout(() => (next === pin ? handleSignUp() : (setErrorModalMessage("PINs do not match"), setShowErrorModal(true), setConfirmPin(""))), 120);
+    };
+    return (
+      <>
+        <View style={pinS.container}>
+          <View style={pinS.top}>
+            <AuthBackground />
+            <TouchableOpacity style={pinS.back} onPress={() => { setStep(1); setPin(""); setConfirmPin(""); }}>
+              <Ionicons name="arrow-back" size={20} color={C.white} />
+            </TouchableOpacity>
+            <Text style={pinS.step}>Step 2 of 2</Text>
+            <Text style={pinS.title}>Set your transaction PIN</Text>
+            <Text style={pinS.sub}>4 digits to approve every payment</Text>
+          </View>
+          <View style={pinS.sheet}>
+            <Text style={pinS.prompt}>{pin.length < 4 ? "Enter PIN" : "Confirm PIN"}</Text>
+            <View style={pinS.boxes}>
+              {[0, 1, 2, 3].map((i) => (
+                <View key={i} style={[pinS.box, i < value.length && pinS.boxOn]}>{i < value.length ? <View style={pinS.dot} /> : null}</View>
+              ))}
+            </View>
+            <Text style={pinS.hint}>{loading ? "Creating your account..." : pin.length < 4 ? "Confirm PIN next →" : "Re-enter the same 4 digits"}</Text>
+            <View style={{ flex: 1 }} />
+            <View style={{ paddingBottom: 32 }}><PinPad onPress={onKey} /></View>
+          </View>
+        </View>
+        <ErrorModal visible={showErrorModal} message={errorModalMessage} onClose={() => setShowErrorModal(false)} title="Sign Up Error" />
+      </>
+    );
+  }
+
   return (
     <>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -301,6 +349,15 @@ export default function SignUpScreen({ navigation }) {
               autoCorrect={false}
             />
             <TextInput style={styles.input} value={referral} onChangeText={(t) => { setReferral(t); setError(""); }} placeholder="Referral code (optional)" placeholderTextColor="#C9D2FF" autoCapitalize="none" autoCorrect={false} />
+            {[["Password · 5 digits", password, setPassword], ["Confirm password", confirmPass, setConfirmPass]].map(([ph, val, set]) => (
+              <View key={ph} style={styles.passWrap}>
+                <TextInput style={[styles.input, { paddingRight: 48 }]} value={val} onChangeText={(t) => set(t.replace(/\D/g, "").slice(0, 7))} placeholder={ph} placeholderTextColor="#C9D2FF" keyboardType="number-pad" secureTextEntry={!showPass} maxLength={7} />
+                <TouchableOpacity style={styles.eye} onPress={() => setShowPass((v) => !v)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name={showPass ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.7)" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <Text style={{ fontSize: 12, fontWeight: "600", color: "#C9D2FF", alignSelf: "flex-start" }}>🔢 Numbers only — numeric keypad opens</Text>
           </View>
         )}
 
@@ -359,12 +416,12 @@ export default function SignUpScreen({ navigation }) {
           onPress={() => {
             if (loading || checkLoading) return;
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            step === 1 ? handleStep1Continue() : step === 2 ? validateStep2() : handleSignUp();
+            handleStep1Continue();
           }}
           disabled={loading || checkLoading}
         >
           <Text style={styles.btnText}>
-            {checkLoading ? "Checking..." : loading ? "Continuing..." : step < 3 ? "Continue" : "Sign Up"}
+            {checkLoading ? "Checking..." : "Continue"}
           </Text>
         </TouchableOpacity>
 
@@ -430,3 +487,19 @@ const styles = withAuthStyles(StyleSheet.create({
   seg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.2)" },
   segOn: { backgroundColor: C.gold },
 }));
+
+const pinS = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.white },
+  top: { paddingTop: 56, paddingHorizontal: 24, paddingBottom: 72, overflow: "hidden" },
+  back: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center", marginBottom: 18 },
+  step: { fontSize: 13, fontWeight: "800", color: C.gold },
+  title: { fontSize: 26, fontWeight: "900", color: C.white, marginTop: 8 },
+  sub: { fontSize: 15, color: C.onPrimaryMuted, marginTop: 8 },
+  sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -40, alignItems: "center", paddingTop: 30 },
+  prompt: { fontSize: 15, fontWeight: "600", color: C.textMuted },
+  boxes: { flexDirection: "row", gap: 14, marginTop: 24 },
+  box: { width: 48, height: 56, borderRadius: 16, backgroundColor: "#F1F3FA", alignItems: "center", justifyContent: "center" },
+  boxOn: { backgroundColor: C.primary + "1A" },
+  dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.primary },
+  hint: { fontSize: 13, fontWeight: "500", color: C.textMuted, marginTop: 16 },
+});

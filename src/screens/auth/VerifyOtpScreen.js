@@ -102,23 +102,12 @@ export default function VerifyOtpScreen({ navigation, route }) {
         </TouchableOpacity>
 
         <View style={styles.avatarWrap}>
-          <Ionicons name="shield-checkmark" size={48} color={C.white} />
+          <Text style={{ fontSize: 36 }}>✉️</Text>
         </View>
-        <Text style={styles.title}>Verify Code</Text>
-        <Text style={styles.subtitle}>Enter the 4-digit code we sent to your email and WhatsApp.</Text>
+        <Text style={styles.title}>{inputType === "email" ? "Check your inbox" : "Verify it's you"}</Text>
+        <Text style={styles.subtitle}>Enter the 4-digit code sent to{"\n"}{phone}</Text>
 
-        {phone ? (
-          <View style={styles.destination}>
-            <Ionicons
-              name={inputType === "email" ? "mail-outline" : "call-outline"}
-              size={16}
-              color={C.white}
-            />
-            <Text style={styles.destinationText} numberOfLines={2}>
-              Code sent to {phone}
-            </Text>
-          </View>
-        ) : null}
+
 
         <View style={styles.otpRow}>
 
@@ -165,9 +154,13 @@ export default function VerifyOtpScreen({ navigation, route }) {
             {resending
               ? "Sending..."
               : cooldown > 0
-              ? `Resend Code in ${cooldown}s`
-              : "Resend Code"}
+              ? `Resend code in 00:${String(cooldown).padStart(2, "0")}`
+              : "Resend code"}
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={goBack} style={{ marginTop: 18 }}>
+          <Text style={{ fontSize: 14, fontWeight: "700", color: C.gold }}>Wrong {inputType === "email" ? "email" : "number"}? Change</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

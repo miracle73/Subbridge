@@ -108,13 +108,11 @@ export default function ForgotPasswordScreen({ navigation, route }) {
         </TouchableOpacity>
 
         <View style={styles.avatarWrap}>
-          <Ionicons name="key" size={48} color={C.white} />
+          <Text style={{ fontSize: 38 }}>🔑</Text>
         </View>
-        <Text style={styles.title}>{mode === "pin" ? "Forgot PIN" : "Forgot Password"}</Text>
+        <Text style={styles.title}>{mode === "pin" ? "Forgot PIN?" : "Forgot password?"}</Text>
         <Text style={styles.subtitle}>
-          {mode === "pin"
-            ? "We'll send a 6-digit code to the number linked to your account."
-            : "We'll send a 6-digit code to the email linked to your account."}
+          No stress — we'll send a 4‑digit code to reset it.
         </Text>
 
         <View style={styles.form}>
@@ -183,7 +181,7 @@ export default function ForgotPasswordScreen({ navigation, route }) {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={goBack}>
-          <Text style={styles.linkText}>Back to Sign In</Text>
+          <Text style={styles.linkText}>← Back to Sign In</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

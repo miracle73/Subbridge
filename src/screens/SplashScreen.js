@@ -52,7 +52,7 @@ export default function SplashScreen({ navigation }) {
       <Text style={[styles.spark, { top: "36%", right: "20%", fontSize: 14 }]}>✦</Text>
       <Text style={[styles.spark, { top: "56%", right: "22%", fontSize: 24 }]}>✦</Text>
       <Animated.View style={{ transform: [{ translateY: logoY }, { scale: logoS }], opacity }}>
-        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+        <View style={styles.logo}><Text style={styles.logoS}>S</Text></View>
       </Animated.View>
       <Text style={styles.name}>SubBridge</Text>
       <Text style={styles.tagline}>Bills paid. Life sorted.</Text>
@@ -67,7 +67,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center" },
   blob: { position: "absolute", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.06)" },
   spark: { position: "absolute", color: "#FFD36B", fontSize: 20, fontWeight: "800" },
-  logo: { width: 104, height: 104, borderRadius: 30, backgroundColor: C.white },
+  logo: { width: 104, height: 104, borderRadius: 30, backgroundColor: C.white, alignItems: "center", justifyContent: "center", shadowColor: "#FFB020", shadowOpacity: 0.5, shadowRadius: 30, shadowOffset: { width: 0, height: 0 }, elevation: 12 },
+  logoS: { fontSize: 54, fontWeight: "900", color: C.primary },
   name: { fontSize: F.h1, fontWeight: "800", color: C.white, marginTop: S.base },
   tagline: { fontSize: F.md, color: "rgba(255,255,255,0.7)", marginTop: S.xs },
   progressWrap: {

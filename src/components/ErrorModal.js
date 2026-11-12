@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { C, F, S } from "../utils/theme";
 
 /** Bottom-sheet error (Figma "Login Failed"): red alert badge, title, message, Try again. */
-export default function ErrorModal({ visible, message, onClose, title = "Something went wrong" }) {
+export default function ErrorModal({ visible, message, onClose, title = "Something went wrong", onForgot }) {
   if (!visible || !message) return null;
 
   return (
@@ -25,6 +25,11 @@ export default function ErrorModal({ visible, message, onClose, title = "Somethi
           <TouchableOpacity style={styles.btn} onPress={onClose} activeOpacity={0.85}>
             <Text style={styles.btnText}>Try again</Text>
           </TouchableOpacity>
+          {onForgot ? (
+            <TouchableOpacity onPress={() => { onClose && onClose(); onForgot(); }} style={{ marginTop: 16 }}>
+              <Text style={{ fontSize: 14, fontWeight: "800", color: C.primary }}>Forgot password?</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
     </Modal>

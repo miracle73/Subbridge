@@ -191,7 +191,7 @@ export default function AuthScreen({ navigation }) {
           {signupLink}
         </View>
       </KeyboardAvoidingView>
-      <ErrorModal title="Login failed" visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
+      <ErrorModal title="Login failed" onForgot={() => navigation.navigate("ForgotPassword")} visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
       </>
     );
   }
@@ -267,7 +267,7 @@ export default function AuthScreen({ navigation }) {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
-    <ErrorModal title="Login failed" visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
+    <ErrorModal title="Login failed" onForgot={() => navigation.navigate("ForgotPassword")} visible={errorModalVisible} message={errorModalMessage} onClose={() => setErrorModalVisible(false)} />
     </>
   );
 }
