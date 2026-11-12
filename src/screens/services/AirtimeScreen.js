@@ -346,7 +346,7 @@ export default function AirtimeScreen({ navigation }) {
       />
 
       <PaymentAuthSheet
-        subtitle={` · ${fmtShort(finalAmount)}`}
+        subtitle={`Airtime · ${fmtShort(finalAmount)}`}
         detail={`${network?.name || ""} · ${phone}`}
         onHelp={() => navigation.navigate("Support")}
         key={authSheetKey}

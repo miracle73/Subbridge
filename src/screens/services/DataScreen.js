@@ -571,7 +571,7 @@ export default function DataScreen({ navigation }) {
       />
 
       <PaymentAuthSheet
-        subtitle={` · ${fmtShort(plan?.amount)}`}
+        subtitle={`Data · ${fmtShort(plan?.amount)}`}
         detail={`${network?.name || ""} · ${phone}`}
         onHelp={() => navigation.navigate("Support")}
         key={authSheetKey}

@@ -390,7 +390,7 @@ export default function ElectricityScreen({ navigation }) {
       />
 
       <PaymentAuthSheet
-        subtitle={` · ${fmtShort(finalAmount)}`} detail={`${provider?.name || ""} · ${meterNumber}`} onHelp={() => navigation.navigate("Support")} key={authSheetKey} visible={showAuthSheet} onClose={() => setShowAuthSheet(false)} onPinAuth={handlePinAuth} onBiometricAuth={handleBiometricAuth} onForgotPin={goForgotPin} />
+        subtitle={`Electricity · ${fmtShort(finalAmount)}`} detail={`${provider?.name || ""} · ${meterNumber}`} onHelp={() => navigation.navigate("Support")} key={authSheetKey} visible={showAuthSheet} onClose={() => setShowAuthSheet(false)} onPinAuth={handlePinAuth} onBiometricAuth={handleBiometricAuth} onForgotPin={goForgotPin} />
 
       <PinErrorModal
         visible={showPinError}
