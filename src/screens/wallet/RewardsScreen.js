@@ -874,3 +874,29 @@ const rf = StyleSheet.create({
   rateLabel: { fontSize: 14, fontWeight: "600", color: C.text },
   rateValue: { fontSize: 14, fontWeight: "800", color: C.primary },
 });
+
+// Withdraw Bonus sheets (choose method, Transfer to Wallet, Transfer to Bank) in the new design language.
+const _wd = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 };
+[
+  ["backdrop", { backgroundColor: "rgba(5,10,36,0.6)" }],
+  ["sheet", { borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 44, backgroundColor: C.bg }],
+  ["handle", { width: 48, height: 5, borderRadius: 3, backgroundColor: "#D5DAEB", marginBottom: 18 }],
+  ["sheetTitle", { fontSize: 22, fontWeight: "900" }],
+  ["sheetSubtitle", { fontSize: 14, marginTop: 4, marginBottom: 14 }],
+  ["sheetOption", { backgroundColor: C.white, borderRadius: 20, padding: 16, borderWidth: 0, marginTop: 10, ..._wd }],
+  ["sheetOptionIcon", { width: 48, height: 48, borderRadius: 16, backgroundColor: C.primary + "1A" }],
+  ["sheetOptionTitle", { fontSize: 16 }],
+  ["sheetOptionDesc", { fontSize: 12, marginTop: 3 }],
+  ["formBack", { width: 40, height: 40, borderRadius: 20, backgroundColor: C.white, alignItems: "center", justifyContent: "center", ..._wd }],
+  ["fieldLabel", { fontSize: 13, fontWeight: "700", marginTop: 16, marginBottom: 8 }],
+  ["amountWrap", { backgroundColor: C.white, borderRadius: 18, borderWidth: 0, paddingHorizontal: 20, height: 64, ..._wd }],
+  ["amountPrefix", { fontSize: 22, color: C.primary }],
+  ["amountInput", { fontSize: 24, fontWeight: "900" }],
+  ["pickerInput", { backgroundColor: C.white, borderRadius: 16, borderWidth: 0, height: 54, paddingHorizontal: 18, ..._wd }],
+  ["input", { backgroundColor: C.white, borderRadius: 16, borderWidth: 0, height: 54, paddingHorizontal: 18, fontSize: 15, ..._wd }],
+  ["resolvedRow", { alignSelf: "flex-start", backgroundColor: C.credit + "1A", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginTop: 10 }],
+  ["resolvedName", { fontSize: 13, fontWeight: "800" }],
+  ["continueBtn", { borderRadius: 18, height: 56, paddingVertical: 0, justifyContent: "center", marginTop: 22, shadowColor: C.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4 }],
+  ["continueBtnText", { fontSize: 16 }],
+  ["bankRow", { borderRadius: 14, paddingHorizontal: 12 }],
+].forEach(([k, v]) => { if (styles[k]) styles[k] = [styles[k], v]; });
