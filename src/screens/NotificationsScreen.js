@@ -7,11 +7,13 @@ import api from "../services/api";
 
 const TABS = ["All", "Transactions", "Promos"];
 const KIND = {
-  transaction: { icon: "wallet-outline", color: C.credit },
-  promo: { icon: "flame-outline", color: C.debit },
-  security: { icon: "lock-closed-outline", color: C.textMuted },
-  default: { icon: "notifications-outline", color: C.primary },
+  transaction: { icon: "💰", color: C.credit },
+  promo: { icon: "🔥", color: C.debit },
+  security: { icon: "🔐", color: C.textMuted },
+  default: { icon: "🔔", color: C.primary },
 };
+// Pick a design emoji from the alert wording (⚡ token, 🤝 referral, 💰 funding …).
+const emojiFor = (n, k) => /token|electric/i.test(n.title) ? "⚡" : /referral/i.test(n.title) ? "🤝" : /login/i.test(n.title) ? "🔐" : k.icon;
 
 // Alerts may arrive without a type, so sort them into tabs by their wording.
 const guessKind = (t) => {
@@ -73,7 +75,7 @@ export default function NotificationsScreen({ navigation }) {
           return (
             <View style={[styles.card, n.unread && styles.cardUnread]}>
               <View style={[styles.icon, { backgroundColor: k.color + "24" }]}>
-                <Ionicons name={k.icon} size={20} color={k.color} />
+                <Text style={{ fontSize: 18 }}>{emojiFor(n, k)}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.title} numberOfLines={1}>{n.title}</Text>

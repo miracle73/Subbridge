@@ -21,13 +21,13 @@ import Toast from "../components/Toast";
 import AddMoneySheet from "../components/AddMoneySheet";
 
 const SERVICES = [
-  { id: "airtime", icon: "phone-portrait-outline", label: "Airtime", screen: "Airtime", tint: "#E8EDFF", color: "#1A3CE8" },
-  { id: "data", icon: "wifi-outline", label: "Data", screen: "Data", tint: "#FFF3D6", color: "#E08A00" },
-  { id: "cable", icon: "tv-outline", label: "Cable TV", screen: "CableTv", tint: "#E3F8EE", color: "#0E9F5A" },
-  { id: "electricity", icon: "flash-outline", label: "Electricity", screen: "Electricity", tint: "#FFE8E6", color: "#F04438" },
-  { id: "a2c", icon: "swap-horizontal-outline", label: "Airtime to Cash", screen: "AirtimeToCash", tint: "#EFE6FF", color: "#7A3CE8" },
-  { id: "ref", icon: "people-outline", label: "Referral", screen: "Rewards", tint: "#E0F6FF", color: "#0A8BC2" },
-];
+  ["data", "📶", "Data", "Data", "#FFF3D6"], ["airtime", "📱", "Airtime", "Airtime", "#E8EDFF"],
+  ["cable", "📺", "Cable", "CableTv", "#E3F8EE"], ["electricity", "⚡", "Electricity", "Electricity", "#FFE8E6"],
+  ["datacard", "💳", "Data Card", null, "#E0F6FF"], ["bonus", "🎁", "Bonus to Wallet", "Rewards", "#FFF3D6"],
+  ["a2c", "💱", "Airtime to Cash", "AirtimeToCash", "#EFE6FF"], ["rpin", "🔢", "Recharge Pin", null, "#E3F8EE"],
+  ["edu", "🎓", "Edu Pin", null, "#E8EDFF"], ["affiliate", "🌐", "Affiliate Site", null, "#FFE8E6"],
+  ["refs", "🤝", "My Referrals", "Rewards", "#E0F6FF"], ["more", "⋯", "More", null, "#F1F3FA"],
+].map(([id, icon, label, screen, tint]) => ({ id, icon, label, screen, tint }));
 
 const TX_ICONS = {
   airtime: "phone-portrait-outline", data: "wifi-outline", cable: "tv-outline",
@@ -194,7 +194,7 @@ export default function HomeScreen({ navigation }) {
         <View style={st.headerLeft}>
           <View style={st.avatar}><Text style={st.avatarText}>{initials}</Text></View>
           <View>
-            <Text style={st.greeting}>{greet} 👋</Text>
+            <Text style={st.greeting}>Welcome 👋</Text>
             <Text style={st.username}>{first}</Text>
           </View>
         </View>
@@ -204,8 +204,15 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity style={st.iconBtn} onPress={() => go("Notifications")}>
             <Ionicons name="notifications-outline" size={18} color={dark ? DARK.text : C.text} />
+            <View style={st.bellDot} />
           </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={st.pkgRow}>
+        <LinearGradient colors={[C.primary, "#4F8BFF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.pkg}>
+          <Text style={st.pkgText}>👑  API PACKAGE</Text>
+        </LinearGradient>
       </View>
 
       <ScrollView
@@ -270,9 +277,9 @@ export default function HomeScreen({ navigation }) {
           <Text style={st.sectionTitle}>Services</Text>
           <View style={st.servicesGrid}>
             {SERVICES.map((s) => (
-              <PressScale key={s.id} style={st.serviceItem} onPress={() => go(s.screen)}>
-                <View style={[st.serviceIcon, { backgroundColor: s.tint }]}>
-                  <Ionicons name={s.icon} size={22} color={s.color} />
+              <PressScale key={s.id} style={st.serviceItem} onPress={() => (s.screen ? go(s.screen) : showToast(`${s.label} is coming soon`, "success"))}>
+                <View style={[st.serviceIcon, { backgroundColor: dark ? DARK.cardAlt : s.tint }]}>
+                  <Text style={{ fontSize: 22 }}>{s.icon}</Text>
                 </View>
                 <Text style={st.serviceLabel} numberOfLines={2}>{s.label}</Text>
               </PressScale>
@@ -286,8 +293,8 @@ export default function HomeScreen({ navigation }) {
           <LinearGradient colors={[C.gold, "#FF6B2C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.referBanner}>
             <View style={[st.blob, { width: 120, height: 120, top: -30, right: -20 }]} />
             <View style={{ flex: 1 }}>
-              <Text style={st.referTitle}>Refer & earn</Text>
-              <Text style={st.referSub}>Earn a bonus for every friend who joins</Text>
+              <Text style={st.referTitle}>Refer & earn ₦50</Text>
+              <Text style={st.referSub}>Per friend who funds their wallet</Text>
             </View>
             <Text style={{ fontSize: 34 }}>🎉</Text>
           </LinearGradient>
@@ -409,9 +416,13 @@ const styles = StyleSheet.create({
 
   servicesCard: { marginHorizontal: S.xl, marginTop: S.lg, backgroundColor: C.white, borderRadius: 24, padding: S.lg, ...shadow },
   servicesGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: S.md, rowGap: S.lg },
-  serviceItem: { width: "33.33%", alignItems: "center" },
-  serviceIcon: { width: 54, height: 54, borderRadius: 27, justifyContent: "center", alignItems: "center", marginBottom: 6 },
-  serviceLabel: { fontSize: F.sm, fontWeight: "600", color: C.text, textAlign: "center" },
+  serviceItem: { width: "25%", alignItems: "center" },
+  bellDot: { position: "absolute", top: 9, right: 10, width: 9, height: 9, borderRadius: 5, backgroundColor: C.debit, borderWidth: 1.5, borderColor: C.white },
+  pkgRow: { paddingHorizontal: S.xl, marginTop: -4, marginBottom: S.sm },
+  pkg: { alignSelf: "flex-start", borderRadius: 13, paddingHorizontal: 14, height: 26, justifyContent: "center" },
+  pkgText: { fontSize: 11, fontWeight: "900", color: C.white, letterSpacing: 0.8 },
+  serviceIcon: { width: 52, height: 52, borderRadius: 26, justifyContent: "center", alignItems: "center", marginBottom: 6 },
+  serviceLabel: { fontSize: 11, fontWeight: "600", color: C.text, textAlign: "center", paddingHorizontal: 2 },
 
   referBanner: { borderRadius: 22, padding: S.lg, flexDirection: "row", alignItems: "center", overflow: "hidden" },
   referTitle: { fontSize: F.xxl, fontWeight: "900", color: C.white },
