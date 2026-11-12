@@ -490,7 +490,7 @@ export default function DataScreen({ navigation }) {
       <ServiceHeader title="Buy Data" onBack={() => navigation.goBack()} />
       <ServiceHero title="Data bundles" subtitle="All networks · instant" emoji="📶" />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 200 + insets.bottom }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220 + insets.bottom }} keyboardShouldPersistTaps="handled">
         <Label>Network</Label>
         <NetworkChips items={networks} selectedId={network?.id} onSelect={handleNetwork} />
 
@@ -512,7 +512,7 @@ export default function DataScreen({ navigation }) {
             const on = plan?.id === p.id;
             const Card = on ? LinearGradient : View;
             return (
-              <TouchableOpacity key={p.id} style={{ width: "31.5%" }} activeOpacity={0.85} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPlan(p); }}>
+              <TouchableOpacity key={p.id} style={{ width: "31%" }} activeOpacity={0.85} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPlan(p); }}>
                 <Card {...(on ? { colors: [C.primary, C.primaryDark], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } : {})} style={dp.card}>
                   <Text style={[dp.size, on && { color: C.white }]}>{p.dataValue || p.name}</Text>
                   <Text style={[dp.price, on && { color: C.gold }]}>{fmtShort(p.amount)}</Text>

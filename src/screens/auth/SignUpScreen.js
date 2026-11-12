@@ -25,6 +25,8 @@ export default function SignUpScreen({ navigation }) {
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [pinStage, setPinStage] = useState("pin");
+  const pinsRef = useRef({ pin: "", confirmPin: "" });
+  pinsRef.current = { pin, confirmPin };
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -178,7 +180,9 @@ export default function SignUpScreen({ navigation }) {
     setStep(3);
   };
 
-  const handleSignUp = async () => {
+  const handleSignUp = async (typed) => {
+    // Use the digits the keypad just produced; React state may not have updated yet.
+    const { pin, confirmPin } = typed || pinsRef.current;
     if (submittingRef.current) return;
     if (pin.length !== 4) {
       setErrorModalMessage("PIN must be 4 digits");
@@ -275,7 +279,7 @@ export default function SignUpScreen({ navigation }) {
       if (pinStage === "pin") { const p = (pin + k).slice(0, 4); setPin(p); if (p.length === 4) setTimeout(() => setPinStage("confirm"), 260); return; }
       const next = (confirmPin + k).slice(0, 4);
       setConfirmPin(next);
-      if (next.length === 4) setTimeout(() => (next === pin ? handleSignUp() : (setErrorModalMessage("PINs do not match"), setShowErrorModal(true), setConfirmPin(""), setPin(""), setPinStage("pin"))), 200);
+      if (next.length === 4) setTimeout(() => (next === pin ? handleSignUp({ pin, confirmPin: next }) : (setErrorModalMessage("PINs do not match"), setShowErrorModal(true), setConfirmPin(""), setPin(""), setPinStage("pin"))), 200);
     };
     return (
       <>

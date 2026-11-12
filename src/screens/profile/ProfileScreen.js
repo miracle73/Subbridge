@@ -1,9 +1,11 @@
 import { useDarkMode, darkVariant, DARK } from "../../utils/darkMode";
 import { FadeIn, Float } from "../../components/Motion";
 import { brandAlert } from "../../components/BrandDialog";
+import { useFocusEffect } from "@react-navigation/native";
+import { useAvatar } from "../../utils/avatar";
 import React, { useState, useCallback } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar, Switch,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar, Switch, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +22,7 @@ import Preloader from "../../components/Preloader";
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [dark, toggleDark] = useDarkMode();
+  const photo = useAvatar();
   const st = dark ? darkStyles : styles;
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +54,8 @@ export default function ProfileScreen({ navigation }) {
       setLoading(false);
     }
   }, []);
+
+  useFocusEffect(useCallback(() => { Biometrics.isEnabled().then(setBioEnabled); refreshBioKeys(); }, []));
 
   React.useEffect(() => {
     fetchProfile();
@@ -150,7 +155,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={[st.spark, { top: insets.top + 20, left: 30 }]}>✦</Text>
           <Text style={[st.spark, { top: insets.top + 110, right: 40, fontSize: 12 }]}>✦</Text>
           <View style={st.avatar}>
-            <Text style={st.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
+            {photo ? <Image source={{ uri: photo }} style={{ width: 88, height: 88, borderRadius: 44 }} /> : <Text style={st.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>}
             <View style={st.onlineDot} />
           </View>
           <Text style={st.name}>{user?.firstName} {user?.lastName}</Text>
@@ -173,7 +178,7 @@ export default function ProfileScreen({ navigation }) {
                       <View style={st.rowIcon}><Text style={{ fontSize: 16 }}>🫆</Text></View>
                       <View style={{ flex: 1 }}>
                         <Text style={st.rowLabel}>Biometrics ({bioLabel})</Text>
-                        {bioEnabled && !bioKeys ? <Text style={st.setupHint}>Setup needed — tap to finish</Text> : null}
+                        
                       </View>
                     </TouchableOpacity>
                     <Switch value={bioEnabled} onValueChange={toggleBiometric} trackColor={{ false: C.border, true: C.primary }} thumbColor={C.white} />

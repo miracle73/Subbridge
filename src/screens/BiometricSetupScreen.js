@@ -87,6 +87,54 @@ export default function BiometricSetupScreen({ navigation }) {
     );
   };
 
+  // Registers the payment key quietly; returns true on success.
+  const registerKey = async () => {
+    try {
+      let publicKeyPem = await BiometricCrypto.getPublicKeyPem();
+      if (!publicKeyPem) publicKeyPem = await withTimeout(BiometricCrypto.generateKeyPair(), 8000);
+      const result = await withTimeout(api.registerBiometricKey(publicKeyPem), 8000);
+      return !!result?.success;
+    } catch (e) { return false; }
+  };
+
+  // Enable Biometrics: confirm with the phone's fingerprint / Face ID, turn on sign-in and payments, then go back.
+  const enableAll = async () => {
+    if (generating) return;
+    const ok = await Biometrics.authenticate("Enable biometrics for SubBridge");
+    if (!ok) return;
+    setGenerating(true);
+    await Biometrics.setEnabled(true);
+    setSignInOn(true);
+    await registerKey();
+    setGenerating(false);
+    navigation.goBack();
+  };
+
+  const disableAll = () => {
+    brandAlert("Disable biometrics?", "You will sign in and approve payments with your PIN instead.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Disable", style: "destructive", onPress: async () => {
+        setLoading(true);
+        await Biometrics.setEnabled(false);
+        setSignInOn(false);
+        try { await api.deregisterBiometric(); await BiometricCrypto.deleteKeys(); } catch (e) {}
+        await checkStatus();
+        setLoading(false);
+      } },
+    ]);
+  };
+
+  const togglePayments = async () => {
+    if (generating) return;
+    if (isRegistered) { handleDeregister(); return; }
+    const ok = await Biometrics.authenticate("Approve payments with biometrics");
+    if (!ok) return;
+    setGenerating(true);
+    await registerKey();
+    await checkStatus();
+    setGenerating(false);
+  };
+
   const doRegister = async () => {
     setGenerating(true);
     try {
@@ -170,25 +218,25 @@ export default function BiometricSetupScreen({ navigation }) {
               <View style={[styles.knob, signInOn && { alignSelf: "flex-end" }]} />
             </View>
           </TouchableOpacity>
-          <View style={[styles.optRow, { marginTop: S.md }]}>
+          <TouchableOpacity style={[styles.optRow, { marginTop: S.md }]} onPress={togglePayments} activeOpacity={0.8}>
             <Text style={styles.optLabel}>Approve payments</Text>
             <View style={[styles.toggle, isRegistered && styles.toggleOn]}>
               <View style={[styles.knob, isRegistered && { alignSelf: "flex-end" }]} />
             </View>
-          </View>
+          </TouchableOpacity>
           {status?.createdAt ? (
             <Text style={styles.since}>Active since {new Date(status.createdAt).toLocaleDateString()}</Text>
           ) : null}
 
           <View style={{ flex: 1 }} />
 
-          {!isRegistered ? (
-            <TouchableOpacity style={[styles.btn, generating && { opacity: 0.6 }]} onPress={handleRegister} disabled={generating} activeOpacity={0.85}>
-              {generating ? <ActivityIndicator color={C.primary} size="small" /> : <Text style={styles.btnText}>Enable {isFace ? "Face ID" : "Fingerprint"}</Text>}
+          {!(isRegistered || signInOn) ? (
+            <TouchableOpacity style={[styles.btn, generating && { opacity: 0.6 }]} onPress={enableAll} disabled={generating} activeOpacity={0.85}>
+              {generating ? <ActivityIndicator color={C.primary} size="small" /> : <Text style={styles.btnText}>Enable Biometrics</Text>}
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.btnGhost} onPress={handleDeregister} activeOpacity={0.85}>
-              <Text style={styles.btnGhostText}>Disable {isFace ? "Face ID" : "Fingerprint"}</Text>
+            <TouchableOpacity style={styles.btnGhost} onPress={disableAll} activeOpacity={0.85}>
+              <Text style={styles.btnGhostText}>Disable Biometrics</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

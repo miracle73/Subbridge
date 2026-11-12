@@ -63,7 +63,7 @@ export default function PaymentSummary({ visible, product, kind, logo, subtitle,
           </View>
         </ScrollView>
 
-        <View style={[styles.bar, { paddingBottom: insets.bottom + 36 }]}>
+        <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}>
           <TouchableOpacity style={styles.payBtn} onPress={onPay} activeOpacity={0.85}>
             <Text style={styles.payText}>Pay {fmtShort(amount)}</Text>
           </TouchableOpacity>

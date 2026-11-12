@@ -46,7 +46,7 @@ export default function SupportScreen({ navigation }) {
         <View style={{ width: 22 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 160 }]}>
         <Text style={styles.sectionTitle}>Contact Us</Text>
 
         <TouchableOpacity style={styles.contactCard} onPress={() => openLink(`https://wa.me/${support?.whatsapp}`)}>

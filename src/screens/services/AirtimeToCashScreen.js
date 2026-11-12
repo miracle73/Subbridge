@@ -74,7 +74,7 @@ export default function AirtimeToCashScreen({ navigation }) {
       <ServiceHeader title="Airtime to Cash" onBack={() => navigation.goBack()} />
       <ServiceHero title="Turn airtime to cash" subtitle="Get up to 85% back" emoji="💱" />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 200 + insets.bottom }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220 + insets.bottom }} keyboardShouldPersistTaps="handled">
         <Label>Network</Label>
         <NetworkChips items={MOCK_NETWORKS} selectedId={network?.id} onSelect={setNetwork} />
 

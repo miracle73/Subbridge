@@ -313,7 +313,7 @@ export default function ElectricityScreen({ navigation }) {
       <ServiceHeader title="Electricity" onBack={() => navigation.goBack()} />
       <ServiceHero title="Pay power bills" subtitle="Token delivered instantly" emoji="⚡" />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 200 + insets.bottom }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220 + insets.bottom }} keyboardShouldPersistTaps="handled">
         <Label>Disco</Label>
         <TouchableOpacity style={ui.field} onPress={() => setShowProvider(true)} activeOpacity={0.8}>
           <Text style={[ui.input, !provider && { color: C.textLight }]} numberOfLines={1}>{provider?.name || "Select your disco"}</Text>

@@ -271,7 +271,7 @@ export default function AirtimeScreen({ navigation }) {
       <ServiceHeader title="Buy Airtime" onBack={() => navigation.goBack()} />
       <ServiceHero title="Instant top-up" subtitle="All networks · 2% cashback" emoji="📱" />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 200 + insets.bottom }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220 + insets.bottom }} keyboardShouldPersistTaps="handled">
         <Label>Network</Label>
         <NetworkChips items={networks} selectedId={network?.id} onSelect={handleNetwork} />
 

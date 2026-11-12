@@ -1,7 +1,9 @@
 import { withPayStyles } from "../../components/payStyles";
 import { brandAlert } from "../../components/BrandDialog";
+import * as ImagePicker from "expo-image-picker";
+import { useAvatar, setAvatar } from "../../utils/avatar";
 import React, { useState, useCallback } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert, Image, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -73,6 +75,13 @@ export default function EditProfileScreen({ navigation }) {
   if (loading) return <Preloader />;
 
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const photo = useAvatar();
+  const pickPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { brandAlert("Photos access needed", "Allow SubBridge to access your photos to set a profile picture."); return; }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+    if (!res.canceled && res.assets?.[0]?.uri) setAvatar(res.assets[0].uri);
+  };
   const field = (label, value, onChange, locked, keyboardType) => (
     <View style={{ marginTop: 18 }}>
       <Text style={ep.label}>{label}</Text>
@@ -96,22 +105,22 @@ export default function EditProfileScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220 }} keyboardShouldPersistTaps="handled">
-        <View style={ep.avatarWrap}>
-          <View style={ep.avatar}><Text style={ep.avatarText}>{initials || "?"}</Text></View>
+        <TouchableOpacity style={ep.avatarWrap} onPress={pickPhoto} activeOpacity={0.85}>
+          {photo ? <Image source={{ uri: photo }} style={ep.avatar} /> : <View style={ep.avatar}><Text style={ep.avatarText}>{initials || "?"}</Text></View>}
           <View style={ep.camera}><Text style={{ fontSize: 13 }}>📷</Text></View>
-        </View>
+        </TouchableOpacity>
+        <Text style={ep.change}>Tap to change photo</Text>
 
         {field("First name", firstName, setFirstName)}
         {field("Last name", lastName, setLastName)}
         {field("Phone number", phone, setPhone, true, "phone-pad")}
         {field("Email", email, setEmail, true, "email-address")}
-        <Text style={ep.note}>🔒 Phone & email are verified — contact support to change.</Text>
         {saved ? <Text style={ep.saved}>Profile updated!</Text> : null}
       </ScrollView>
 
       <View style={[ep.bar, { paddingBottom: insets.bottom + 24 }]}>
         <TouchableOpacity style={[ep.btn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving} activeOpacity={0.85}>
-          <Text style={ep.btnText}>{saving ? "Saving..." : "Save changes"}</Text>
+          {saving ? <ActivityIndicator color={C.white} /> : <Text style={ep.btnText}>Save changes</Text>}
         </TouchableOpacity>
       </View>
     </View>
@@ -132,7 +141,8 @@ const ep = StyleSheet.create({
   field: { flexDirection: "row", alignItems: "center", backgroundColor: C.white, borderRadius: 16, height: 54, paddingHorizontal: 20, ...epShadow },
   input: { flex: 1, fontSize: 15, fontWeight: "600", color: C.text },
   note: { fontSize: 12, fontWeight: "500", color: C.textMuted, marginTop: 14 },
-  saved: { fontSize: 13, fontWeight: "700", color: C.credit, marginTop: 12 },
+  saved: { fontSize: 13, fontWeight: "700", color: C.credit, marginTop: 16, textAlign: "center" },
+  change: { fontSize: 12, fontWeight: "700", color: C.primary, textAlign: "center", marginTop: 8 },
   bar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 12, backgroundColor: C.bg },
   btn: { backgroundColor: C.primary, borderRadius: 18, height: 56, alignItems: "center", justifyContent: "center", shadowColor: C.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4 },
   btnText: { fontSize: 16, fontWeight: "800", color: C.white },

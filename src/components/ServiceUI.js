@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "../utils/theme";
 import { getNetworkLogo } from "../utils/logos";
@@ -73,9 +74,10 @@ export function SegTabs({ items, value, onChange }) {
   );
 }
 
-export function PayBar({ label, onPress, disabled, bottom = 0 }) {
+export function PayBar({ label, onPress, disabled }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={[ui.bar, { paddingBottom: 20 + bottom }]}>
+    <View style={[ui.bar, { paddingBottom: 20 + Math.max(insets.bottom, 16) }]}>
       <PressScale style={[ui.payBtn, disabled && ui.payOff]} onPress={onPress} disabled={disabled} scale={0.97}>
         <Text style={[ui.payText, disabled && { color: C.textMuted }]}>{label}</Text>
       </PressScale>
@@ -104,8 +106,8 @@ export const ui = StyleSheet.create({
   segItem: { flex: 1, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   segOn: { backgroundColor: C.primary },
   segText: { fontSize: 14, fontWeight: "800", color: C.textMuted },
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
-  amount: { width: "31.5%", height: 50, borderRadius: 16, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  amount: { width: "31%", height: 50, borderRadius: 16, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
   amountOn: { backgroundColor: C.primary },
   amountText: { fontSize: 15, fontWeight: "800", color: C.text },
   note: { fontSize: 13, fontWeight: "500", color: C.textMuted, textAlign: "center", marginTop: 20 },
