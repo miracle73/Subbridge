@@ -71,49 +71,71 @@ export default function EditProfileScreen({ navigation }) {
 
   if (loading) return <Preloader />;
 
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const field = (label, value, onChange, locked, keyboardType) => (
+    <View style={{ marginTop: 18 }}>
+      <Text style={ep.label}>{label}</Text>
+      <View style={ep.field}>
+        <TextInput style={[ep.input, locked && { color: C.textMuted }]} value={value} onChangeText={onChange} editable={!locked} keyboardType={keyboardType} autoCapitalize={keyboardType ? "none" : "words"} />
+        {locked ? <Text style={{ fontSize: 14 }}>🔒</Text> : null}
+      </View>
+    </View>
+  );
+
+  // Design "Edit Profile": avatar with camera badge, four fields (phone + email locked), Save changes.
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[ep.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
+      <View style={ep.header}>
+        <TouchableOpacity style={ep.back} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color={C.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={{ width: 22 }} />
+        <Text style={ep.title}>Edit Profile</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{firstName?.charAt(0)}{lastName?.charAt(0)}</Text>
-          </View>
-          <TouchableOpacity style={styles.changePhoto}>
-            <Ionicons name="camera-outline" size={16} color={C.primary} />
-            <Text style={styles.changePhotoText}>Change Photo</Text>
-          </TouchableOpacity>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+        <View style={ep.avatarWrap}>
+          <View style={ep.avatar}><Text style={ep.avatarText}>{initials || "?"}</Text></View>
+          <View style={ep.camera}><Text style={{ fontSize: 13 }}>📷</Text></View>
         </View>
 
-        <Text style={styles.label}>First Name</Text>
-        <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
-
-        <Text style={styles.label}>Last Name</Text>
-        <TextInput style={styles.input} value={lastName} onChangeText={setLastName} />
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" />
-
-        <Text style={styles.label}>Phone</Text>
-        <TextInput style={[styles.input, { color: C.textMuted }]} value={phone} editable={false} />
-
-        {saved && <Text style={styles.saved}>Profile updated!</Text>}
-
-        <TouchableOpacity style={[styles.btn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-          <Text style={styles.btnText}>{saving ? "Saving..." : "Save Changes"}</Text>
-        </TouchableOpacity>
+        {field("First name", firstName, setFirstName)}
+        {field("Last name", lastName, setLastName)}
+        {field("Phone number", phone, setPhone, true, "phone-pad")}
+        {field("Email", email, setEmail, true, "email-address")}
+        <Text style={ep.note}>🔒 Phone & email are verified — contact support to change.</Text>
+        {saved ? <Text style={ep.saved}>Profile updated!</Text> : null}
       </ScrollView>
+
+      <View style={[ep.bar, { paddingBottom: insets.bottom + 24 }]}>
+        <TouchableOpacity style={[ep.btn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving} activeOpacity={0.85}>
+          <Text style={ep.btnText}>{saving ? "Saving..." : "Save changes"}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
+
+const epShadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 };
+const ep = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingVertical: 12 },
+  back: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.white, alignItems: "center", justifyContent: "center", ...epShadow },
+  title: { fontSize: 18, fontWeight: "800", color: C.text },
+  avatarWrap: { alignSelf: "center", marginTop: 12 },
+  avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: C.primary + "1F", alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 28, fontWeight: "900", color: C.primary },
+  camera: { position: "absolute", right: 0, bottom: 4, width: 30, height: 30, borderRadius: 15, backgroundColor: C.primary, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.bg },
+  label: { fontSize: 13, fontWeight: "600", color: C.textMuted, marginBottom: 8 },
+  field: { flexDirection: "row", alignItems: "center", backgroundColor: C.white, borderRadius: 16, height: 54, paddingHorizontal: 20, ...epShadow },
+  input: { flex: 1, fontSize: 15, fontWeight: "600", color: C.text },
+  note: { fontSize: 12, fontWeight: "500", color: C.textMuted, marginTop: 14 },
+  saved: { fontSize: 13, fontWeight: "700", color: C.credit, marginTop: 12 },
+  bar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 12, backgroundColor: C.bg },
+  btn: { backgroundColor: C.primary, borderRadius: 18, height: 56, alignItems: "center", justifyContent: "center", shadowColor: C.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4 },
+  btnText: { fontSize: 16, fontWeight: "800", color: C.white },
+});
 
 const styles = withPayStyles(StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white },

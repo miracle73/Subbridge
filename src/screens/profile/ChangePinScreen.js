@@ -1,4 +1,5 @@
 import { withPayStyles } from "../../components/payStyles";
+import { ServiceHeader } from "../../components/ServiceUI";
 import React, { useState, useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated, StatusBar, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -121,7 +122,7 @@ export default function ChangePinScreen({ navigation }) {
   };
 
   const pinValue = step === 1 ? currentPin : step === 2 ? newPin : confirmPin;
-  const titles = { 1: "Enter Current PIN", 2: "Enter New PIN", 3: "Confirm New PIN" };
+  const titles = { 1: "Enter current PIN", 2: "Enter new PIN", 3: "Confirm new PIN" };
 
   if (loading) return <Preloader />;
 
@@ -153,36 +154,50 @@ export default function ChangePinScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <View style={[styles.header]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Change PIN</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ServiceHeader title="Change PIN" onBack={() => navigation.goBack()} />
 
-      <View style={[styles.center, { paddingBottom: insets.bottom + S.xl }]}>
-        <View style={{ flexDirection: "row", gap: 8, alignSelf: "stretch", paddingHorizontal: S.xl, marginBottom: S.base }}>
-          {[1, 2, 3].map((n) => <View key={n} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: n <= step ? C.primary : "#E1E5F2" }} />)}
+      <View style={cp.body}>
+        <View style={cp.bars}>
+          {[1, 2, 3].map((n) => <View key={n} style={[cp.bar, n <= step && { backgroundColor: C.primary }]} />)}
         </View>
-        <Text style={styles.stepLabel}>Step {step} of 3</Text>
-        <Text style={styles.title}>{titles[step]}</Text>
-        <Animated.View style={{ transform: [{ translateX: shake }] }}>
-          <PinDots length={4} filled={pinValue.length} />
+        <Text style={cp.step}>Step {step} of 3</Text>
+        <Text style={cp.title}>{titles[step]}</Text>
+        <Text style={cp.sub}>{step === 1 ? "Then set and confirm a new 4‑digit PIN" : step === 2 ? "Choose 4 digits you'll remember" : "Re-enter the same 4 digits"}</Text>
+        <Animated.View style={[cp.boxes, { transform: [{ translateX: shake }] }]}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={[cp.box, i < pinValue.length && cp.boxOn]}>{i < pinValue.length ? <View style={cp.dot} /> : null}</View>
+          ))}
         </Animated.View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {verifying ? <Text style={{ fontSize: F.sm, color: C.textMuted, marginTop: S.md }}>Verifying...</Text> : null}
       </View>
 
-      <View style={{ paddingBottom: insets.bottom }}>
+      <View style={{ paddingBottom: insets.bottom + 8, alignItems: "center" }}>
         <PinPad onPress={handleKey} />
+        <TouchableOpacity style={{ paddingVertical: 14 }} onPress={() => navigation.navigate("ForgotPassword", { mode: "pin" })}>
+          <Text style={cp.forgot}>Forgot PIN?</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+const cp = StyleSheet.create({
+  body: { flex: 1, paddingHorizontal: 24, paddingTop: 8 },
+  bars: { flexDirection: "row", gap: 8 },
+  bar: { flex: 1, height: 6, borderRadius: 3, backgroundColor: "#E1E5F2" },
+  step: { fontSize: 13, fontWeight: "800", color: C.primary, marginTop: 18 },
+  title: { fontSize: 24, fontWeight: "900", color: C.text, marginTop: 6 },
+  sub: { fontSize: 14, color: C.textMuted, marginTop: 6 },
+  boxes: { flexDirection: "row", gap: 14, alignSelf: "center", marginTop: 40 },
+  box: { width: 48, height: 56, borderRadius: 16, backgroundColor: C.white, alignItems: "center", justifyContent: "center", shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 },
+  boxOn: { backgroundColor: C.primary + "1A" },
+  dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.primary },
+  forgot: { fontSize: 15, fontWeight: "800", color: C.primary },
+});
+
 const styles = withPayStyles(StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.white },
+  container: { flex: 1, backgroundColor: C.bg },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.xl, paddingVertical: S.base },
   headerTitle: { fontSize: F.lg, fontWeight: "800", color: C.white },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },

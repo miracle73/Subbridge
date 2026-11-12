@@ -112,7 +112,7 @@ export default function ForgotPasswordScreen({ navigation, route }) {
         </View>
         <Text style={styles.title}>{mode === "pin" ? "Forgot PIN?" : "Forgot password?"}</Text>
         <Text style={styles.subtitle}>
-          No stress — we'll send a 4‑digit code to reset it.
+          {mode === "pin" ? "We'll send a 4‑digit code to the phone or email linked to your account." : "No stress — we'll send a 4‑digit code to reset it."}
         </Text>
 
         <View style={styles.form}>
