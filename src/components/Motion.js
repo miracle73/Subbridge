@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Easing, Pressable } from "react-native";
+import { Animated, Easing, Pressable, StyleSheet } from "react-native";
 
 /** Fades and slides its children up on mount; use `delay` to stagger sections. */
 export function FadeIn({ delay = 0, distance = 18, duration = 520, style, children }) {
@@ -14,13 +14,19 @@ export function FadeIn({ delay = 0, distance = 18, duration = 520, style, childr
   );
 }
 
-/** Springy press: shrinks slightly while held and bounces back on release. */
+/** Springy press: shrinks slightly while held and bounces back on release.
+ *  Layout keys (width, flex, margins, alignment) go on the outer Pressable so
+ *  percentage widths and grids size correctly; the rest goes on the scaled view. */
+const OUTER = ["width", "minWidth", "maxWidth", "flex", "flexGrow", "flexShrink", "flexBasis", "alignSelf", "margin", "marginTop", "marginBottom", "marginLeft", "marginRight", "marginHorizontal", "marginVertical", "position", "top", "left", "right", "bottom"];
 export function PressScale({ onPress, style, children, disabled, scale = 0.95 }) {
   const v = useRef(new Animated.Value(1)).current;
   const to = (n) => Animated.spring(v, { toValue: n, friction: 5, tension: 260, useNativeDriver: true }).start();
+  const flat = StyleSheet.flatten(style) || {};
+  const outer = {}, inner = {};
+  Object.keys(flat).forEach((k) => { (OUTER.includes(k) ? outer : inner)[k] = flat[k]; });
   return (
-    <Pressable onPress={onPress} disabled={disabled} onPressIn={() => to(scale)} onPressOut={() => to(1)}>
-      <Animated.View style={[style, { transform: [{ scale: v }] }]}>{children}</Animated.View>
+    <Pressable style={outer} onPress={onPress} disabled={disabled} onPressIn={() => to(scale)} onPressOut={() => to(1)}>
+      <Animated.View style={[inner, { transform: [{ scale: v }] }]}>{children}</Animated.View>
     </Pressable>
   );
 }

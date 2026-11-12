@@ -72,7 +72,8 @@
     ],
     "platforms": [
       "android",
-      "ios"
+      "ios",
+      "web"
     ],
     "extra": {
       "eas": {

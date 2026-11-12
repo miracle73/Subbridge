@@ -248,27 +248,23 @@ export default function HomeScreen({ navigation }) {
 
         <FadeIn delay={90}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={312} decelerationRate="fast" contentContainerStyle={{ paddingHorizontal: S.xl, gap: S.md }} style={{ marginTop: S.lg }}>
-          <LinearGradient colors={[C.primaryMid, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.acctCard}>
-            <View style={[st.blob, { width: 140, height: 140, top: -40, right: -30 }]} />
-            <View style={st.rowBetween}>
-              <Text style={st.acctNo} selectable>{acctNo || "—"}</Text>
-              <TouchableOpacity style={st.copyBtn} onPress={copyAccount} disabled={!acctNo}>
-                <Ionicons name="copy-outline" size={16} color={C.white} />
-              </TouchableOpacity>
-            </View>
-            <Text style={st.acctLabel}>ACCOUNT NAME</Text>
-            <Text style={st.acctName} numberOfLines={1}>{acctName}</Text>
-            <View style={[st.row, { marginTop: S.sm }]}>
-              <View style={st.bankPill}><Text style={st.bankPillText} numberOfLines={1}>{bankName}</Text></View>
-              <Text style={st.fee}>Instant funding</Text>
-            </View>
-          </LinearGradient>
-          <TouchableOpacity onPress={() => go("Data")} activeOpacity={0.9}>
-            <LinearGradient colors={[C.gold, "#FF6B2C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[st.acctCard, { width: 220, flex: 1 }]}>
-              <Text style={st.promoTitle}>🎁 Hot data deals</Text>
-              <Text style={st.promoSub}>Cheap bundles on all networks. Tap to buy.</Text>
+          {(wallet?.accounts?.length ? wallet.accounts : [{ bankName, accountNumber: acctNo, fee: "Instant funding" }]).map((a, i) => (
+            <LinearGradient key={a.accountNumber || i} colors={i % 2 ? [C.primary, C.primaryDark] : [C.primaryMid, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.acctCard}>
+              <View style={[st.blob, { width: 140, height: 140, top: -40, right: -30 }]} />
+              <View style={st.rowBetween}>
+                <Text style={st.acctNo} selectable>{a.accountNumber || "—"}</Text>
+                <TouchableOpacity style={st.copyBtn} onPress={async () => { await Clipboard.setStringAsync(a.accountNumber || ""); showToast("Account number copied", "success"); }} disabled={!a.accountNumber}>
+                  <Ionicons name="copy-outline" size={16} color={C.white} />
+                </TouchableOpacity>
+              </View>
+              <Text style={st.acctLabel}>ACCOUNT NAME</Text>
+              <Text style={st.acctName} numberOfLines={1}>{acctName}</Text>
+              <View style={[st.row, { marginTop: S.sm }]}>
+                <View style={st.bankPill}><Text style={st.bankPillText} numberOfLines={1}>{a.bankName}</Text></View>
+                <Text style={st.fee}>{a.fee || "Instant funding"}</Text>
+              </View>
             </LinearGradient>
-          </TouchableOpacity>
+          ))}
         </ScrollView>
         </FadeIn>
 
@@ -445,7 +441,7 @@ const styles = StyleSheet.create({
   txStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginTop: 4 },
   txStatusText: { fontSize: 10, fontWeight: "800", textTransform: "capitalize" },
 
-  nOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,16,48,0.42)", paddingHorizontal: S.xl, zIndex: 100, overflow: "hidden" },
+  nOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,16,48,0.86)", paddingHorizontal: S.xl, zIndex: 100, overflow: "hidden" },
   nLogo: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
   nBrand: { fontSize: F.base, fontWeight: "900", color: C.white, letterSpacing: 0.5 },
   nSub: { fontSize: F.sm, color: C.onPrimaryMuted, fontWeight: "500" },
