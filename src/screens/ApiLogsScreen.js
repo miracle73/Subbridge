@@ -1,3 +1,4 @@
+import { brandAlert } from "../components/BrandDialog";
 import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,7 +25,7 @@ export default function ApiLogsScreen({ navigation }) {
   }, [refresh]);
 
   const clearAll = () => {
-    Alert.alert("Clear API logs?", "All recorded request/response entries will be removed.", [
+    brandAlert("Clear API logs?", "All recorded request/response entries will be removed.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Clear",

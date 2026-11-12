@@ -69,8 +69,7 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
     const next = pin + k;
     setPin(next);
     if (next.length === 4) {
-      onPinAuth(next);
-      onClose();
+      setTimeout(() => { onPinAuth(next); onClose(); }, 220);
     }
   };
 
@@ -174,7 +173,7 @@ const fig = StyleSheet.create({
   avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
   topSub: { fontSize: 14, color: C.onPrimaryMuted, fontWeight: "500" },
   topTitle: { fontSize: 22, color: C.white, fontWeight: "900", marginTop: 2 },
-  sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -32, alignItems: "center", paddingTop: 32, paddingBottom: 40 },
+  sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -32, alignItems: "center", paddingTop: 28, paddingBottom: 56 },
   prompt: { fontSize: 15, fontWeight: "600", color: C.textMuted, marginBottom: 24 },
   forgot: { fontSize: 15, fontWeight: "800", color: C.primary },
   initials: { fontSize: 22, fontWeight: "900", color: C.primary },

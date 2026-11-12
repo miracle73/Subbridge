@@ -1,3 +1,4 @@
+import { Gloss } from "../../components/Motion";
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,6 +39,7 @@ export default function AddMoneyScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: S.xl, paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
         <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+<Gloss />
           <View style={styles.blob} />
           <Text style={styles.heroLabel}>Wallet balance</Text>
           <Text style={styles.heroAmount}>{fmt(balance)}</Text>

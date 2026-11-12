@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 /** Fades and slides its children up on mount; use `delay` to stagger sections. */
 export function FadeIn({ delay = 0, distance = 18, duration = 520, style, children }) {
@@ -61,5 +62,12 @@ export function Sparkle({ style, size = 16, delay = 0 }) {
     <Animated.Text pointerEvents="none" style={[{ position: "absolute", color: "#FFD36B", fontSize: size, fontWeight: "800" }, style, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0.3, 1], outputRange: [0.8, 1.15] }) }] }]}>
       ✦
     </Animated.Text>
+  );
+}
+
+/** Glassy top sheen for brand cards (sits under the content, clipped by the card). */
+export function Gloss() {
+  return (
+    <LinearGradient pointerEvents="none" colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0.04)", "rgba(255,255,255,0)"]} locations={[0, 0.45, 1]} style={{ position: "absolute", left: 0, right: 0, top: 0, height: "60%" }} />
   );
 }

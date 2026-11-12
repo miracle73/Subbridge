@@ -1,3 +1,4 @@
+import { brandAlert } from "../components/BrandDialog";
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,7 +30,7 @@ export default function CrashLogsScreen({ navigation }) {
   }, []);
 
   const clearAll = () => {
-    Alert.alert("Clear crash logs?", "All recorded crash entries will be removed.", [
+    brandAlert("Clear crash logs?", "All recorded crash entries will be removed.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Clear",

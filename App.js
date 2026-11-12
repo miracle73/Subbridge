@@ -1,5 +1,6 @@
 import "./src/utils/themeEngine";
 import { useDarkMode } from "./src/utils/darkMode";
+import { BrandDialogHost } from "./src/components/BrandDialog";
 import React, { useState, useEffect, useRef } from "react";
 import { AppState, BackHandler, Platform, Alert, View, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -190,6 +191,7 @@ export default function App() {
         <NavigationContainer key={`${authKey}-${dark}`} ref={navRef} initialState={navStateRef.current} onStateChange={handleNavStateChange}>
           <AppNavigator initialRouteName={initialRoute} />
         </NavigationContainer>
+        <BrandDialogHost />
         {/* Lock is an overlay — the navigator stays mounted underneath so
             the user's screen (and form state) is preserved across lock/unlock. */}
         {locked ? (

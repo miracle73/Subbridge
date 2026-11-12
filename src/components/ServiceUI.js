@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "../utils/theme";
 import { getNetworkLogo } from "../utils/logos";
-import { FadeIn, Float, PressScale } from "./Motion";
+import { FadeIn, Float, PressScale, Gloss } from "./Motion";
 
 // Shared building blocks for the Figma service screens (Airtime, Data, Cable, Electricity, Airtime to Cash).
 const shadow = { shadowColor: "#1A2680", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 };
@@ -25,6 +25,7 @@ export function ServiceHero({ title, subtitle, emoji }) {
   return (
     <FadeIn>
       <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={ui.hero}>
+<Gloss />
         <Float style={ui.heroBlob} range={8} />
         <View style={{ flex: 1 }}>
           <Text style={ui.heroTitle}>{title}</Text>

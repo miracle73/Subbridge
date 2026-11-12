@@ -88,7 +88,15 @@ export function demoResponse(endpoint) {
   if (/mobile\/referral\/earnings/.test(e)) return ok({ results: REFERRAL.recentEarnings, count: REFERRAL.recentEarnings.length });
   if (/mobile\/referral/.test(e)) return ok(REFERRAL);
   if (/mobile\/commission/.test(e)) return ok(REFERRAL.commissionRates);
-  if (/\/support\//.test(e)) return ok({ whatsapp: "2348012345678", email: "support@subbridge.com", phone: "08012345678", faqs: [] });
+  if (/\/support\//.test(e)) return ok({ whatsapp: "2348012345678", email: "support@subbridge.com", phone: "08012345678", faqs: [
+    { q: "How do I fund my wallet?", a: "Tap + Add Funds on the dashboard and transfer to any of your SubBridge account numbers. Your balance updates in seconds." },
+    { q: "How fast is airtime and data delivery?", a: "Instantly. Most purchases land within 5 seconds of confirming your PIN." },
+    { q: "My electricity token didn't arrive. What do I do?", a: "Open the receipt in Transactions — the token is saved there. If it still shows unavailable, tap Support and we'll resend it." },
+    { q: "What happens if a transaction fails?", a: "Failed purchases are refunded to your wallet automatically, usually within a few minutes." },
+    { q: "How do I earn from referrals?", a: "Share your code from Referrals & commission. You earn a bonus when friends sign up and pay their first bill." },
+    { q: "I forgot my PIN or password.", a: "Go to Profile → Forgot PIN, or tap Forgot password on the sign-in screen. We'll send a 4-digit code to reset it." },
+    { q: "Can I use Face ID or fingerprint?", a: "Yes. Open Profile → Biometrics to sign in and approve payments without typing your PIN." },
+  ] });
   if (/\/banks\//.test(e)) return ok([{ code: "058", name: "GTBank" }, { code: "044", name: "Access Bank" }, { code: "999992", name: "OPay" }, { code: "999991", name: "PalmPay" }, { code: "50515", name: "Moniepoint" }]);
   if (/paystack-resolve/.test(e)) return ok({ account_name: "GODWIN CHIDIEBERE", accountName: "GODWIN CHIDIEBERE" });
   if (/bonus-transfer|paystack-bank-transfer|logout|biometric/.test(e)) return ok({});

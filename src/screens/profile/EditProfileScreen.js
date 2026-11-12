@@ -1,4 +1,5 @@
 import { withPayStyles } from "../../components/payStyles";
+import { brandAlert } from "../../components/BrandDialog";
 import React, { useState, useCallback } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -59,11 +60,11 @@ export default function EditProfileScreen({ navigation }) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } else {
-        Alert.alert("Error", res.message || "Failed to update profile");
+        brandAlert("Error", res.message || "Failed to update profile");
       }
     } catch (err) {
       console.error("Save error:", err);
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      brandAlert("Error", "Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -94,7 +95,7 @@ export default function EditProfileScreen({ navigation }) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220 }} keyboardShouldPersistTaps="handled">
         <View style={ep.avatarWrap}>
           <View style={ep.avatar}><Text style={ep.avatarText}>{initials || "?"}</Text></View>
           <View style={ep.camera}><Text style={{ fontSize: 13 }}>📷</Text></View>

@@ -24,6 +24,7 @@ export default function SignUpScreen({ navigation }) {
   const [passStage, setPassStage] = useState("new"); // "new" -> "confirm"
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [pinStage, setPinStage] = useState("pin");
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -173,6 +174,7 @@ export default function SignUpScreen({ navigation }) {
     resetCheck();
     setPin("");
     setConfirmPin("");
+    setPinStage("pin");
     setStep(3);
   };
 
@@ -264,16 +266,16 @@ export default function SignUpScreen({ navigation }) {
   const phoneError = phoneTouched && evPhoneTaken ? "#FF6B6B" : "";
 
   if (step === 3) {
-    const value = pin.length < 4 ? pin : confirmPin;
+    const value = pinStage === "pin" ? pin : confirmPin;
     const onKey = (k) => {
       if (loading) return;
-      if (k === "del") { pin.length < 4 || !confirmPin ? setPin(pin.slice(0, -1)) : setConfirmPin(confirmPin.slice(0, -1)); return; }
+      if (k === "del") { pinStage === "pin" ? setPin(pin.slice(0, -1)) : setConfirmPin(confirmPin.slice(0, -1)); return; }
       if (!/^\d$/.test(k)) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (pin.length < 4) { setPin(pin + k); return; }
+      if (pinStage === "pin") { const p = (pin + k).slice(0, 4); setPin(p); if (p.length === 4) setTimeout(() => setPinStage("confirm"), 260); return; }
       const next = (confirmPin + k).slice(0, 4);
       setConfirmPin(next);
-      if (next.length === 4) setTimeout(() => (next === pin ? handleSignUp() : (setErrorModalMessage("PINs do not match"), setShowErrorModal(true), setConfirmPin(""))), 120);
+      if (next.length === 4) setTimeout(() => (next === pin ? handleSignUp() : (setErrorModalMessage("PINs do not match"), setShowErrorModal(true), setConfirmPin(""), setPin(""), setPinStage("pin"))), 200);
     };
     return (
       <>
@@ -288,13 +290,13 @@ export default function SignUpScreen({ navigation }) {
             <Text style={pinS.sub}>4 digits to approve every payment</Text>
           </View>
           <View style={pinS.sheet}>
-            <Text style={pinS.prompt}>{pin.length < 4 ? "Enter PIN" : "Confirm PIN"}</Text>
+            <Text style={pinS.prompt}>{pinStage === "pin" ? "Enter PIN" : "Confirm PIN"}</Text>
             <View style={pinS.boxes}>
               {[0, 1, 2, 3].map((i) => (
                 <View key={i} style={[pinS.box, i < value.length && pinS.boxOn]}>{i < value.length ? <View style={pinS.dot} /> : null}</View>
               ))}
             </View>
-            <Text style={pinS.hint}>{loading ? "Creating your account..." : pin.length < 4 ? "Confirm PIN next →" : "Re-enter the same 4 digits"}</Text>
+            <Text style={pinS.hint}>{loading ? "Creating your account..." : pinStage === "pin" ? "Confirm PIN next →" : "Re-enter the same 4 digits"}</Text>
             <View style={{ flex: 1 }} />
             <View style={{ paddingBottom: 32 }}><PinPad onPress={onKey} /></View>
           </View>
@@ -357,7 +359,6 @@ export default function SignUpScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
             ))}
-            <Text style={{ fontSize: 12, fontWeight: "600", color: "#C9D2FF", alignSelf: "flex-start" }}>🔢 Numbers only — numeric keypad opens</Text>
           </View>
         )}
 
@@ -425,7 +426,7 @@ export default function SignUpScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.signupLink} onPress={goBack}>
+        <TouchableOpacity style={styles.signupLink} onPress={() => navigation.navigate("Auth")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Text style={styles.signupText}>Already have an account? <Text style={styles.signupBold}>Sign In</Text></Text>
         </TouchableOpacity>
       </ScrollView>
@@ -479,8 +480,8 @@ const styles = withAuthStyles(StyleSheet.create({
     width: "100%", alignItems: "center", marginTop: S.xl,
   },
   btnText: { color: C.primary, fontSize: F.lg, fontWeight: "700" },
-  signupLink: { marginTop: S.xl },
-  signupText: { fontSize: F.md, color: "rgba(255,255,255,0.6)" },
+  signupLink: { marginTop: S.xl, marginBottom: 48, paddingVertical: 6 },
+  signupText: { fontSize: F.md, color: "#C9D2FF", textAlign: "center" },
   signupBold: { color: C.white, fontWeight: "700" },
   stepLabel: { fontSize: 13, fontWeight: "800", color: C.gold, marginBottom: 6 },
   segRow: { flexDirection: "row", gap: 8, marginTop: S.base, marginBottom: S.lg },

@@ -48,12 +48,11 @@ export default function ChangePasswordScreen({ navigation }) {
     <View style={[s.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <ServiceHeader title="Change Password" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220 }} keyboardShouldPersistTaps="handled">
         <View style={s.icon}><Text style={{ fontSize: 32 }}>🔐</Text></View>
         {field("Current password", current, setCurrent)}
         {field("New password (5 digits)", next, setNext)}
         {field("Confirm new password", confirm, setConfirm)}
-        <Text style={s.hint}>🔢 Numbers only — numeric keypad opens</Text>
       </ScrollView>
       <View style={[s.bar, { paddingBottom: insets.bottom + 24 }]}>
         <TouchableOpacity style={[s.btn, saving && { opacity: 0.6 }]} onPress={update} disabled={saving} activeOpacity={0.85}>

@@ -1,6 +1,7 @@
 import { withPayStyles } from "../../components/payStyles";
 import PaymentSummary from "../../components/PaymentSummary";
 import { ServiceHeader, Label, SegTabs, PayBar, ui } from "../../components/ServiceUI";
+import { brandAlert } from "../../components/BrandDialog";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, ActivityIndicator, Alert,
@@ -29,7 +30,7 @@ async function signTransaction(txnId, txnData) {
   const auth = await BiometricCrypto.authenticate();
   if (!auth.success) return { signature: null };
   const challengeRes = await api.requestChallenge(txnId, txnData);
-  if (!challengeRes.success) { Alert.alert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
+  if (!challengeRes.success) { brandAlert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
   const signature = await BiometricCrypto.signChallenge(challengeRes.data.challenge);
   return { signature, transactionId: txnId, transactionData: txnData };
 }
@@ -316,7 +317,7 @@ export default function CableTvScreen({ navigation }) {
       <Toast message={toastMsg} type={toastType} onHide={() => setToastMsg("")} />
       <ServiceHeader title="Cable TV" onBack={() => navigation.goBack()} />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 + insets.bottom }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 200 + insets.bottom }} keyboardShouldPersistTaps="handled">
         <View style={{ marginTop: 8 }}>
           <SegTabs items={providers.map((p) => p.name)} value={provider?.name} onChange={(name) => { const p = providers.find((x) => x.name === name); if (p) handleProvider(p); }} />
         </View>

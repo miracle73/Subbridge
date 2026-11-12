@@ -1,6 +1,7 @@
 import { useDarkMode, darkVariant, DARK } from "../utils/darkMode";
 import { FadeIn, PressScale, Float, Sparkle } from "../components/Motion";
 import { txTitle, txWhen, txEmoji, txStatusLabel } from "../utils/txDisplay";
+import { Gloss } from "../components/Motion";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
@@ -209,11 +210,6 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      <View style={st.pkgRow}>
-        <LinearGradient colors={[C.primary, "#4F8BFF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.pkg}>
-          <Text style={st.pkgText}>👑  API PACKAGE</Text>
-        </LinearGradient>
-      </View>
 
       <ScrollView
         contentContainerStyle={{ paddingBottom: 110 }}
@@ -222,6 +218,7 @@ export default function HomeScreen({ navigation }) {
       >
         <FadeIn delay={0}>
         <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.balanceCard}>
+<Gloss />
           <Float style={[st.blob, { width: 180, height: 180, top: -50, right: -40 }]} range={10} />
           <Float style={[st.blob, { width: 110, height: 110, bottom: -40, right: 30, backgroundColor: C.gold + "40" }]} range={12} duration={5000} delay={400} />
           <Sparkle style={{ top: 18, right: 120 }} size={13} />
@@ -250,6 +247,7 @@ export default function HomeScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={312} decelerationRate="fast" contentContainerStyle={{ paddingHorizontal: S.xl, gap: S.md }} style={{ marginTop: S.lg }}>
           {(wallet?.accounts?.length ? wallet.accounts : [{ bankName, accountNumber: acctNo, fee: "Instant funding" }]).map((a, i) => (
             <LinearGradient key={a.accountNumber || i} colors={i % 2 ? [C.primary, C.primaryDark] : [C.primaryMid, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.acctCard}>
+<Gloss />
               <View style={[st.blob, { width: 140, height: 140, top: -40, right: -30 }]} />
               <View style={st.rowBetween}>
                 <Text style={st.acctNo} selectable>{a.accountNumber || "—"}</Text>

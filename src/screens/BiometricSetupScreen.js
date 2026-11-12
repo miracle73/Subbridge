@@ -1,6 +1,8 @@
 import AuthBackground from "../components/AuthBackground";
+import { brandAlert } from "../components/BrandDialog";
 import React, { useState, useEffect } from "react";
 import {
+  ScrollView,
   View,
   Text,
   TouchableOpacity,
@@ -58,7 +60,7 @@ export default function BiometricSetupScreen({ navigation }) {
     try {
       const hasKeys = await BiometricCrypto.hasKeys();
       if (!hasKeys && (await CrashLog.hasKeygenCrash())) {
-        Alert.alert(
+        brandAlert(
           "Key setup crashed the app before",
           "Fingerprint key setup previously caused the app to close. What would you like to do?",
           [
@@ -75,7 +77,7 @@ export default function BiometricSetupScreen({ navigation }) {
   };
 
   const confirmRegister = () => {
-    Alert.alert(
+    brandAlert(
       "Enable Biometric Payments",
       "Generate an RSA key pair on your device. The private key stays on your phone. This may take a moment.",
       [
@@ -95,22 +97,22 @@ export default function BiometricSetupScreen({ navigation }) {
       }
       const result = await withTimeout(api.registerBiometricKey(publicKeyPem), 8000);
       if (result.success) {
-        Alert.alert("Success", "Biometric payments enabled. You can now pay with your fingerprint.");
+        brandAlert("Success", "Biometric payments enabled. You can now pay with your fingerprint.");
         checkStatus();
       } else {
         // Keep any locally generated keys so a retry can reuse them
         // instead of running RSA key generation again.
-        Alert.alert("Error", result.message || "Failed to register key.");
+        brandAlert("Error", result.message || "Failed to register key.");
       }
     } catch (e) {
       console.error("[BiometricSetup] register error:", e);
-      Alert.alert("Error", "Failed to generate or register key.");
+      brandAlert("Error", "Failed to generate or register key.");
     }
     setGenerating(false);
   };
 
   const handleDeregister = async () => {
-    Alert.alert(
+    brandAlert(
       "Disable Biometric Payments",
       "This will remove your registered key. You can re-enable anytime.",
       [
@@ -123,10 +125,10 @@ export default function BiometricSetupScreen({ navigation }) {
             try {
               await api.deregisterBiometric();
               await BiometricCrypto.deleteKeys();
-              Alert.alert("Done", "Biometric payments disabled.");
+              brandAlert("Done", "Biometric payments disabled.");
               checkStatus();
             } catch (e) {
-              Alert.alert("Error", "Failed to deregister.");
+              brandAlert("Error", "Failed to deregister.");
             }
             setLoading(false);
           },
@@ -150,7 +152,7 @@ export default function BiometricSetupScreen({ navigation }) {
       {loading ? (
         <ActivityIndicator size="large" color={C.white} style={{ marginTop: 120 }} />
       ) : (
-        <View style={styles.body}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.body, { flexGrow: 1, paddingBottom: 80 }]}>
           <View style={styles.ringOuter}>
             <View style={styles.ringInner}>
               <Ionicons name={isFace ? "scan" : "finger-print"} size={84} color={C.white} />
@@ -189,7 +191,7 @@ export default function BiometricSetupScreen({ navigation }) {
               <Text style={styles.btnGhostText}>Disable {isFace ? "Face ID" : "Fingerprint"}</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </ScrollView>
       )}
     </View>
   );
@@ -199,7 +201,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
   header: { paddingTop: 56, paddingHorizontal: S.xl },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
-  body: { flex: 1, alignItems: "center", paddingHorizontal: S.xl, paddingBottom: 40 },
+  body: { alignItems: "center", paddingHorizontal: S.xl },
   ringOuter: { width: 200, height: 200, borderRadius: 100, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center", marginTop: S.xl },
   ringInner: { width: 150, height: 150, borderRadius: 75, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" },
   title: { fontSize: 28, fontWeight: "900", color: C.white, textAlign: "center", marginTop: S.xxl },

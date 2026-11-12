@@ -139,14 +139,14 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
   // Figma "Set new PIN": light page, 4 boxes, keypad; enter then confirm.
   if (isPin) {
-    const value = password.length < 4 ? password : confirm;
+    const value = stage === "new" ? password : confirm;
     const onKey = (k) => {
       if (loading) return;
-      if (k === "del") { password.length < 4 || !confirm ? setPassword(password.slice(0, -1)) : setConfirm(confirm.slice(0, -1)); return; }
+      if (k === "del") { stage === "new" ? setPassword(password.slice(0, -1)) : setConfirm(confirm.slice(0, -1)); return; }
       if (!/^\d$/.test(k)) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setError("");
-      if (password.length < 4) { setPassword(password + k); return; }
+      if (stage === "new") { const p = (password + k).slice(0, 4); setPassword(p); if (p.length === 4) setTimeout(() => setStage("confirm"), 260); return; }
       const next = (confirm + k).slice(0, 4);
       setConfirm(next);
       if (next.length === 4) setTimeout(() => submit(password, next), 120);
@@ -159,7 +159,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
           <View style={{ width: 40 }} />
         </View>
         <Text style={[fig.title, { textAlign: "center", marginTop: 28 }]}>Create new PIN</Text>
-        <Text style={[fig.sub, { textAlign: "center" }]}>{password.length < 4 ? "Enter, then confirm your 4‑digit PIN" : "Confirm your new PIN"}</Text>
+        <Text style={[fig.sub, { textAlign: "center" }]}>{stage === "new" ? "Enter, then confirm your 4‑digit PIN" : "Confirm your new PIN"}</Text>
         <View style={np.boxes}>
           {[0, 1, 2, 3].map((i) => (
             <View key={i} style={[np.box, i < value.length && np.boxOn]}>{i < value.length ? <View style={np.dot} /> : null}</View>

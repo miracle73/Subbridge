@@ -1,6 +1,7 @@
 import { withPayStyles } from "../../components/payStyles";
 import PaymentSummary from "../../components/PaymentSummary";
 import { ServiceHeader, ServiceHero, Label, NetworkChips, PayBar, ui } from "../../components/ServiceUI";
+import { brandAlert } from "../../components/BrandDialog";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Image, StatusBar, Platform, Alert,
@@ -31,7 +32,7 @@ async function signTransaction(txnId, txnData) {
   const auth = await BiometricCrypto.authenticate();
   if (!auth.success) return { signature: null };
   const challengeRes = await api.requestChallenge(txnId, txnData);
-  if (!challengeRes.success) { Alert.alert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
+  if (!challengeRes.success) { brandAlert("Error", challengeRes.message || "Failed to get challenge"); return { signature: null }; }
   const signature = await BiometricCrypto.signChallenge(challengeRes.data.challenge);
   return { signature, transactionId: txnId, transactionData: txnData };
 }
@@ -270,7 +271,7 @@ export default function AirtimeScreen({ navigation }) {
       <ServiceHeader title="Buy Airtime" onBack={() => navigation.goBack()} />
       <ServiceHero title="Instant top-up" subtitle="All networks · 2% cashback" emoji="📱" />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 + insets.bottom }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 200 + insets.bottom }} keyboardShouldPersistTaps="handled">
         <Label>Network</Label>
         <NetworkChips items={networks} selectedId={network?.id} onSelect={handleNetwork} />
 

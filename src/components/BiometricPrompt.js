@@ -1,3 +1,4 @@
+import { brandAlert } from "./BrandDialog";
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -141,7 +142,7 @@ export default function BiometricPrompt({ visible, onClose }) {
     try {
       const hasKeys = await BiometricCrypto.hasKeys();
       if (!hasKeys && (await CrashLog.hasKeygenCrash())) {
-        Alert.alert(
+        brandAlert(
           "Key setup crashed the app before",
           "Fingerprint payment key setup previously caused the app to close. What would you like to do?",
           [

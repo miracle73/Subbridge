@@ -1,3 +1,4 @@
+import { Gloss } from "./Motion";
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,8 +22,9 @@ export default function PaymentSummary({ visible, product, kind, logo, subtitle,
           <View style={{ width: 40 }} />
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: S.xl, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ padding: S.xl, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
           <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+<Gloss />
             <View style={styles.blob} />
             <Text style={styles.spark}>✦</Text>
             <View style={styles.heroRow}>

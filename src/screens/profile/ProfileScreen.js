@@ -1,5 +1,6 @@
 import { useDarkMode, darkVariant, DARK } from "../../utils/darkMode";
 import { FadeIn, Float } from "../../components/Motion";
+import { brandAlert } from "../../components/BrandDialog";
 import React, { useState, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar, Switch,
@@ -62,9 +63,9 @@ export default function ProfileScreen({ navigation }) {
   const toggleBiometric = async (on) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (on) {
-      setShowBioSetup(true);
+      navigation.navigate("BiometricSetup");
     } else {
-      Alert.alert(
+      brandAlert(
         `Disable ${bioLabel}?`,
         `You will need to enter your PIN manually for logins and transactions.`,
         [
@@ -90,7 +91,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
+    brandAlert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Logout",

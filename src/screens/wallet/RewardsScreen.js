@@ -1,5 +1,6 @@
 import { withPayStyles } from "../../components/payStyles";
 import { FadeIn, PressScale, Float, Sparkle } from "../../components/Motion";
+import { Gloss } from "../../components/Motion";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Share, Modal, StatusBar, Image,
@@ -373,6 +374,7 @@ export default function RewardsScreen({ navigation }) {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 60 + insets.bottom }} showsVerticalScrollIndicator={false}>
         <FadeIn>
           <LinearGradient colors={[C.primary, C.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={rf.hero}>
+<Gloss />
             <Float style={rf.heroBlob} range={10} />
             <Sparkle style={{ top: 22, left: 178 }} size={14} />
             <Sparkle style={{ bottom: 16, right: 20 }} size={10} delay={500} />

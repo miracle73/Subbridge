@@ -1,3 +1,4 @@
+import { brandAlert } from "../components/BrandDialog";
 import { useState } from "react";
 import { Alert } from "react-native";
 import api from "../services/api";
@@ -10,13 +11,13 @@ export function useBiometricAuth() {
     if (authMode === "biometric") {
       const auth = await BiometricCrypto.authenticate();
       if (!auth.success) {
-        Alert.alert("Authentication", auth.error || "Authentication failed");
+        brandAlert("Authentication", auth.error || "Authentication failed");
         return null;
       }
 
       const challengeRes = await api.requestChallenge(transactionId, transactionData);
       if (!challengeRes.success) {
-        Alert.alert("Error", challengeRes.message || "Failed to get challenge");
+        brandAlert("Error", challengeRes.message || "Failed to get challenge");
         return null;
       }
 
@@ -30,13 +31,13 @@ export function useBiometricAuth() {
 
     if (authMode === "pin") {
       if (!pin) {
-        Alert.alert("Error", "Please enter your PIN");
+        brandAlert("Error", "Please enter your PIN");
         return null;
       }
       return { pin };
     }
 
-    Alert.alert("Error", "Please select a payment method");
+    brandAlert("Error", "Please select a payment method");
     return null;
   };
 
