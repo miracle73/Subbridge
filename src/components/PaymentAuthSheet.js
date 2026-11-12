@@ -2,6 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import AuthBackground from "./AuthBackground";
 import { SecurePin } from "../utils/storage";
+import { useDarkMode } from "../utils/darkMode";
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -21,6 +22,7 @@ import PinPad from "./PinPad";
 
 export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiometricAuth, onForgotPin, title = "Confirm payment", subtitle, detail, onHelp }) {
   const [initials, setInitials] = useState("");
+  const [dark, toggleDark] = useDarkMode();
   useEffect(() => { SecurePin.getName().then((n) => n && setInitials(n.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase())).catch(() => {}); }, []);
   const [pin, setPin] = useState("");
   const [bioAvailable, setBioAvailable] = useState(false);
@@ -101,8 +103,8 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
         <AuthBackground />
         <View style={fig.top}>
           <View style={fig.topBar}>
-            <TouchableOpacity style={fig.close} onPress={() => onClose()}>
-              <Ionicons name="close" size={20} color={C.white} />
+            <TouchableOpacity style={fig.close} onPress={toggleDark} onLongPress={() => onClose()}>
+              <Ionicons name={dark ? "sunny-outline" : "moon-outline"} size={18} color={C.white} />
             </TouchableOpacity>
           </View>
           <View style={fig.topRow}>
@@ -159,7 +161,7 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
 
 const fig = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.primary },
-  top: { paddingTop: 52, paddingHorizontal: 24, paddingBottom: 60 },
+  top: { paddingTop: 52, paddingHorizontal: 24, paddingBottom: 64 },
   topBar: { flexDirection: "row", justifyContent: "flex-end" },
   close: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
   topRow: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12 },

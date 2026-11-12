@@ -5,8 +5,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, S } from "../utils/theme";
 
-const CELL = 66;
-const GAP = 16;
+const CELL = 72;
+const GAP = 14;
 
 const KEYS = [
   ["1", "2", "3"],
@@ -33,15 +33,15 @@ export default function PinPad({ onPress, onBiometric }) {
           {row.map((k) => {
             if (k === "bio") {
               return onBiometric ? (
-                <TouchableOpacity key={k} style={styles.cell} onPress={() => handle(k)}>
+                <TouchableOpacity key={k} style={[styles.cell, styles.bioCell]} onPress={() => handle(k)}>
                   <Ionicons name={face ? "scan-outline" : "finger-print-outline"} size={26} color={C.primary} />
                 </TouchableOpacity>
               ) : <View key={k} style={styles.cellEmpty} />;
             }
             if (k === "del") {
               return (
-                <TouchableOpacity key={k} style={styles.cell} onPress={() => handle(k)}>
-                  <Ionicons name="backspace-outline" size={24} color={C.textMuted} />
+                <TouchableOpacity key={k} style={[styles.cell, styles.delCell]} onPress={() => handle(k)}>
+                  <Ionicons name="backspace-outline" size={26} color={C.text} />
                 </TouchableOpacity>
               );
             }
@@ -60,13 +60,16 @@ export default function PinPad({ onPress, onBiometric }) {
 const styles = StyleSheet.create({
   grid: { alignItems: "center" },
   row: { flexDirection: "row", gap: GAP, marginBottom: GAP },
+  // Design keypad: wide rounded keys, light-blue fingerprint key, plain delete key.
   cell: {
-    width: CELL, height: CELL, borderRadius: CELL / 2,
-    backgroundColor: C.inputBg, justifyContent: "center", alignItems: "center",
+    width: 100, height: 54, borderRadius: 18,
+    backgroundColor: "#F1F3FA", justifyContent: "center", alignItems: "center",
   },
+  bioCell: { backgroundColor: "#E8EDFF" },
+  delCell: { backgroundColor: "transparent" },
   // Invisible placeholder that keeps the 3-column grid aligned
   cellEmpty: {
-    width: CELL, height: CELL, backgroundColor: "transparent",
+    width: 100, height: 54, backgroundColor: "transparent",
   },
-  key: { fontSize: 22, fontWeight: "600", color: C.text },
+  key: { fontSize: 24, fontWeight: "800", color: C.text },
 });
