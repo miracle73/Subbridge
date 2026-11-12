@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import AuthBackground from "./AuthBackground";
+import { SecurePin } from "../utils/storage";
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -18,7 +19,9 @@ import api from "../services/api";
 import PinDots from "./PinDots";
 import PinPad from "./PinPad";
 
-export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiometricAuth, onForgotPin, title = "Confirm payment", subtitle }) {
+export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiometricAuth, onForgotPin, title = "Confirm payment", subtitle, detail, onHelp }) {
+  const [initials, setInitials] = useState("");
+  useEffect(() => { SecurePin.getName().then((n) => n && setInitials(n.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase())).catch(() => {}); }, []);
   const [pin, setPin] = useState("");
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioRegistered, setBioRegistered] = useState(false);
@@ -103,10 +106,11 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
             </TouchableOpacity>
           </View>
           <View style={fig.topRow}>
-            <View style={fig.avatar}><Ionicons name="shield-checkmark" size={28} color={C.primary} /></View>
+            <View style={fig.avatar}>{initials ? <Text style={fig.initials}>{initials}</Text> : <Ionicons name="person" size={26} color={C.primary} />}</View>
             <View style={{ flex: 1 }}>
               <Text style={fig.topSub}>Confirm payment</Text>
               <Text style={fig.topTitle} numberOfLines={2}>{subtitle || title}</Text>
+              {detail ? <Text style={fig.detail} numberOfLines={1}>{detail}</Text> : null}
             </View>
           </View>
         </View>
@@ -137,6 +141,11 @@ export default function PaymentAuthSheet({ visible, onClose, onPinAuth, onBiomet
               <Text style={fig.forgot}>Forgot PIN?</Text>
             </TouchableOpacity>
           ) : null}
+          {onHelp ? (
+            <TouchableOpacity style={fig.help} onPress={() => { onClose(); onHelp(); }}>
+              <Text style={fig.helpText}>🎧 Get help</Text>
+            </TouchableOpacity>
+          ) : null}
           <View style={{ flex: 1 }} />
           <View style={fig.secured}>
             <Ionicons name="shield-checkmark-outline" size={14} color={C.textMuted} />
@@ -160,6 +169,10 @@ const fig = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -32, alignItems: "center", paddingTop: 32, paddingBottom: 40 },
   prompt: { fontSize: 15, fontWeight: "600", color: C.textMuted, marginBottom: 24 },
   forgot: { fontSize: 15, fontWeight: "800", color: C.primary },
+  initials: { fontSize: 22, fontWeight: "900", color: C.primary },
+  detail: { fontSize: 14, color: C.onPrimaryMuted, marginTop: 4, fontWeight: "500" },
+  help: { backgroundColor: C.primaryLight, borderRadius: 20, paddingHorizontal: 18, height: 40, justifyContent: "center", marginTop: 8 },
+  helpText: { fontSize: 14, fontWeight: "800", color: C.primary },
   secured: { flexDirection: "row", alignItems: "center", gap: 6 },
   securedText: { fontSize: 12, fontWeight: "600", color: C.textMuted },
 });

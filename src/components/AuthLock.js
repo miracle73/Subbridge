@@ -1,4 +1,5 @@
 import { DEMO_MODE } from "../services/demoMode";
+import AuthBackground from "./AuthBackground";
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -104,25 +105,27 @@ export default function AuthLock({ onUnlock, onLogout, onForgotPin }) {
     else onUnlock();
   };
 
+  // Design "Enter PIN": blue top with greeting, white rounded sheet with dots + keypad.
   return (
-    <View style={styles.container}>
-      <View style={styles.center}>
-        <View style={styles.profileAvatar}>
-          {userName ? (
-            <Text style={styles.profileInitial}>{userName.charAt(0).toUpperCase()}</Text>
-          ) : (
-            <Ionicons name="person" size={40} color={C.primary} />
-          )}
+    <View style={lk.container}>
+      <View style={[lk.top, { paddingTop: insets.top + 32 }]}>
+        <AuthBackground />
+        <View style={lk.row}>
+          <View style={lk.avatar}>
+            {userName ? <Text style={lk.initial}>{userName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}</Text> : <Ionicons name="person" size={30} color={C.primary} />}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={lk.welcome}>Welcome back,</Text>
+            <Text style={lk.name}>{userName ? userName.split(" ")[0].toUpperCase() : "THERE"}</Text>
+          </View>
         </View>
-        <Text style={styles.title}>
-          {userName ? `Welcome Back, ${userName.split(" ")[0]}` : "Welcome Back"}
-        </Text>
-        <Text style={styles.subtitle}>Enter your PIN to continue</Text>
+        <Text style={lk.hint}>Enter your passcode to continue.</Text>
+      </View>
 
+      <View style={lk.sheet}>
         <Animated.View style={{ transform: [{ translateX: shake }] }}>
           <PinDots length={4} filled={pin.length} />
         </Animated.View>
-
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {loading ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
@@ -130,24 +133,42 @@ export default function AuthLock({ onUnlock, onLogout, onForgotPin }) {
             <Text style={{ fontSize: F.sm, color: C.textMuted, fontWeight: "600" }}>Verifying...</Text>
           </View>
         ) : null}
-      </View>
-
-      <View style={{ paddingBottom: insets.bottom }}>
-        <PinPad onPress={handleKey} onBiometric={bioReady ? loginWithBiometric : undefined} />
-      </View>
-
-      {onForgotPin ? (
-        <TouchableOpacity style={styles.forgotPin} onPress={onForgotPin}>
-          <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+        <View style={{ marginTop: 24 }}>
+          <PinPad onPress={handleKey} onBiometric={bioReady ? loginWithBiometric : undefined} />
+        </View>
+        {onForgotPin ? (
+          <TouchableOpacity style={{ paddingVertical: 10 }} onPress={onForgotPin}>
+            <Text style={lk.forgot}>Forgot PIN?</Text>
+          </TouchableOpacity>
+        ) : null}
+        <TouchableOpacity style={{ paddingVertical: 6 }} onPress={handleLogout}>
+          <Text style={lk.logout}>Sign out</Text>
         </TouchableOpacity>
-      ) : null}
-
-      <TouchableOpacity style={[styles.logoutBtn, { marginBottom: insets.bottom + S.sm }]} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+        <View style={{ flex: 1 }} />
+        <View style={[lk.secured, { marginBottom: insets.bottom + 20 }]}>
+          <Ionicons name="shield-checkmark-outline" size={14} color={C.textMuted} />
+          <Text style={lk.securedText}>Secured by SubBridge</Text>
+        </View>
+      </View>
     </View>
   );
 }
+
+const lk = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.white },
+  top: { paddingHorizontal: 24, paddingBottom: 64, overflow: "hidden" },
+  row: { flexDirection: "row", alignItems: "center", gap: 16 },
+  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.white, alignItems: "center", justifyContent: "center", borderWidth: 4, borderColor: "rgba(255,255,255,0.35)" },
+  initial: { fontSize: 22, fontWeight: "900", color: C.primary },
+  welcome: { fontSize: 15, color: C.onPrimaryMuted },
+  name: { fontSize: 26, fontWeight: "900", color: C.white },
+  hint: { fontSize: 15, color: C.onPrimaryMuted, marginTop: 16 },
+  sheet: { flex: 1, backgroundColor: C.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -32, alignItems: "center", paddingTop: 32 },
+  forgot: { fontSize: 15, fontWeight: "800", color: C.primary },
+  logout: { fontSize: 15, fontWeight: "800", color: C.debit },
+  secured: { flexDirection: "row", alignItems: "center", gap: 6 },
+  securedText: { fontSize: 12, fontWeight: "600", color: C.textMuted },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.white, paddingTop: 60 },

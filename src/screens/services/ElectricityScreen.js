@@ -10,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { C, F, R, S } from "../../utils/theme";
-import { fmt } from "../../utils/format";
+import { fmt, fmtShort } from "../../utils/format";
 import api from "../../services/api";
 import { enrichProviders, getElectricityLogo } from "../../utils/logos";
 import PaymentAuthSheet from "../../components/PaymentAuthSheet";
@@ -390,7 +390,7 @@ export default function ElectricityScreen({ navigation }) {
       />
 
       <PaymentAuthSheet
-        subtitle={`Electricity · ${fmt(finalAmount)}`} key={authSheetKey} visible={showAuthSheet} onClose={() => setShowAuthSheet(false)} onPinAuth={handlePinAuth} onBiometricAuth={handleBiometricAuth} onForgotPin={goForgotPin} />
+        subtitle={` · ${fmtShort(finalAmount)}`} detail={`${provider?.name || ""} · ${meterNumber}`} onHelp={() => navigation.navigate("Support")} key={authSheetKey} visible={showAuthSheet} onClose={() => setShowAuthSheet(false)} onPinAuth={handlePinAuth} onBiometricAuth={handleBiometricAuth} onForgotPin={goForgotPin} />
 
       <PinErrorModal
         visible={showPinError}

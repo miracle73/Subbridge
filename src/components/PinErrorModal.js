@@ -15,9 +15,8 @@ export default function PinErrorModal({ visible, onTryAgain, onForgotPin }) {
               <Ionicons name="lock-closed" size={24} color={C.white} />
             </View>
           </View>
-          <Text style={styles.title}>PIN Incorrect</Text>
-          <Text style={styles.msg}>The PIN you entered is wrong.
-Please check and try again.</Text>
+          <Text style={styles.title}>Incorrect PIN</Text>
+          <Text style={styles.msg}>The PIN you entered is wrong.{"\n"}Please check and try again.</Text>
 
           <TouchableOpacity style={styles.primaryBtn} onPress={onTryAgain}>
             <Text style={styles.primaryText}>Try again</Text>

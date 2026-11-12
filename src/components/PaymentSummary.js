@@ -1,14 +1,14 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C, F, S } from "../utils/theme";
-import { fmt } from "../utils/format";
+import { fmt, fmtShort } from "../utils/format";
 
 /** Figma "Confirm Payment" summary screen shown before the PIN sheet.
  *  rows: [[label, value], ...] */
-export default function PaymentSummary({ visible, product, subtitle, amount, rows = [], balance, onCancel, onPay }) {
+export default function PaymentSummary({ visible, product, kind, logo, subtitle, amount, rows = [], balance, onCancel, onPay }) {
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={!!visible} animationType="slide" onRequestClose={onCancel}>
@@ -26,7 +26,7 @@ export default function PaymentSummary({ visible, product, subtitle, amount, row
             <View style={styles.blob} />
             <Text style={styles.spark}>✦</Text>
             <View style={styles.heroRow}>
-              <View style={styles.heroIcon}><Ionicons name="receipt-outline" size={22} color={C.primary} /></View>
+              <View style={styles.heroIcon}>{logo ? <Image source={logo} style={{ width: 48, height: 48, borderRadius: 24 }} /> : <Ionicons name="receipt-outline" size={22} color={C.primary} />}</View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.heroTitle}>{product}</Text>
                 {subtitle ? <Text style={styles.heroSub} numberOfLines={1}>{subtitle}</Text> : null}
@@ -36,7 +36,7 @@ export default function PaymentSummary({ visible, product, subtitle, amount, row
           </LinearGradient>
 
           <View style={styles.card}>
-            {[["Product", product], ...rows, ["Amount", fmt(amount)]].map(([label, value], i) => (
+            {[["Product", kind || product], ...rows, ["Amount", fmt(amount)]].map(([label, value], i) => (
               <View key={label} style={[styles.row, i > 0 && styles.rowDivider]}>
                 <Text style={styles.rowLabel}>{label}</Text>
                 <Text style={styles.rowValue} numberOfLines={2}>{value}</Text>
@@ -45,6 +45,10 @@ export default function PaymentSummary({ visible, product, subtitle, amount, row
             <View style={[styles.row, styles.rowDivider]}>
               <Text style={styles.rowLabel}>Fee</Text>
               <Text style={styles.rowValue}>{fmt(0)}</Text>
+            </View>
+            <View style={[styles.row, styles.rowDivider]}>
+              <Text style={styles.rowLabel}>Cashback</Text>
+              <Text style={[styles.rowValue, { color: C.credit }]}>+{fmt(Math.round((Number(amount) || 0) * 0.02))}</Text>
             </View>
           </View>
 
@@ -59,7 +63,7 @@ export default function PaymentSummary({ visible, product, subtitle, amount, row
 
         <View style={[styles.bar, { paddingBottom: insets.bottom + 36 }]}>
           <TouchableOpacity style={styles.payBtn} onPress={onPay} activeOpacity={0.85}>
-            <Text style={styles.payText}>Pay {fmt(amount)}</Text>
+            <Text style={styles.payText}>Pay {fmtShort(amount)}</Text>
           </TouchableOpacity>
         </View>
       </View>

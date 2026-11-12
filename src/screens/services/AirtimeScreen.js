@@ -334,8 +334,10 @@ export default function AirtimeScreen({ navigation }) {
       {/* Confirmation Modal */}
       <PaymentSummary
         visible={showConfirm}
-        product="Airtime"
-        subtitle={network?.name}
+        product={`${network?.name || ""} Airtime`}
+        kind="Airtime"
+        logo={network?.logo}
+        subtitle={phone}
         amount={finalAmount}
         balance={balance}
         rows={[["Network", network?.name], ["Phone", phone]]}
@@ -344,7 +346,9 @@ export default function AirtimeScreen({ navigation }) {
       />
 
       <PaymentAuthSheet
-        subtitle={`Airtime · ${fmt(finalAmount)}`}
+        subtitle={` · ${fmtShort(finalAmount)}`}
+        detail={`${network?.name || ""} · ${phone}`}
+        onHelp={() => navigation.navigate("Support")}
         key={authSheetKey}
         visible={showAuthSheet}
         onClose={() => setShowAuthSheet(false)}

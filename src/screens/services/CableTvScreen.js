@@ -402,7 +402,9 @@ export default function CableTvScreen({ navigation }) {
       />
 
       <PaymentAuthSheet
-        subtitle={`Cable TV · ${fmt(plan?.amount)}`}
+        subtitle={` · ${fmtShort(plan?.amount)}`}
+        detail={`${provider?.name || ""} · ${smartcard}`}
+        onHelp={() => navigation.navigate("Support")}
         key={authSheetKey}
         visible={showAuthSheet}
         onClose={() => setShowAuthSheet(false)}

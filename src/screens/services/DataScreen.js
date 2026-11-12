@@ -559,8 +559,10 @@ export default function DataScreen({ navigation }) {
       {/* Confirmation Modal - with save beneficiary */}
       <PaymentSummary
         visible={showConfirm}
-        product="Data bundle"
-        subtitle={network?.name}
+        product={`${network?.name || ""} ${plan?.name || "Data"}`}
+        kind="Data"
+        logo={network?.logo}
+        subtitle={phone}
         amount={plan?.amount}
         balance={balance}
         rows={[["Network", network?.name], ["Plan", plan?.name], ["Phone", phone]]}
@@ -569,7 +571,9 @@ export default function DataScreen({ navigation }) {
       />
 
       <PaymentAuthSheet
-        subtitle={`Data bundle · ${fmt(plan?.amount)}`}
+        subtitle={` · ${fmtShort(plan?.amount)}`}
+        detail={`${network?.name || ""} · ${phone}`}
+        onHelp={() => navigation.navigate("Support")}
         key={authSheetKey}
         visible={showPaymentAuth}
         onClose={() => setShowPaymentAuth(false)}
